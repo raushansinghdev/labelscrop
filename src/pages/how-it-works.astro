@@ -1,0 +1,81 @@
+---
+import Layout from '@/layouts/Layout.astro';
+
+const title = 'How LabelsCrop Works — Crop & Sort Meesho Labels';
+const description =
+	'A step-by-step look at how LabelsCrop crops the invoice off your Meesho shipping labels, sorts them, and prepares a print-ready PDF — entirely in your browser.';
+
+const steps = [
+	{
+		name: 'Upload your Meesho label PDF',
+		text: 'Drag and drop one or more label PDFs you downloaded from Meesho Supplier Hub. Multiple files are supported if you run more than one account or downloaded in batches.',
+	},
+	{
+		name: 'Choose your printer and sort order',
+		text: 'Pick a label-printer size (3x5" or 4x6") or an A4 layout, decide whether to keep the tax invoice, and choose how labels should be sorted — original order, SKU, or courier.',
+	},
+	{
+		name: 'Preview the first label',
+		text: 'LabelsCrop shows you what the first label will look like with your chosen settings before you commit to processing the whole file.',
+	},
+	{
+		name: 'Download your print-ready PDF',
+		text: 'Process the full batch and download a clean PDF sized for your printer, plus an optional SKU order summary for packing.',
+	},
+];
+
+const schema = {
+	'@context': 'https://schema.org',
+	'@type': 'HowTo',
+	name: 'How to crop and sort Meesho shipping labels',
+	description,
+	step: steps.map((step) => ({
+		'@type': 'HowToStep',
+		name: step.name,
+		text: step.text,
+	})),
+};
+---
+
+<Layout title={title} description={description} schema={schema}>
+	<section class="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24">
+		<h1 data-reveal class="text-4xl font-bold tracking-tight sm:text-5xl">How it works</h1>
+		<p data-reveal class="mt-4 text-lg text-muted-foreground">
+			Four steps, entirely in your browser. Nothing you upload is ever sent to a server.
+		</p>
+
+		<ol class="mt-12 space-y-10 border-l border-border pl-8">
+			{steps.map((step, i) => (
+				<li data-reveal class="relative">
+					<span
+						class="absolute -left-[calc(2rem+1px)] flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground"
+						aria-hidden="true"
+					>
+						{i + 1}
+					</span>
+					<h2 class="font-semibold">{step.name}</h2>
+					<p class="mt-1.5 text-muted-foreground">{step.text}</p>
+				</li>
+			))}
+		</ol>
+
+		<div data-reveal class="mt-16 rounded-xl border border-border bg-muted/30 p-6">
+			<h2 class="font-semibold">Why does this run only in my browser?</h2>
+			<p class="mt-2 text-sm text-muted-foreground">
+				Shipping labels contain your customers' names, addresses, and phone numbers. LabelsCrop
+				never uploads your PDF anywhere — all cropping, sorting, and PDF generation happens on
+				your own device using your browser's built-in capabilities. That also means it works
+				without an account and without waiting on a server.
+			</p>
+		</div>
+
+		<div data-reveal class="mt-10 text-center">
+			<a
+				href="/tools/meesho-label-cropper"
+				class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+			>
+				Try it now
+			</a>
+		</div>
+	</section>
+</Layout>

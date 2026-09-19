@@ -1,0 +1,103 @@
+---
+import Layout from '@/layouts/Layout.astro';
+
+const title = 'Meesho Label Cropper FAQ — LabelsCrop';
+const description =
+	"Answers to common questions about LabelsCrop's free Meesho label cropper: is it really free, does it work on mobile, is my data safe, and more.";
+
+const faqs = [
+	{
+		q: 'Is LabelsCrop really free?',
+		a: 'Yes. LabelsCrop is free forever, with no page limits, no watermark, and no account required. The site is supported by ads placed away from the upload, preview, and download flow so they never get in your way.',
+	},
+	{
+		q: 'Do I need to create an account or sign in?',
+		a: 'No. There is no login, no signup, and no email required. Open the tool, upload your PDF, and download your result.',
+	},
+	{
+		q: 'Is my order and customer data safe?',
+		a: "Your PDF is never uploaded anywhere. All cropping, sorting, and file generation happens locally in your browser using your device's own processing power — LabelsCrop has no server that ever sees your file.",
+	},
+	{
+		q: 'Does LabelsCrop work on my phone?',
+		a: 'Yes. LabelsCrop is built mobile-first and works in any modern mobile browser (Chrome, Safari, etc.), in addition to desktop and tablet.',
+	},
+	{
+		q: 'What printer sizes are supported?',
+		a: 'You can crop labels for 3x5" and 4x6" thermal label printers, or pack multiple labels onto an A4 sheet for a regular printer.',
+	},
+	{
+		q: 'Can I remove the tax invoice from my Meesho labels?',
+		a: "Yes. Meesho prints the shipping label and tax invoice on the same page — LabelsCrop detects the split automatically and can crop the invoice away, or keep it as a separate file if you'd rather not discard it.",
+	},
+	{
+		q: 'Can I sort my labels by SKU or courier?',
+		a: "Yes. Labels can be reordered by SKU, courier, or kept in the original order Meesho exported them in — useful when you're packing in a specific sequence.",
+	},
+	{
+		q: 'Can I upload labels from more than one Meesho account?',
+		a: 'Yes. LabelsCrop supports uploading multiple PDF files at once, so sellers running more than one account or exporting in batches can process everything together.',
+	},
+	{
+		q: 'How many labels can I process at once?',
+		a: "Because everything runs in your browser rather than on a server, the practical limit depends on your device's memory rather than any limit we impose. LabelsCrop processes large batches in chunks and will warn you before a very large upload might strain your browser.",
+	},
+	{
+		q: 'Will Amazon or Flipkart label support be added?',
+		a: "It's on the roadmap. LabelsCrop is built to support multiple platforms — Meesho is first, with Amazon and Flipkart label cropping planned as a later addition.",
+	},
+];
+
+const schema = {
+	'@context': 'https://schema.org',
+	'@type': 'FAQPage',
+	mainEntity: faqs.map((faq) => ({
+		'@type': 'Question',
+		name: faq.q,
+		acceptedAnswer: {
+			'@type': 'Answer',
+			text: faq.a,
+		},
+	})),
+};
+---
+
+<Layout title={title} description={description} schema={schema}>
+	<section class="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24">
+		<h1 data-reveal class="text-4xl font-bold tracking-tight sm:text-5xl">Frequently asked questions</h1>
+		<p data-reveal class="mt-4 text-lg text-muted-foreground">
+			Can't find what you're looking for? These cover the questions sellers ask most.
+		</p>
+
+		<div class="mt-10 divide-y divide-border border-y border-border">
+			{faqs.map((faq) => (
+				<details data-reveal class="group py-5">
+					<summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-medium marker:content-none">
+						{faq.q}
+						<svg
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180"
+						>
+							<path d="m6 9 6 6 6-6" />
+						</svg>
+					</summary>
+					<p class="mt-3 text-sm text-muted-foreground">{faq.a}</p>
+				</details>
+			))}
+		</div>
+
+		<div data-reveal class="mt-10 text-center">
+			<a
+				href="/tools/meesho-label-cropper"
+				class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+			>
+				Open the tool
+			</a>
+		</div>
+	</section>
+</Layout>

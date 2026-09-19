@@ -1,0 +1,122 @@
+---
+const navItems = [
+	{ href: '/tools/meesho-label-cropper', label: 'Meesho Label Cropper' },
+	{ href: '/how-it-works', label: 'How it Works' },
+	{ href: '/faq', label: 'FAQ' },
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<header
+	class="sticky top-0 z-40 border-b border-border/80 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70"
+>
+	<div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+		<a href="/" class="flex items-center gap-2 font-semibold tracking-tight" aria-label="LabelsCrop home">
+			<span
+				class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"
+				aria-hidden="true"
+			>
+				<svg viewBox="0 0 24 24" fill="none" class="h-4.5 w-4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
+					<path d="M14 3v5h5" />
+					<path d="m9.5 13.5 2 2 4-4.5" stroke-dasharray="0" />
+				</svg>
+			</span>
+			<span class="text-base">LabelsCrop</span>
+		</a>
+
+		<nav class="hidden items-center gap-1 md:flex" aria-label="Primary">
+			{navItems.map((item) => {
+				const active = currentPath === item.href;
+				return (
+					<a
+						href={item.href}
+						class:list={[
+							'rounded-md px-3 py-2 text-sm font-medium transition-colors',
+							active
+								? 'text-foreground'
+								: 'text-muted-foreground hover:text-foreground',
+						]}
+						aria-current={active ? 'page' : undefined}
+					>
+						{item.label}
+					</a>
+				);
+			})}
+		</nav>
+
+		<div class="hidden md:block">
+			<a
+				href="/tools/meesho-label-cropper"
+				class="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.03] active:scale-[0.98]"
+			>
+				Open the tool
+			</a>
+		</div>
+
+		<button
+			id="menu-toggle"
+			type="button"
+			class="inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground md:hidden"
+			aria-expanded="false"
+			aria-controls="mobile-menu"
+			aria-label="Toggle menu"
+		>
+			<svg id="menu-icon-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="h-5 w-5">
+				<path d="M4 7h16M4 12h16M4 17h16" />
+			</svg>
+			<svg id="menu-icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="hidden h-5 w-5">
+				<path d="M6 6l12 12M18 6 6 18" />
+			</svg>
+		</button>
+	</div>
+
+	<div
+		id="mobile-menu"
+		class="grid grid-rows-[0fr] overflow-hidden border-b border-border/80 transition-[grid-template-rows] duration-300 ease-out md:hidden"
+	>
+		<div class="min-h-0">
+			<nav class="flex flex-col gap-1 px-4 pb-4" aria-label="Mobile">
+				{navItems.map((item) => (
+					<a
+						href={item.href}
+						class="rounded-md px-3 py-2.5 text-sm font-medium text-foreground/90 hover:bg-muted"
+					>
+						{item.label}
+					</a>
+				))}
+				<a
+					href="/tools/meesho-label-cropper"
+					class="mt-2 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
+				>
+					Open the tool
+				</a>
+			</nav>
+		</div>
+	</div>
+</header>
+
+<script>
+	const toggle = document.getElementById('menu-toggle');
+	const menu = document.getElementById('mobile-menu');
+	const iconOpen = document.getElementById('menu-icon-open');
+	const iconClose = document.getElementById('menu-icon-close');
+
+	function setOpen(open: boolean) {
+		if (!toggle || !menu || !iconOpen || !iconClose) return;
+		toggle.setAttribute('aria-expanded', String(open));
+		menu.classList.toggle('grid-rows-[1fr]', open);
+		menu.classList.toggle('grid-rows-[0fr]', !open);
+		iconOpen.classList.toggle('hidden', open);
+		iconClose.classList.toggle('hidden', !open);
+	}
+
+	toggle?.addEventListener('click', () => {
+		const isOpen = toggle.getAttribute('aria-expanded') === 'true';
+		setOpen(!isOpen);
+	});
+
+	// Astro view-transitions swap the DOM; re-close the menu after navigation.
+	document.addEventListener('astro:after-swap', () => setOpen(false));
+</script>

@@ -1,0 +1,183 @@
+---
+import Layout from '@/layouts/Layout.astro';
+
+const title = 'Free Meesho Label Cropper & Sorter — LabelsCrop';
+const description =
+	'Crop, resize, and sort your Meesho shipping labels for free, right in your browser. No login, no upload to any server, no watermarks — just clean, print-ready PDFs.';
+
+const features = [
+	{
+		title: 'Crop the invoice away',
+		body: 'Meesho bundles the tax invoice with every shipping label on the same page. LabelsCrop finds the split automatically and gives you a clean label.',
+		icon: 'crop',
+	},
+	{
+		title: 'Fits your printer',
+		body: 'Choose 3x5" or 4x6" thermal labels, or pack multiple labels per A4 sheet — auto-rotated to fill the page.',
+		icon: 'printer',
+	},
+	{
+		title: 'Sort however you pack',
+		body: 'Reorder your labels by SKU, courier, or pickup so packing matches the pile in front of you, not the order Meesho exported them in.',
+		icon: 'sort',
+	},
+	{
+		title: 'SKU order summary',
+		body: 'See how many units of each SKU you need to pack today, and download that summary as its own PDF.',
+		icon: 'list',
+	},
+];
+
+const trustPoints = [
+	'Your PDF never leaves your device — everything runs in your browser.',
+	'No account, no login, no email required.',
+	'Free forever. No watermarks, no page limits designed to push you to a paid plan.',
+];
+
+const schema = [
+	{
+		'@context': 'https://schema.org',
+		'@type': 'WebSite',
+		name: 'LabelsCrop',
+		url: Astro.site?.toString(),
+		potentialAction: {
+			'@type': 'SearchAction',
+			target: `${Astro.site}faq?q={search_term_string}`,
+			'query-input': 'required name=search_term_string',
+		},
+	},
+	{
+		'@context': 'https://schema.org',
+		'@type': 'SoftwareApplication',
+		name: 'LabelsCrop — Meesho Label Cropper',
+		applicationCategory: 'BusinessApplication',
+		operatingSystem: 'Any (runs in browser)',
+		offers: {
+			'@type': 'Offer',
+			price: '0',
+			priceCurrency: 'INR',
+		},
+		description,
+	},
+];
+---
+
+<Layout title={title} description={description} schema={schema}>
+	<!-- Hero -->
+	<section class="relative overflow-hidden">
+		<div
+			class="pointer-events-none absolute inset-x-0 -top-32 -z-10 flex justify-center blur-3xl"
+			aria-hidden="true"
+		>
+			<div
+				class="aspect-[1155/678] w-[72rem] bg-gradient-to-tr from-primary/25 via-primary/10 to-transparent opacity-70"
+				style="clip-path: polygon(74% 44%, 100% 61%, 97% 26%, 85% 0%, 70% 25%, 55% 0%, 34% 11%, 0 40%, 15% 100%, 45% 80%, 65% 100%)"
+			>
+			</div>
+		</div>
+
+		<div class="mx-auto max-w-4xl px-4 pb-16 pt-16 text-center sm:px-6 sm:pb-24 sm:pt-24">
+			<p
+				data-reveal
+				class="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground"
+			>
+				<span class="h-1.5 w-1.5 rounded-full bg-success"></span>
+				Free forever, no signup
+			</p>
+
+			<h1 data-reveal class="mt-6 text-balance text-4xl font-bold tracking-tight sm:text-6xl">
+				Crop &amp; sort your <span class="text-primary">Meesho shipping labels</span> in seconds
+			</h1>
+
+			<p data-reveal class="mx-auto mt-5 max-w-2xl text-balance text-lg text-muted-foreground">
+				Upload your label PDF, pick your printer size, and download a clean, print-ready file —
+				sorted the way you actually pack. Nothing is ever uploaded to a server.
+			</p>
+
+			<div data-reveal class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+				<a
+					href="/tools/meesho-label-cropper"
+					class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98] sm:w-auto"
+				>
+					Open the Meesho Label Cropper
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+						<path d="M5 12h14M13 6l6 6-6 6" />
+					</svg>
+				</a>
+				<a
+					href="/how-it-works"
+					class="inline-flex w-full items-center justify-center rounded-md border border-border px-6 py-3 text-base font-medium text-foreground transition-colors hover:bg-muted sm:w-auto"
+				>
+					See how it works
+				</a>
+			</div>
+		</div>
+	</section>
+
+	<!-- Trust strip -->
+	<section class="border-y border-border/80 bg-muted/30">
+		<div class="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+			<ul class="grid gap-4 text-sm text-muted-foreground sm:grid-cols-3">
+				{trustPoints.map((point) => (
+					<li class="flex items-start gap-2">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 h-4 w-4 flex-shrink-0 text-success">
+							<path d="M20 6 9 17l-5-5" />
+						</svg>
+						<span>{point}</span>
+					</li>
+				))}
+			</ul>
+		</div>
+	</section>
+
+	<!-- Features -->
+	<section class="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+		<div class="mx-auto max-w-2xl text-center">
+			<h2 data-reveal class="text-3xl font-bold tracking-tight sm:text-4xl">
+				Everything you need to prep labels for packing
+			</h2>
+			<p data-reveal class="mt-4 text-muted-foreground">
+				Built for sellers who do this every single day — not a one-time conversion tool.
+			</p>
+		</div>
+
+		<div class="mt-12 grid gap-6 sm:grid-cols-2">
+			{features.map((feature) => (
+				<div data-reveal class="rounded-xl border border-border bg-card p-6 shadow-sm">
+					<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+							{feature.icon === 'crop' && <path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2" />}
+							{feature.icon === 'printer' && (
+								<>
+									<path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+									<rect x="6" y="14" width="12" height="8" />
+								</>
+							)}
+							{feature.icon === 'sort' && <path d="M11 5h10M11 9h7M11 13h4M3 17l3 3 3-3M6 18V4" />}
+							{feature.icon === 'list' && <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />}
+						</svg>
+					</div>
+					<h3 class="mt-4 font-semibold">{feature.title}</h3>
+					<p class="mt-2 text-sm text-muted-foreground">{feature.body}</p>
+				</div>
+			))}
+		</div>
+	</section>
+
+	<!-- CTA -->
+	<section class="mx-auto max-w-4xl px-4 pb-24 sm:px-6">
+		<div data-reveal class="rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-card to-card p-10 text-center">
+			<h2 class="text-2xl font-bold tracking-tight sm:text-3xl">Ready to clean up today's labels?</h2>
+			<p class="mx-auto mt-3 max-w-xl text-muted-foreground">
+				No signup, no watermark, no catch. Upload a PDF and see a preview before you download
+				anything.
+			</p>
+			<a
+				href="/tools/meesho-label-cropper"
+				class="mt-6 inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+			>
+				Open the Meesho Label Cropper
+			</a>
+		</div>
+	</section>
+</Layout>

@@ -1,0 +1,53 @@
+---
+import Layout from '@/layouts/Layout.astro';
+
+const title = 'About LabelsCrop';
+const description =
+	'LabelsCrop is a free, browser-only toolkit for Indian e-commerce sellers to prep shipping labels for printing — no login, no uploads, no watermarks.';
+---
+
+<Layout title={title} description={description}>
+	<section class="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24">
+		<h1 data-reveal class="text-4xl font-bold tracking-tight sm:text-5xl">About LabelsCrop</h1>
+
+		<div data-reveal class="prose prose-neutral mt-8 max-w-none text-muted-foreground dark:prose-invert">
+			<p>
+				LabelsCrop exists because packing orders shouldn't mean fighting with a PDF. Meesho — and
+				most Indian marketplaces — export shipping labels with a tax invoice glued to the same
+				page, in whatever order your orders happened to sync in. Every seller ends up needing the
+				same three things: a clean label sized for their printer, sorted the way they actually
+				pack, with the invoice handled sensibly.
+			</p>
+			<p>A few things we think matter enough to say plainly:</p>
+			<ul>
+				<li>
+					<strong>Nothing you upload leaves your device.</strong> LabelsCrop has no server that
+					processes your files. Cropping, sorting, and PDF generation all happen locally in your
+					browser, using code that runs on your machine — not ours.
+				</li>
+				<li>
+					<strong>No account, ever.</strong> There's nothing to sign up for and nothing to forget
+					a password for. Open the tool, use it, close the tab.
+				</li>
+				<li>
+					<strong>Free forever, funded by ads.</strong> LabelsCrop is supported by advertising
+					placed away from the upload, preview, and download flow, so it never gets in the way of
+					actually getting your labels done.
+				</li>
+			</ul>
+			<p>
+				LabelsCrop started with Meesho label cropping and sorting. Support for other marketplaces
+				is on the roadmap — see the <a href="/faq">FAQ</a> for details.
+			</p>
+		</div>
+
+		<div data-reveal class="mt-10 text-center">
+			<a
+				href="/tools/meesho-label-cropper"
+				class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+			>
+				Open the tool
+			</a>
+		</div>
+	</section>
+</Layout>

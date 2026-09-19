@@ -1,0 +1,56 @@
+---
+import Layout from '@/layouts/Layout.astro';
+
+const title = 'Privacy Policy — LabelsCrop';
+const description = 'How LabelsCrop handles your data: what never leaves your browser, and what our ad and analytics providers see.';
+const lastUpdated = 'September 19, 2026';
+---
+
+<Layout title={title} description={description}>
+	<section class="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24">
+		<h1 data-reveal class="text-4xl font-bold tracking-tight sm:text-5xl">Privacy Policy</h1>
+		<p data-reveal class="mt-2 text-sm text-muted-foreground">Last updated: {lastUpdated}</p>
+
+		<div data-reveal class="prose prose-neutral mt-8 max-w-none text-muted-foreground dark:prose-invert">
+			<h2>Your files</h2>
+			<p>
+				LabelsCrop does not have a server that receives, stores, or processes the PDF files you
+				upload. All cropping, sorting, text extraction, and file generation happen locally in
+				your browser. Your label files, and any customer names, addresses, or order details they
+				contain, are never transmitted to LabelsCrop or any third party by this tool.
+			</p>
+
+			<h2>Local storage</h2>
+			<p>
+				LabelsCrop may save your last-used tool settings (such as printer size or sort order) in
+				your browser's local storage so you don't have to re-select them on your next visit. This
+				data stays on your device, is never transmitted anywhere, and can be cleared at any time
+				through your browser settings.
+			</p>
+
+			<h2>Advertising</h2>
+			<p>
+				LabelsCrop is free to use and is supported by advertising, served through Google AdSense.
+				Google and its advertising partners may use cookies or similar technologies to serve ads
+				based on your prior visits to this or other websites. You can learn more about how Google
+				uses this data and manage your ad personalization settings at
+				<a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener noreferrer">
+					policies.google.com/technologies/ads
+				</a>.
+			</p>
+
+			<h2>Analytics</h2>
+			<p>
+				LabelsCrop uses privacy-friendly, cookie-free analytics to understand aggregate traffic to
+				this site (such as which pages are visited). This does not track you individually across
+				other websites.
+			</p>
+
+			<h2>Contact</h2>
+			<p>
+				Questions about this policy can be sent to the contact details listed on our
+				<a href="/about">About</a> page.
+			</p>
+		</div>
+	</section>
+</Layout>
