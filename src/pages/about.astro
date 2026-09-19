@@ -1,4 +1,5 @@
 ---
+import { url } from '@/lib/url';
 import Layout from '@/layouts/Layout.astro';
 
 const title = 'About LabelsCrop';
@@ -37,13 +38,13 @@ const description =
 			</ul>
 			<p>
 				LabelsCrop started with Meesho label cropping and sorting. Support for other marketplaces
-				is on the roadmap — see the <a href="/faq">FAQ</a> for details.
+				is on the roadmap — see the <a href={url('/faq')}>FAQ</a> for details.
 			</p>
 		</div>
 
 		<div data-reveal class="mt-10 text-center">
 			<a
-				href="/tools/meesho-label-cropper"
+				href={url('/tools/meesho-label-cropper')}
 				class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
 			>
 				Open the tool

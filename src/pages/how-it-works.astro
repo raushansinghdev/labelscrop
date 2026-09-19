@@ -1,4 +1,5 @@
 ---
+import { url } from '@/lib/url';
 import Layout from '@/layouts/Layout.astro';
 
 const title = 'How LabelsCrop Works — Crop & Sort Meesho Labels';
@@ -71,7 +72,7 @@ const schema = {
 
 		<div data-reveal class="mt-10 text-center">
 			<a
-				href="/tools/meesho-label-cropper"
+				href={url('/tools/meesho-label-cropper')}
 				class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
 			>
 				Try it now

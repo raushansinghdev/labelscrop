@@ -1,28 +1,29 @@
 ---
+import { url } from '@/lib/url';
 const year = new Date().getFullYear();
 
 const columns = [
 	{
 		heading: 'Tools',
 		links: [
-			{ href: '/tools/meesho-label-cropper', label: 'Meesho Label Cropper' },
-			{ href: '/tools/amazon-label-cropper', label: 'Amazon Label Cropper (soon)' },
-			{ href: '/tools/flipkart-label-cropper', label: 'Flipkart Label Cropper (soon)' },
+			{ href: url('/tools/meesho-label-cropper'), label: 'Meesho Label Cropper' },
+			{ href: url('/tools/amazon-label-cropper'), label: 'Amazon Label Cropper (soon)' },
+			{ href: url('/tools/flipkart-label-cropper'), label: 'Flipkart Label Cropper (soon)' },
 		],
 	},
 	{
 		heading: 'Learn',
 		links: [
-			{ href: '/how-it-works', label: 'How it Works' },
-			{ href: '/faq', label: 'FAQ' },
-			{ href: '/about', label: 'About' },
+			{ href: url('/how-it-works'), label: 'How it Works' },
+			{ href: url('/faq'), label: 'FAQ' },
+			{ href: url('/about'), label: 'About' },
 		],
 	},
 	{
 		heading: 'Legal',
 		links: [
-			{ href: '/privacy-policy', label: 'Privacy Policy' },
-			{ href: '/terms', label: 'Terms of Use' },
+			{ href: url('/privacy-policy'), label: 'Privacy Policy' },
+			{ href: url('/terms'), label: 'Terms of Use' },
 		],
 	},
 ];
@@ -32,7 +33,7 @@ const columns = [
 	<div class="mx-auto max-w-6xl px-4 py-12 sm:px-6">
 		<div class="grid gap-10 sm:grid-cols-2 md:grid-cols-4">
 			<div class="md:col-span-1">
-				<a href="/" class="flex items-center gap-2 font-semibold tracking-tight">
+				<a href={url('/')} class="flex items-center gap-2 font-semibold tracking-tight">
 					<span class="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground" aria-hidden="true">
 						<svg viewBox="0 0 24 24" fill="none" class="h-4 w-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 							<path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />

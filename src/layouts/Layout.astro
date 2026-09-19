@@ -1,4 +1,5 @@
 ---
+import { url } from '@/lib/url';
 import { ClientRouter } from 'astro:transitions';
 import Header from '@/components/site/Header.astro';
 import Footer from '@/components/site/Footer.astro';
@@ -23,7 +24,7 @@ const schemaList = schema ? (Array.isArray(schema) ? schema : [schema]) : [];
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" type="image/svg+xml" href={url('/favicon.svg')} />
 		<link rel="canonical" href={canonicalURL} />
 		{noindex && <meta name="robots" content="noindex, nofollow" />}
 

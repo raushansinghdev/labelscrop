@@ -1,4 +1,5 @@
 ---
+import { url } from '@/lib/url';
 import Layout from '@/layouts/Layout.astro';
 
 const title = 'Privacy Policy — LabelsCrop';
@@ -49,7 +50,7 @@ const lastUpdated = 'September 19, 2026';
 			<h2>Contact</h2>
 			<p>
 				Questions about this policy can be sent to the contact details listed on our
-				<a href="/about">About</a> page.
+				<a href={url('/about')}>About</a> page.
 			</p>
 		</div>
 	</section>
