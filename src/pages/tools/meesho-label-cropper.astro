@@ -8,11 +8,28 @@ const description =
 	'Crop the tax invoice off your Meesho shipping labels, resize them for 3x5" or 4x6" printers, and sort by SKU or courier — free, in your browser, no login.';
 
 const toolOptions = [
-	{ label: 'Printer type', detail: 'Label printer (3x5" / 4x6") or A4 sheet, multiple labels per page.' },
-	{ label: 'Invoice handling', detail: 'Crop the invoice away, or keep it as a separate downloadable PDF.' },
-	{ label: 'Sort order', detail: 'Original order, by SKU, or by courier — match how you pack.' },
+	{ label: 'Printer type', detail: 'Label printer (3x5" / 4x6"), or A4 paper with 1, 2, or 4 labels per sheet.' },
+	{ label: 'Invoice handling', detail: 'Crop the invoice away, keep it attached, or save invoices as a separate PDF.' },
+	{ label: 'Sort order', detail: 'Original order, SKU, courier, pickup hub, or color and size — match how you pack.' },
 	{ label: 'Custom text & order #', detail: 'Stamp a note or the order number onto each label.' },
 	{ label: 'SKU order summary', detail: 'A downloadable count of every SKU across the batch, for packing.' },
+	{ label: 'Private by design', detail: 'Everything runs in your browser — your labels and customer details are never uploaded.' },
+];
+
+const iconAttrs = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"';
+const helpLinks = [
+	{
+		href: url('/how-it-works'),
+		title: 'How it works',
+		detail: 'Upload, customize, download — in under a minute.',
+		icon: `<svg ${iconAttrs}><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
+	},
+	{
+		href: url('/faq'),
+		title: 'FAQ',
+		detail: 'Privacy, printer sizes, using it on your phone, and more.',
+		icon: `<svg ${iconAttrs}><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>`,
+	},
 ];
 
 const schema = {
@@ -27,16 +44,22 @@ const schema = {
 ---
 
 <Layout title={title} description={description} schema={schema}>
-	<section class="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20">
+	<section class="mx-auto max-w-5xl px-4 pt-8 pb-16 sm:px-6 sm:pt-14 sm:pb-20">
 		<div class="mx-auto max-w-2xl text-center">
-			<h1 data-reveal class="text-4xl font-bold tracking-tight sm:text-5xl">Meesho Label Cropper</h1>
-			<p data-reveal class="mt-4 text-lg text-muted-foreground">
-				Upload your Meesho shipping label PDF, crop away the tax invoice, resize for your printer,
-				and sort your labels the way you pack — free, with nothing ever leaving your browser.
+			<h1 class="text-3xl font-bold tracking-tight text-balance sm:text-5xl">Meesho Label Cropper</h1>
+			<p class="mx-auto mt-3 max-w-xl text-base text-pretty text-muted-foreground sm:mt-4 sm:text-lg">
+				Crop the invoice, fit labels to your printer, and sort them the way you pack.
 			</p>
+			<ul class="mt-4 flex flex-wrap justify-center gap-2 text-xs font-medium text-muted-foreground" aria-label="Highlights">
+				<li class="rounded-full bg-muted px-3 py-1">100% free</li>
+				<li class="rounded-full bg-muted px-3 py-1">No login</li>
+				<li class="rounded-full bg-muted px-3 py-1">Files never leave your device</li>
+			</ul>
 		</div>
 
-		<div data-reveal class="mt-10">
+		{/* Not wrapped in data-reveal: the tool is the page's main content and should be visible (and tappable)
+		  * immediately rather than waiting on a scroll-reveal fade. */}
+		<div class="mt-8 sm:mt-12">
 			<MeeshoToolApp client:load />
 		</div>
 
@@ -52,12 +75,26 @@ const schema = {
 			</dl>
 		</div>
 
-		<div data-reveal class="mx-auto mt-16 max-w-2xl rounded-xl border border-border bg-muted/30 p-6 text-center">
-			<p class="text-sm text-muted-foreground">
-				Have questions about how this works, or whether your data is safe? See the
-				<a href={url('/faq')} class="font-medium text-foreground underline underline-offset-2">FAQ</a>
-				or <a href={url('/how-it-works')} class="font-medium text-foreground underline underline-offset-2">how it works</a>.
-			</p>
+		<div data-reveal class="mx-auto mt-16 max-w-3xl">
+			<h2 class="text-center text-2xl font-semibold tracking-tight">Got questions?</h2>
+			<p class="mt-2 text-center text-sm text-muted-foreground">How the tool works, and why your data stays safe.</p>
+			<div class="mt-8 grid gap-4 sm:grid-cols-2">
+				{helpLinks.map((link) => (
+					<a
+						href={link.href}
+						class="group flex items-center gap-4 rounded-2xl border border-border bg-card p-5 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md active:translate-y-0"
+					>
+						<span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary" set:html={link.icon} />
+						<span class="min-w-0 flex-1">
+							<span class="block font-semibold">{link.title}</span>
+							<span class="mt-0.5 block text-sm text-muted-foreground">{link.detail}</span>
+						</span>
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-1 group-hover:text-primary" aria-hidden="true">
+							<path d="M5 12h14M13 6l6 6-6 6" />
+						</svg>
+					</a>
+				))}
+			</div>
 		</div>
 	</section>
 </Layout>

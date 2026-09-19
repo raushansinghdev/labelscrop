@@ -26,6 +26,29 @@ export const MEESHO_LAYOUTS: Record<string, LayoutPreset> = {
 		marginPt: 0,
 		gapPt: 0,
 	},
+	// A4 sheets are offered 1, 2, or 4 labels per page. Every cell auto-rotates its label to fill the cell
+	// (see `fitContainAutoRotate`), so a cropped label lands upright in a 2-up half-sheet and sideways (larger)
+	// on a 1-up full sheet, without the preset having to know which crop mode is in use.
+	'a4-1up': {
+		id: 'a4-1up',
+		label: 'A4 sheet, 1 label per page',
+		pageWidth: inch(8.27),
+		pageHeight: inch(11.69),
+		columns: 1,
+		rows: 1,
+		marginPt: inch(0.25),
+		gapPt: 0,
+	},
+	'a4-2up': {
+		id: 'a4-2up',
+		label: 'A4 sheet, 2 labels per page',
+		pageWidth: inch(8.27),
+		pageHeight: inch(11.69),
+		columns: 1,
+		rows: 2,
+		marginPt: inch(0.25),
+		gapPt: inch(0.15),
+	},
 	'a4-4up': {
 		id: 'a4-4up',
 		label: 'A4 sheet, 4 labels per page',

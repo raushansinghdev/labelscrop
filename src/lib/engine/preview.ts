@@ -5,14 +5,17 @@ import type { LayoutPreset, OverlayOptions, PlatformAdapter, SourcePage } from '
 
 export interface PreviewResult {
 	pdfBytes: Uint8Array;
+	/** How many source labels landed on the previewed sheet (fewer than the layout's cells for a short file). */
+	labelCount: number;
 }
 
-/** Builds a single-page preview of how the *first* page of one uploaded file will look once cropped (or, in
- * `cropMode: 'full'`, left untouched), repacked to the chosen layout, and stamped — reusing the exact same
- * pure `extractPageLines`/`composeOutputDocument` functions the full pipeline uses (see pipeline.ts), just
- * for one page. Called on demand when the user asks to preview/confirm, on the main thread (not the worker).
- * Returns `null` rather than throwing for an empty/unreadable PDF — the caller shows a plain "preview
- * unavailable" state instead of an error. */
+/** Builds a one-page preview of the *first output sheet* for one uploaded file: its first page for a
+ * one-label-per-page layout, or its first N pages packed onto the sheet for an N-up layout (so a 4-per-A4
+ * choice previews as a full 2x2 sheet, not one label marooned in a corner). Each label is cropped (or, in
+ * `cropMode: 'full'`, left untouched), repacked, and stamped by the exact same pure
+ * `extractPageLines`/`composeOutputDocument` functions the full pipeline uses (see pipeline.ts). Runs on the
+ * main thread, not the worker. Returns `null` rather than throwing for an empty/unreadable PDF — the caller
+ * shows a plain "preview unavailable" state instead of an error. */
 export async function buildFirstPagePreview(
 	fileBytes: Uint8Array,
 	adapter: PlatformAdapter,
@@ -23,15 +26,16 @@ export async function buildFirstPagePreview(
 	const pageTexts = await extractPageLines(fileBytes);
 	if (pageTexts.length === 0) return null;
 
-	const pageText = pageTexts[0];
-	const boundary = adapter.detectBoundary(pageText);
-	const metadata = adapter.extractMetadata(pageText, boundary.splitY);
 	const sourceDoc = await PDFDocument.load(fileBytes);
+	const region = labelRegionFor(cropMode);
+	const inputs: ComposeInput[] = pageTexts.slice(0, layout.columns * layout.rows).map((pageText) => {
+		const boundary = adapter.detectBoundary(pageText);
+		const metadata = adapter.extractMetadata(pageText, boundary.splitY);
+		const sourcePage: SourcePage = { fileIndex: 0, pageIndex: pageText.pageIndex, pageText, boundary, metadata };
+		return { sourcePage, sourceDoc, region };
+	});
 
-	const sourcePage: SourcePage = { fileIndex: 0, pageIndex: pageText.pageIndex, pageText, boundary, metadata };
-	const input: ComposeInput = { sourcePage, sourceDoc, region: labelRegionFor(cropMode) };
-
-	const outputDoc = await composeOutputDocument([input], layout, overlay);
+	const outputDoc = await composeOutputDocument(inputs, layout, overlay);
 	const pdfBytes = await outputDoc.save();
-	return { pdfBytes };
+	return { pdfBytes, labelCount: inputs.length };
 }

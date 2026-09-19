@@ -12,13 +12,15 @@ const KNOWN_SORT_KEYS: SortKey[] = ['original', 'sku', 'courier', 'destinationCo
 export function resolveMeeshoProcessOptions(config: OptionConfig): Omit<ProcessOptions, 'onProgress'> {
 	const printerType = config.printerType;
 	const labelSize = typeof config.labelSize === 'string' ? config.labelSize : 'thermal-4x6';
-	const layout = printerType === 'a4' ? MEESHO_LAYOUTS['a4-4up'] : (MEESHO_LAYOUTS[labelSize] ?? MEESHO_LAYOUTS['thermal-4x6']);
+	const perSheet = config.labelsPerSheet === '1' || config.labelsPerSheet === '2' ? config.labelsPerSheet : '4';
+	const layout =
+		printerType === 'a4' ? MEESHO_LAYOUTS[`a4-${perSheet}up`] : (MEESHO_LAYOUTS[labelSize] ?? MEESHO_LAYOUTS['thermal-4x6']);
 
 	const cropMode: 'label' | 'full' = config.cropMode === 'full' ? 'full' : 'label';
 	// A kept-full page already contains the invoice, so a separate invoice download would be redundant —
 	// `options.ts` also hides the "keep invoice" toggle in this mode via `visibleIf`, this just mirrors that
 	// at the resolution layer in case a stale/invalid saved config still has it set to "yes".
-	const keepInvoice = cropMode === 'label' && config.keepInvoice === 'yes';
+	const keepInvoice = cropMode === 'label' && config.keepInvoice === true;
 
 	const sortKeyValue = typeof config.sortKey === 'string' ? config.sortKey : 'original';
 	const sortKey: SortKey = (KNOWN_SORT_KEYS as string[]).includes(sortKeyValue) ? (sortKeyValue as SortKey) : 'original';

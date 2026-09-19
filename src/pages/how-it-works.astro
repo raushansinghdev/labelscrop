@@ -1,28 +1,37 @@
 ---
-import { url } from '@/lib/url';
 import Layout from '@/layouts/Layout.astro';
+import PageCta from '@/components/site/PageCta.astro';
 
 const title = 'How LabelsCrop Works — Crop & Sort Meesho Labels';
 const description =
 	'A step-by-step look at how LabelsCrop crops the invoice off your Meesho shipping labels, sorts them, and prepares a print-ready PDF — entirely in your browser.';
 
+const iconAttrs =
+	'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6" aria-hidden="true"';
+
+// Mirrors the tool's own three steps (Upload → Customize → Download) so the page and the UI tell the same story.
 const steps = [
 	{
-		name: 'Upload your Meesho label PDF',
-		text: 'Drag and drop one or more label PDFs you downloaded from Meesho Supplier Hub. Multiple files are supported if you run more than one account or downloaded in batches.',
+		name: 'Upload your label PDFs',
+		text: 'Add one or more label PDFs downloaded from the Meesho Supplier Panel — from one account or several, all at once.',
+		icon: `<svg ${iconAttrs}><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>`,
 	},
 	{
-		name: 'Choose your printer and sort order',
-		text: 'Pick a label-printer size (3x5" or 4x6") or an A4 layout, decide whether to keep the tax invoice, and choose how labels should be sorted — original order, SKU, or courier.',
+		name: 'Customize and preview',
+		text: 'Pick a 3x5" or 4x6" label printer, or A4 with 1, 2, or 4 labels per sheet. Crop the invoice or keep it, choose a sort order, and watch the live preview update.',
+		icon: `<svg ${iconAttrs}><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>`,
 	},
 	{
-		name: 'Preview the first label',
-		text: 'LabelsCrop shows you what the first label will look like with your chosen settings before you commit to processing the whole file.',
+		name: 'Download and print',
+		text: 'Get a print-ready PDF sized for your printer, plus an SKU pick list for packing. On a phone, share it straight to WhatsApp, Drive, or your printer app.',
+		icon: `<svg ${iconAttrs}><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>`,
 	},
-	{
-		name: 'Download your print-ready PDF',
-		text: 'Process the full batch and download a clean PDF sized for your printer, plus an optional SKU order summary for packing.',
-	},
+];
+
+const promises = [
+	{ title: 'Private', text: 'Customer names and addresses never leave your device — there is no server to send them to.' },
+	{ title: 'Fast', text: 'No waiting on uploads — most batches are ready in seconds.' },
+	{ title: 'No account', text: 'Nothing to sign up for or remember. Open the page and go.' },
 ];
 
 const schema = {
@@ -39,44 +48,67 @@ const schema = {
 ---
 
 <Layout title={title} description={description} schema={schema}>
-	<section class="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24">
-		<h1 data-reveal class="text-4xl font-bold tracking-tight sm:text-5xl">How it works</h1>
-		<p data-reveal class="mt-4 text-lg text-muted-foreground">
-			Four steps, entirely in your browser. Nothing you upload is ever sent to a server.
-		</p>
+	<section class="mx-auto max-w-5xl px-4 pt-10 pb-16 sm:px-6 sm:pt-16 sm:pb-24">
+		<div class="mx-auto max-w-2xl text-center">
+			<p data-reveal class="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+				3 steps · under a minute
+			</p>
+			<h1 data-reveal class="mt-4 text-3xl font-bold tracking-tight text-balance sm:text-5xl">How it works</h1>
+			<p data-reveal class="mt-3 text-base text-pretty text-muted-foreground sm:mt-4 sm:text-lg">
+				Everything happens right in your browser. Nothing you add is ever sent to a server.
+			</p>
+		</div>
 
-		<ol class="mt-12 space-y-10 border-l border-border pl-8">
+		<ol class="relative mt-12 grid gap-4 sm:mt-16 md:grid-cols-3 md:gap-6">
+			{/* Connector: vertical through the icons on phones, horizontal through them from md up. */}
+			<div
+				class="absolute top-8 bottom-8 left-[2.75rem] w-px bg-gradient-to-b from-primary/40 via-primary/20 to-transparent md:top-[3.25rem] md:right-[16%] md:bottom-auto md:left-[16%] md:h-px md:w-auto md:bg-gradient-to-r"
+				aria-hidden="true"
+			>
+			</div>
 			{steps.map((step, i) => (
-				<li data-reveal class="relative">
-					<span
-						class="absolute -left-[calc(2rem+1px)] flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground"
-						aria-hidden="true"
-					>
-						{i + 1}
+				<li
+					data-reveal
+					style={`transition-delay: ${i * 90}ms`}
+					class="relative flex gap-4 rounded-3xl border border-border bg-card p-5 md:flex-col md:items-center md:p-6 md:text-center"
+				>
+					<span class="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25">
+						<Fragment set:html={step.icon} />
+						<span class="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-background text-[11px] font-bold text-primary ring-2 ring-primary">
+							{i + 1}
+						</span>
 					</span>
-					<h2 class="font-semibold">{step.name}</h2>
-					<p class="mt-1.5 text-muted-foreground">{step.text}</p>
+					<div class="min-w-0">
+						<h2 class="font-semibold">{step.name}</h2>
+						<p class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{step.text}</p>
+					</div>
 				</li>
 			))}
 		</ol>
 
-		<div data-reveal class="mt-16 rounded-xl border border-border bg-muted/30 p-6">
-			<h2 class="font-semibold">Why does this run only in my browser?</h2>
-			<p class="mt-2 text-sm text-muted-foreground">
-				Shipping labels contain your customers' names, addresses, and phone numbers. LabelsCrop
-				never uploads your PDF anywhere — all cropping, sorting, and PDF generation happens on
-				your own device using your browser's built-in capabilities. That also means it works
-				without an account and without waiting on a server.
+		<div data-reveal class="mt-16 rounded-3xl bg-muted/50 p-6 sm:p-8">
+			<h2 class="text-center text-xl font-bold tracking-tight">Why it only runs in your browser</h2>
+			<p class="mx-auto mt-2 max-w-2xl text-center text-sm text-pretty text-muted-foreground">
+				Shipping labels carry your customers' names, addresses, and phone numbers. So all cropping, sorting,
+				and PDF building happens on your own device.
 			</p>
+			<dl class="mt-6 grid gap-3 sm:grid-cols-3">
+				{promises.map((item) => (
+					<div class="rounded-2xl bg-background p-4 ring-1 ring-border">
+						<dt class="flex items-center gap-2 font-semibold">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-success" aria-hidden="true">
+								<path d="M20 6 9 17l-5-5" />
+							</svg>
+							{item.title}
+						</dt>
+						<dd class="mt-1 text-sm text-muted-foreground">{item.text}</dd>
+					</div>
+				))}
+			</dl>
 		</div>
 
-		<div data-reveal class="mt-10 text-center">
-			<a
-				href={url('/tools/meesho-label-cropper')}
-				class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
-			>
-				Try it now
-			</a>
+		<div class="mx-auto max-w-3xl">
+			<PageCta />
 		</div>
 	</section>
 </Layout>

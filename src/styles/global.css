@@ -132,7 +132,55 @@
     }
   html {
     @apply font-sans;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
     }
+  button, a, label, [role="button"] {
+    touch-action: manipulation;
+    }
+  /* Tailwind v4 resets buttons to the default arrow cursor; restore the hand on everything clickable.
+   * Lives in the base layer, so a component can still opt out with a utility like `cursor-default`. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="radio"],
+  [role="switch"],
+  [role="tab"],
+  [role="option"],
+  summary,
+  select,
+  label:has(input, [role="switch"]),
+  input[type="file"] {
+    cursor: pointer;
+    }
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+    }
+}
+
+/* Bottom padding that clears the iPhone home indicator (needs `viewport-fit=cover`, set in Layout.astro). */
+@utility pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+/* Soft sweep used on skeleton/loading surfaces inside the tool. */
+@keyframes shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--background) 70%, transparent), transparent);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shimmer::after { animation: none; }
 }
 
 /* Lightweight scroll-reveal for static pages (no animation library). */

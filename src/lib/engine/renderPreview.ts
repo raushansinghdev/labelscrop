@@ -1,7 +1,8 @@
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 
-/** Renders page 1 of a PDF onto a canvas, scaled to fill `targetWidthPx` CSS pixels (sharp on high-DPI
- * screens). Browser-only (uses `window`/`HTMLCanvasElement`) — kept out of `pdfText.ts` since that module is
+/** Renders page 1 of a PDF onto a canvas at a backing resolution sharp enough for `targetWidthPx` CSS pixels
+ * on high-DPI screens. Display size is left to CSS (`max-width`/`max-height` with auto width/height), so the
+ * caller can fit the sheet to a phone's viewport height while the canvas keeps its own aspect ratio. Browser-only (uses `window`/`HTMLCanvasElement`) — kept out of `pdfText.ts` since that module is
  * also exercised by the Node-based vitest suite and has no reason to touch canvas rendering. */
 export async function renderPdfFirstPageToCanvas(
 	pdfBytes: Uint8Array,
@@ -19,8 +20,6 @@ export async function renderPdfFirstPageToCanvas(
 
 		canvas.width = Math.round(viewport.width);
 		canvas.height = Math.round(viewport.height);
-		canvas.style.width = `${targetWidthPx}px`;
-		canvas.style.height = `${(targetWidthPx * viewport.height) / viewport.width}px`;
 
 		const ctx = canvas.getContext('2d');
 		if (!ctx) return;

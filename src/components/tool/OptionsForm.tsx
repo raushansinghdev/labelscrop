@@ -1,68 +1,176 @@
-import { InfoIcon } from 'lucide-react';
+import {
+	BarcodeIcon,
+	CheckIcon,
+	ChevronDownIcon,
+	ChevronsUpDownIcon,
+	FileTextIcon,
+	ListOrderedIcon,
+	MapPinIcon,
+	PaletteIcon,
+	RulerIcon,
+	ScissorsIcon,
+	SlidersHorizontalIcon,
+	TagIcon,
+	TruckIcon,
+} from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { type ReactNode, useId } from 'react';
 import { cn } from 'cn';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { type OptionConfig, type OptionField, visibleFields } from '@/lib/options/schema';
+import { type OptionChoice, type OptionConfig, type OptionField, visibleFields } from '@/lib/options/schema';
 
 interface OptionsFormProps {
 	fields: OptionField[];
 	config: OptionConfig;
-	mode: 'simple' | 'advanced';
+	/** Whether the "More options" section (every `simpleModeVisible: false` field) is expanded. */
+	advancedOpen: boolean;
+	onAdvancedOpenChange: (open: boolean) => void;
 	onChange: (id: string, value: string | boolean) => void;
+	disabled?: boolean;
 }
 
-export function OptionsForm({ fields, config, mode, onChange }: OptionsFormProps) {
-	const visible = visibleFields(fields, config, mode);
-	const groupOrder: string[] = [];
-	const groups = new Map<string, OptionField[]>();
-	for (const field of visible) {
-		const key = field.group ?? '';
-		if (!groups.has(key)) {
-			groups.set(key, []);
-			groupOrder.push(key);
-		}
-		groups.get(key)?.push(field);
-	}
+const EASE_OUT = [0.16, 1, 0.3, 1] as const;
+
+// Height+fade for fields that appear/disappear via `visibleIf` (e.g. Label size ↔ Labels per A4 sheet), so
+// the form reflows smoothly instead of jumping under the user's thumb.
+const FIELD_PRESENCE = {
+	initial: { opacity: 0, height: 0 },
+	animate: { opacity: 1, height: 'auto' },
+	exit: { opacity: 0, height: 0 },
+	transition: { duration: 0.28, ease: EASE_OUT },
+};
+
+export function OptionsForm({ fields, config, advancedOpen, onAdvancedOpenChange, onChange, disabled }: OptionsFormProps) {
+	const visible = visibleFields(fields, config, 'advanced');
+	const primary = visible.filter((field) => field.simpleModeVisible);
+	const advanced = visible.filter((field) => !field.simpleModeVisible);
+	const activeAdvanced = advanced.filter((field) => config[field.id] !== field.default).length;
+	const panelId = useId();
 
 	return (
-		<div className="space-y-6">
-			{groupOrder.map((group) => (
-				<div key={group || 'ungrouped'}>
-					{group && (
-						<h3 className="mb-2.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{group}</h3>
-					)}
-					<div className="space-y-4">
-						{groups.get(group)?.map((field) => (
-							<OptionFieldControl
-								key={field.id}
-								field={field}
-								value={config[field.id]}
-								onChange={(value) => onChange(field.id, value)}
-							/>
-						))}
-					</div>
+		<fieldset disabled={disabled} className={cn('min-w-0 transition-opacity', disabled && 'opacity-60')}>
+			<div className="flex flex-col">
+				<AnimatePresence initial={false}>
+					{primary.map((field) => (
+						<motion.div key={field.id} {...FIELD_PRESENCE} className="overflow-hidden">
+							<div className="pb-6">
+								<OptionFieldControl field={field} value={config[field.id]} onChange={(value) => onChange(field.id, value)} />
+							</div>
+						</motion.div>
+					))}
+				</AnimatePresence>
+			</div>
+
+			{advanced.length > 0 && (
+				<div className="rounded-2xl border border-border bg-muted/30">
+					<button
+						type="button"
+						onClick={() => onAdvancedOpenChange(!advancedOpen)}
+						aria-expanded={advancedOpen}
+						aria-controls={panelId}
+						className="flex min-h-14 w-full items-center gap-3 rounded-2xl px-4 text-left"
+					>
+						<SlidersHorizontalIcon className="size-4 text-muted-foreground" />
+						<span className="flex-1 text-sm font-semibold">More options</span>
+						<AnimatePresence>
+							{activeAdvanced > 0 && !advancedOpen && (
+								<motion.span
+									initial={{ opacity: 0, scale: 0.6 }}
+									animate={{ opacity: 1, scale: 1 }}
+									exit={{ opacity: 0, scale: 0.6 }}
+									className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground"
+								>
+									{activeAdvanced} on
+								</motion.span>
+							)}
+						</AnimatePresence>
+						<motion.span animate={{ rotate: advancedOpen ? 180 : 0 }} transition={{ duration: 0.25, ease: EASE_OUT }}>
+							<ChevronDownIcon className="size-4 text-muted-foreground" />
+						</motion.span>
+					</button>
+					<AnimatePresence initial={false}>
+						{advancedOpen && (
+							<motion.div id={panelId} {...FIELD_PRESENCE} className="overflow-hidden">
+								<div className="space-y-1 px-2 pb-3">
+									<AnimatePresence initial={false}>
+										{advanced.map((field) => (
+											<motion.div key={field.id} {...FIELD_PRESENCE} className="overflow-hidden">
+												<OptionFieldControl
+													field={field}
+													value={config[field.id]}
+													onChange={(value) => onChange(field.id, value)}
+												/>
+											</motion.div>
+										))}
+									</AnimatePresence>
+								</div>
+							</motion.div>
+						)}
+					</AnimatePresence>
 				</div>
-			))}
-		</div>
+			)}
+		</fieldset>
 	);
 }
 
-function FieldLabel({ field }: { field: OptionField }) {
+/* ---------------------------------------------------------------------------------------------------------- */
+
+/** Mini sheet diagrams for the "labels per sheet" choices — a picture of the result reads faster than "2 labels". */
+function SheetGlyph({ cells }: { cells: 1 | 2 | 4 }) {
+	const rects =
+		cells === 1
+			? [{ x: 3, y: 3, w: 14, h: 20 }]
+			: cells === 2
+				? [
+						{ x: 3, y: 3, w: 14, h: 9 },
+						{ x: 3, y: 14, w: 14, h: 9 },
+					]
+				: [
+						{ x: 3, y: 3, w: 6.5, h: 9 },
+						{ x: 10.5, y: 3, w: 6.5, h: 9 },
+						{ x: 3, y: 14, w: 6.5, h: 9 },
+						{ x: 10.5, y: 14, w: 6.5, h: 9 },
+					];
 	return (
-		<div className="flex items-center gap-1.5">
-			<Label htmlFor={field.id}>{field.label}</Label>
-			{field.helpText && (
-				<Tooltip>
-					<TooltipTrigger aria-label={`About ${field.label}`} className="text-muted-foreground hover:text-foreground">
-						<InfoIcon className="size-3.5" />
-					</TooltipTrigger>
-					<TooltipContent>{field.helpText}</TooltipContent>
-				</Tooltip>
+		<svg viewBox="0 0 20 26" className="h-6 w-5" fill="none" aria-hidden="true">
+			<rect x="0.75" y="0.75" width="18.5" height="24.5" rx="2" stroke="currentColor" strokeWidth="1.5" />
+			{rects.map((r) => (
+				<rect key={`${r.x}-${r.y}`} x={r.x} y={r.y} width={r.w} height={r.h} rx="1" fill="currentColor" opacity="0.85" />
+			))}
+		</svg>
+	);
+}
+
+const CHOICE_ICONS: Record<string, ReactNode> = {
+	'label-printer': <TagIcon className="size-5" />,
+	'a4-sheet': <FileTextIcon className="size-5" />,
+	crop: <ScissorsIcon className="size-5" />,
+	'full-page': <FileTextIcon className="size-5" />,
+	'grid-1': <SheetGlyph cells={1} />,
+	'grid-2': <SheetGlyph cells={2} />,
+	'grid-4': <SheetGlyph cells={4} />,
+	'sort-original': <ListOrderedIcon className="size-5" />,
+	'sort-sku': <BarcodeIcon className="size-5" />,
+	'sort-courier': <TruckIcon className="size-5" />,
+	'sort-hub': <MapPinIcon className="size-5" />,
+	'sort-color': <PaletteIcon className="size-5" />,
+	'sort-size': <RulerIcon className="size-5" />,
+};
+
+function FieldHeader({ field, htmlFor }: { field: OptionField; htmlFor?: string }) {
+	return (
+		<div className="mb-2.5 space-y-0.5">
+			{htmlFor ? (
+				<label htmlFor={htmlFor} className="text-sm font-semibold">
+					{field.label}
+				</label>
+			) : (
+				<p className="text-sm font-semibold">{field.label}</p>
 			)}
+			{/* Inline rather than in a hover tooltip: phones have no hover, and this text is short enough to just show. */}
+			{field.helpText && <p className="text-xs leading-relaxed text-muted-foreground">{field.helpText}</p>}
 		</div>
 	);
 }
@@ -76,90 +184,229 @@ function OptionFieldControl({
 	value: string | boolean;
 	onChange: (value: string | boolean) => void;
 }) {
-	if (field.controlType === 'segmented') {
+	if (field.controlType === 'segmented' || field.controlType === 'radio') {
+		const choices = field.choices ?? [];
+		const asCards = choices.length > 0 && choices.every((choice) => choice.icon);
 		return (
-			<div className="flex flex-col gap-1.5">
-				<FieldLabel field={field} />
-				<div className="inline-flex w-fit rounded-lg border border-border bg-muted p-1" role="group" aria-label={field.label}>
-					{field.choices?.map((choice) => (
-						<button
-							key={choice.value}
-							type="button"
-							aria-pressed={value === choice.value}
-							onClick={() => onChange(choice.value)}
-							className={cn(
-								'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-								value === choice.value
-									? 'bg-background text-foreground shadow-sm'
-									: 'text-muted-foreground hover:text-foreground',
-							)}
-						>
-							{choice.label}
-						</button>
-					))}
-				</div>
+			<div role="radiogroup" aria-label={field.label}>
+				<FieldHeader field={field} />
+				{asCards ? (
+					<ChoiceCards fieldId={field.id} choices={choices} value={value as string} onChange={onChange} />
+				) : (
+					<SegmentedPill fieldId={field.id} choices={choices} value={value as string} onChange={onChange} />
+				)}
 			</div>
 		);
 	}
 
 	if (field.controlType === 'select') {
 		return (
-			<div className="flex flex-col gap-1.5">
-				<FieldLabel field={field} />
-				{/* `items` is what makes the trigger show the choice's label ("SKU ID") rather than the raw stored
-				 * value ("sku") — Base UI's Select.Value falls back to the value when it has no item map. */}
-				<Select items={field.choices} value={value as string} onValueChange={(v) => onChange(v as string)}>
-					<SelectTrigger id={field.id} className="h-10 w-full shadow-xs sm:w-72">
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						{field.choices?.map((choice) => (
-							<SelectItem key={choice.value} value={choice.value}>
-								{choice.label}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-			</div>
-		);
-	}
-
-	if (field.controlType === 'radio') {
-		return (
-			<div className="flex flex-col gap-1.5">
-				<FieldLabel field={field} />
-				<RadioGroup value={value as string} onValueChange={(v) => onChange(v as string)}>
-					{field.choices?.map((choice) => (
-						<label key={choice.value} className="flex items-center gap-2 text-sm">
-							<RadioGroupItem value={choice.value} />
-							{choice.label}
-						</label>
-					))}
-				</RadioGroup>
+			<div>
+				<FieldHeader field={field} />
+				<SelectRow label={field.label} choices={field.choices ?? []} value={value as string} onChange={onChange} />
 			</div>
 		);
 	}
 
 	if (field.controlType === 'toggle') {
+		const checked = value === true;
 		return (
-			<div className="flex items-center justify-between gap-4">
-				<FieldLabel field={field} />
-				<Switch id={field.id} checked={value as boolean} onCheckedChange={(checked) => onChange(Boolean(checked))} />
-			</div>
+			// The whole row is the hit target (a `label` wrapping the switch), not just the 32px switch itself.
+			<label
+				className="flex min-h-14 cursor-pointer items-center justify-between gap-4 rounded-xl px-2 py-2.5 transition-colors hover:bg-background/70"
+			>
+				<span className="min-w-0">
+					<span className="block text-sm font-medium">{field.label}</span>
+					{field.helpText && <span className="mt-0.5 block text-xs text-muted-foreground">{field.helpText}</span>}
+				</span>
+				<Switch checked={checked} onCheckedChange={(next) => onChange(Boolean(next))} />
+			</label>
 		);
 	}
 
 	return (
-		<div className="flex flex-col gap-1.5">
-			<FieldLabel field={field} />
+		<div className="px-2 pt-2 pb-1">
+			<FieldHeader field={field} htmlFor={field.id} />
 			<Input
 				id={field.id}
 				value={value as string}
 				onChange={(e) => onChange(e.target.value)}
 				maxLength={60}
 				placeholder="e.g. Dispatch Monday"
-				className="w-full sm:w-72"
+				// 16px on phones stops iOS Safari zooming the page when the field is focused.
+				className="h-12 rounded-xl bg-background text-base sm:text-sm"
 			/>
 		</div>
+	);
+}
+
+function ChoiceCards({
+	fieldId,
+	choices,
+	value,
+	onChange,
+}: {
+	fieldId: string;
+	choices: OptionChoice[];
+	value: string;
+	onChange: (value: string) => void;
+}) {
+	return (
+		<div className={cn('grid gap-2.5', choices.length === 3 ? 'grid-cols-3' : 'grid-cols-2')}>
+			{choices.map((choice) => {
+				const selected = choice.value === value;
+				return (
+					<motion.button
+						key={choice.value}
+						type="button"
+						role="radio"
+						aria-checked={selected}
+						onClick={() => onChange(choice.value)}
+						whileTap={{ scale: 0.96 }}
+						transition={{ duration: 0.15 }}
+						className={cn(
+							'relative flex min-h-24 flex-col items-start gap-2 rounded-2xl border bg-card p-3 text-left transition-[border-color,box-shadow,background-color] duration-200',
+							selected
+								? 'border-primary bg-primary/[0.04] shadow-[inset_0_0_0_1px_var(--color-primary)]'
+								: 'border-border hover:border-foreground/20',
+						)}
+					>
+						<span
+							className={cn(
+								'flex size-9 items-center justify-center rounded-xl transition-colors duration-200',
+								selected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+							)}
+						>
+							{choice.icon ? CHOICE_ICONS[choice.icon] : null}
+						</span>
+						<span className="min-w-0">
+							<span className="block text-sm leading-tight font-semibold">{choice.label}</span>
+							{choice.description && (
+								<span className="mt-0.5 block text-xs leading-tight text-muted-foreground">{choice.description}</span>
+							)}
+						</span>
+						{/* A shared layoutId makes the check mark glide from the old card to the new one. */}
+						{selected && (
+							<motion.span
+								layoutId={`${fieldId}-check`}
+								transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+								className="absolute top-2.5 right-2.5 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground"
+							>
+								<CheckIcon className="size-3" strokeWidth={3} />
+							</motion.span>
+						)}
+					</motion.button>
+				);
+			})}
+		</div>
+	);
+}
+
+function SegmentedPill({
+	fieldId,
+	choices,
+	value,
+	onChange,
+}: {
+	fieldId: string;
+	choices: OptionChoice[];
+	value: string;
+	onChange: (value: string) => void;
+}) {
+	return (
+		<div className="flex rounded-2xl bg-muted p-1">
+			{choices.map((choice) => {
+				const selected = choice.value === value;
+				return (
+					<button
+						key={choice.value}
+						type="button"
+						role="radio"
+						aria-checked={selected}
+						onClick={() => onChange(choice.value)}
+						className={cn(
+							'relative h-11 flex-1 rounded-xl text-sm font-semibold transition-colors duration-200',
+							selected ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+						)}
+					>
+						{selected && (
+							<motion.span
+								layoutId={`${fieldId}-pill`}
+								className="absolute inset-0 rounded-xl bg-background shadow-sm ring-1 ring-border/60"
+								transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+							/>
+						)}
+						<span className="relative">{choice.label}</span>
+					</button>
+				);
+			})}
+		</div>
+	);
+}
+
+/** A long list of choices as one compact row showing the current pick; tapping it opens the full list with
+ * a one-line explanation under each option. Six chips took three rows on a phone and still didn't say what
+ * each sort does. */
+function SelectRow({
+	label,
+	choices,
+	value,
+	onChange,
+}: {
+	label: string;
+	choices: OptionChoice[];
+	value: string;
+	onChange: (value: string) => void;
+}) {
+	const current = choices.find((choice) => choice.value === value) ?? choices[0];
+	return (
+		<Select value={value} onValueChange={(next) => next != null && onChange(String(next))}>
+			<SelectTrigger
+				aria-label={label}
+				className="h-auto min-h-16 w-full gap-3 rounded-2xl border-border bg-card py-2.5 pr-3 pl-2.5 text-left whitespace-normal transition-[border-color,background-color] hover:border-foreground/20 data-popup-open:border-primary [&>svg:last-child]:hidden"
+			>
+				<ChoiceIcon icon={current?.icon} selected />
+				<span className="min-w-0 flex-1">
+					<motion.span key={current?.value} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="block">
+						<span className="block text-sm font-semibold">{current?.label}</span>
+						{current?.description && (
+							<span className="mt-0.5 block text-xs text-muted-foreground">{current.description}</span>
+						)}
+					</motion.span>
+				</span>
+				<ChevronsUpDownIcon className="size-4 text-muted-foreground" />
+			</SelectTrigger>
+			<SelectContent alignItemWithTrigger={false} sideOffset={6} className="rounded-2xl p-1.5 shadow-xl">
+				{choices.map((choice) => (
+					<SelectItem
+						key={choice.value}
+						value={choice.value}
+						className="min-h-14 cursor-pointer gap-3 rounded-xl py-2 pr-10 pl-2 data-selected:bg-primary/[0.06] [&_svg]:size-4"
+					>
+						<ChoiceIcon icon={choice.icon} selected={choice.value === value} />
+						<span className="min-w-0">
+							<span className="block text-sm font-semibold">{choice.label}</span>
+							{choice.description && (
+								<span className="block text-xs font-normal whitespace-normal text-muted-foreground">{choice.description}</span>
+							)}
+						</span>
+					</SelectItem>
+				))}
+			</SelectContent>
+		</Select>
+	);
+}
+
+function ChoiceIcon({ icon, selected }: { icon?: string; selected: boolean }) {
+	if (!icon) return null;
+	return (
+		<span
+			className={cn(
+				'flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors duration-200 [&_svg]:size-5!',
+				selected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+			)}
+		>
+			{CHOICE_ICONS[icon]}
+		</span>
 	);
 }

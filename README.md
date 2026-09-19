@@ -15,9 +15,10 @@ See `/Users/raushan2410/.claude/plans/okay-so-i-want-moonlit-gizmo.md` for the f
 
 ## Status
 
-**Phase A (this commit): static SEO shell.** Landing page, How it Works, FAQ, About, Privacy/Terms, and placeholder pages for the Meesho/Amazon/Flipkart tools. The Meesho tool page has no working upload/crop engine yet — that's Phase B.
-
-Phase B is blocked on getting a second real Meesho label sample from a different courier (one Delhivery sample is already in hand) and the final options list for the Meesho tool.
+Phases A–D are done: static SEO shell, the platform-agnostic PDF engine with the Meesho adapter, the tool UI
+wired to a Web Worker, and a mobile-first polish pass (step indicator, sticky bottom action bar, touch-sized
+option cards/chips, live full-sheet preview, share-to-app on phones). A4 output supports 1, 2, or 4 labels per
+sheet, with or without the invoice attached. Next up is Phase E (ads, analytics, deploy).
 
 ## Commands
 

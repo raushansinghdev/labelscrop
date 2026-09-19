@@ -1,34 +1,57 @@
-import { AlertTriangleIcon } from 'lucide-react';
+import { AlertTriangleIcon, ArrowLeftIcon, ArrowRightIcon, RotateCwIcon, SparklesIcon } from 'lucide-react';
 import { AnimatePresence, motion, MotionConfig } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from 'cn';
+import { buttonVariants } from '@/components/ui/button';
 import type { FileFailure, ProcessResult } from '@/lib/engine/pipeline';
-import { resolveDefaultConfig, type OptionConfig } from '@/lib/options/schema';
+import { resolveDefaultConfig, sanitizeConfig, type OptionConfig } from '@/lib/options/schema';
+import { describeMeeshoConfig } from '@/lib/platforms/meesho/describe';
 import { MEESHO_OPTIONS } from '@/lib/platforms/meesho/options';
-import { loadPlatformSettings, loadUiMode, saveUiMode, savePlatformSettings } from '@/lib/storage/settings';
-import { ConfirmStep } from './ConfirmStep';
+import { resolveMeeshoProcessOptions } from '@/lib/platforms/meesho/resolveOptions';
+import {
+	loadPlatformSettings,
+	loadUiMode,
+	requestPersistentStorage,
+	saveUiMode,
+	savePlatformSettings,
+} from '@/lib/storage/settings';
+import { ActionBar } from './ActionBar';
 import { OptionsForm } from './OptionsForm';
-import type { PreviewStatus } from './PreviewCard';
-import type { ProgressEvent } from './ProcessProgress';
+import { PreviewCard, type PreviewStatus } from './PreviewCard';
+import { PreviewSheet, PreviewThumb } from './PreviewSheet';
+import { ProcessProgress, type ProgressEvent } from './ProcessProgress';
 import { ResultsPanel } from './ResultsPanel';
+import { StepIndicator } from './StepIndicator';
 import { formatSize, UploadDropzone, type UploadedFile } from './UploadDropzone';
 
 // Batches beyond this size still process (per the plan, chunked composition targets 2000+ pages), but a
 // heads-up here sets expectations before the user waits through a long run on a slow connection/device.
 const LARGE_BATCH_BYTES = 30 * 1024 * 1024;
 
-// Render target for the live preview shown beside the options form.
-const PREVIEW_TARGET_WIDTH_PX = 260;
+// Backing-store width (CSS px, multiplied by devicePixelRatio) for the preview canvas. The displayed size is
+// set by CSS; this only needs to be large enough that a 4-per-sheet A4 preview stays legible when zoomed.
+const PREVIEW_RENDER_WIDTH_PX = 440;
 
-// Shared fade+slide used for every top-level stage swap (configure/confirm/done), so switching stages
-// reads as one deliberate motion language rather than each screen inventing its own.
+const EASE_OUT = [0.16, 1, 0.3, 1] as const;
+
+// Shared fade+slide for every top-level stage swap, so the three screens read as one motion language.
 const STAGE_TRANSITION = {
-	initial: { opacity: 0, y: 10 },
-	animate: { opacity: 1, y: 0 },
-	exit: { opacity: 0, y: -10 },
-	transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const },
+	initial: { opacity: 0, y: 16 },
+	animate: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE_OUT } },
+	exit: { opacity: 0, y: -8, transition: { duration: 0.18, ease: 'easeIn' as const } },
 };
+
+const primaryCta = cn(
+	buttonVariants({ size: 'lg' }),
+	'h-14 flex-1 gap-2 rounded-2xl text-base font-semibold shadow-lg shadow-primary/25 transition-[transform,background-color,box-shadow]',
+);
+
+// Chrome: "Failed to fetch dynamically imported module", Firefox: "error loading dynamically imported module",
+// Safari: "Importing a module script failed". All mean a lazily loaded chunk is gone — in production, a new
+// deploy replaced the hashed files under an open tab; in dev, Vite re-optimized its deps. Only a reload fixes it.
+function isStaleChunkError(error: unknown): boolean {
+	return error instanceof Error && /dynamically imported module|importing a module script failed/i.test(error.message);
+}
 
 function makeId(): string {
 	return typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
@@ -37,32 +60,44 @@ function makeId(): string {
 export function MeeshoToolApp() {
 	const [browserSupported, setBrowserSupported] = useState(true);
 	const [files, setFiles] = useState<UploadedFile[]>([]);
-	const [mode, setMode] = useState<'simple' | 'advanced'>('simple');
+	const [advancedOpen, setAdvancedOpen] = useState(false);
 	const [config, setConfig] = useState<OptionConfig>(() => resolveDefaultConfig(MEESHO_OPTIONS));
 	const [settingsLoaded, setSettingsLoaded] = useState(false);
 
-	// 'upload' = just the dropzone; 'configure' = options on the left with a live preview + proceed button on
-	// the right. "processing"/"done"/"error" are layered on top via `status` below.
+	// 'upload' = dropzone + file list; 'configure' = options + live preview. Processing/done/error are layered
+	// on top via `status` below.
 	const [stage, setStage] = useState<'upload' | 'configure'>('upload');
 	const [previewStatus, setPreviewStatus] = useState<PreviewStatus>('empty');
+	const [previewUpdating, setPreviewUpdating] = useState(false);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
+	// Phones show the preview as a thumbnail in the action bar (plus a full-size sheet on tap) instead of the
+	// big card, so they need the rendered canvas as an image; desktop uses the canvas directly.
+	const [previewSnapshot, setPreviewSnapshot] = useState<string | null>(null);
+	const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
+	const closePreviewSheet = useCallback(() => setPreviewSheetOpen(false), []);
+	useEffect(() => {
+		if (!previewSnapshot) return;
+		return () => URL.revokeObjectURL(previewSnapshot);
+	}, [previewSnapshot]);
+	const rootRef = useRef<HTMLDivElement>(null);
 
 	const [status, setStatus] = useState<'idle' | 'processing' | 'done' | 'error'>('idle');
 	const [progressEvent, setProgressEvent] = useState<ProgressEvent | null>(null);
 	const [result, setResult] = useState<ProcessResult | null>(null);
 	const [failures, setFailures] = useState<FileFailure[]>([]);
 	const [runError, setRunError] = useState<string | null>(null);
+	const [needsReload, setNeedsReload] = useState(false);
 
-	// One-time setup: unsupported-browser check plus loading any previously saved options/mode. Wrapped in
-	// try/catch at the storage layer already (Safari private mode, etc.) — this just merges what comes back.
+	// One-time setup: unsupported-browser check plus loading any previously saved options. Wrapped in try/catch
+	// at the storage layer already (Safari private mode, etc.) — this just merges what comes back, dropping any
+	// saved value that no longer fits the current option list.
 	useEffect(() => {
 		if (typeof Worker === 'undefined' || typeof File === 'undefined') {
 			setBrowserSupported(false);
 		}
-		const savedMode = loadUiMode();
-		if (savedMode) setMode(savedMode);
+		if (loadUiMode() === 'advanced') setAdvancedOpen(true);
 		const saved = loadPlatformSettings('meesho');
-		if (saved) setConfig((prev) => ({ ...prev, ...saved }));
+		if (saved) setConfig((prev) => ({ ...prev, ...sanitizeConfig(MEESHO_OPTIONS, saved) }));
 		setSettingsLoaded(true);
 	}, []);
 
@@ -71,8 +106,8 @@ export function MeeshoToolApp() {
 	}, [config, settingsLoaded]);
 
 	useEffect(() => {
-		if (settingsLoaded) saveUiMode(mode);
-	}, [mode, settingsLoaded]);
+		if (settingsLoaded) saveUiMode(advancedOpen ? 'advanced' : 'simple');
+	}, [advancedOpen, settingsLoaded]);
 
 	const handleFilesAdded = useCallback((added: { name: string; bytes: Uint8Array }[]) => {
 		setFiles((prev) => [...prev, ...added.map((f) => ({ id: makeId(), name: f.name, sizeBytes: f.bytes.byteLength, bytes: f.bytes }))]);
@@ -86,45 +121,65 @@ export function MeeshoToolApp() {
 
 	const handleOptionChange = useCallback((id: string, value: string | boolean) => {
 		setConfig((prev) => ({ ...prev, [id]: value }));
+		// The first time someone picks their own setup, ask the browser to keep it through storage clean-ups.
+		void requestPersistentStorage();
 	}, []);
 
 	const totalBytes = files.reduce((sum, f) => sum + f.sizeBytes, 0);
+	const view: 'done' | 'configure' | 'upload' = status === 'done' && result ? 'done' : stage;
+	const stepIndex = view === 'upload' ? 0 : view === 'configure' ? 1 : 2;
+	const processing = status === 'processing';
+	const configSummary = describeMeeshoConfig(config);
+	const { layout } = resolveMeeshoProcessOptions(config);
+	const labelsPerPage = layout.columns * layout.rows;
 
-	// Live preview: re-renders the first label whenever the options (or first file) change while on the configure
-	// stage. Debounced, and a run counter drops results from superseded renders so a slow older render can't
-	// overwrite a newer one.
+	// Bring the top of the tool into view on every stage change — on a phone the user has usually scrolled
+	// down to the action bar, and would otherwise land mid-way through the next screen.
+	useEffect(() => {
+		const el = rootRef.current;
+		if (el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}, [view]);
+
+	// Live preview: re-renders the first output sheet whenever the options (or first file) change while on the
+	// configure stage. Debounced, and a run counter drops results from superseded renders so a slow older
+	// render can't overwrite a newer one.
 	const previewRunRef = useRef(0);
 	const firstFile = files[0];
 	useEffect(() => {
-		if (stage !== 'configure' || !firstFile) return;
+		if (view !== 'configure' || !firstFile) return;
 		const run = ++previewRunRef.current;
+		// Keep the current sheet on screen (dimmed) while re-rendering; only the very first render shows the skeleton.
+		setPreviewStatus((prev) => (prev === 'ready' ? prev : 'loading'));
+		setPreviewUpdating(true);
 		const timer = setTimeout(async () => {
-			// Keep the current canvas visible while re-rendering; only show the spinner for the first render.
-			setPreviewStatus((prev) => (prev === 'ready' ? prev : 'loading'));
 			try {
-				const [{ buildFirstPagePreview }, { renderPdfFirstPageToCanvas }, { meeshoAdapter }, { resolveMeeshoProcessOptions }] =
-					await Promise.all([
-						import('@/lib/engine/preview'),
-						import('@/lib/engine/renderPreview'),
-						import('@/lib/platforms/meesho/adapter'),
-						import('@/lib/platforms/meesho/resolveOptions'),
-					]);
-				const { layout, cropMode, overlay } = resolveMeeshoProcessOptions(config);
-				const preview = await buildFirstPagePreview(firstFile.bytes, meeshoAdapter, layout, cropMode ?? 'label', overlay);
+				const [{ buildFirstPagePreview }, { renderPdfFirstPageToCanvas }, { meeshoAdapter }] = await Promise.all([
+					import('@/lib/engine/preview'),
+					import('@/lib/engine/renderPreview'),
+					import('@/lib/platforms/meesho/adapter'),
+				]);
+				const { layout: previewLayout, cropMode, overlay } = resolveMeeshoProcessOptions(config);
+				const preview = await buildFirstPagePreview(firstFile.bytes, meeshoAdapter, previewLayout, cropMode ?? 'label', overlay);
 				if (run !== previewRunRef.current) return;
 				if (!preview || !canvasRef.current) {
 					setPreviewStatus('unavailable');
 					return;
 				}
-				await renderPdfFirstPageToCanvas(preview.pdfBytes, canvasRef.current, PREVIEW_TARGET_WIDTH_PX);
+				const canvas = canvasRef.current;
+				await renderPdfFirstPageToCanvas(preview.pdfBytes, canvas, PREVIEW_RENDER_WIDTH_PX);
 				if (run !== previewRunRef.current) return;
+				const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+				if (run !== previewRunRef.current) return;
+				setPreviewSnapshot(blob ? URL.createObjectURL(blob) : null);
 				setPreviewStatus('ready');
 			} catch {
 				if (run === previewRunRef.current) setPreviewStatus('unavailable');
+			} finally {
+				if (run === previewRunRef.current) setPreviewUpdating(false);
 			}
-		}, 250);
+		}, 200);
 		return () => clearTimeout(timer);
-	}, [stage, firstFile, config]);
+	}, [view, firstFile, config]);
 
 	function handleContinue() {
 		if (files.length === 0) return;
@@ -132,25 +187,32 @@ export function MeeshoToolApp() {
 		setStage('configure');
 	}
 
-	function handleEdit() {
+	function handleBackToUpload() {
+		setPreviewSheetOpen(false);
 		setStage('upload');
 		setStatus('idle');
 		setRunError(null);
 		setProgressEvent(null);
 	}
 
+	function handleEditOptions() {
+		// Back from results to the options with the same files — the preview re-renders from scratch since the
+		// canvas was unmounted with the configure screen.
+		setStatus('idle');
+		setResult(null);
+		setPreviewStatus('empty');
+		setStage('configure');
+	}
+
 	async function handleProcess() {
 		if (files.length === 0) return;
+		setPreviewSheetOpen(false);
 		setStatus('processing');
 		setRunError(null);
 		setProgressEvent({ stage: 'reading', current: 0, total: files.length });
 
 		try {
-			const [Comlink, { getEngineWorker }, { resolveMeeshoProcessOptions }] = await Promise.all([
-				import('comlink'),
-				import('@/lib/engine/workerClient'),
-				import('@/lib/platforms/meesho/resolveOptions'),
-			]);
+			const [Comlink, { getEngineWorker }] = await Promise.all([import('comlink'), import('@/lib/engine/workerClient')]);
 			const api = getEngineWorker();
 			const options = resolveMeeshoProcessOptions(config);
 
@@ -160,11 +222,27 @@ export function MeeshoToolApp() {
 				Comlink.proxy((event: ProgressEvent) => setProgressEvent(event)),
 			);
 
+			if (processResult.pageCount === 0) {
+				setFailures(fileFailures);
+				setRunError(
+					fileFailures.length > 0
+						? `None of your files could be read — ${fileFailures[0].message}`
+						: 'No labels were found in these files.',
+				);
+				setStatus('error');
+				return;
+			}
+
 			setResult(processResult);
 			setFailures(fileFailures);
 			setStatus('done');
 		} catch (error) {
-			setRunError(error instanceof Error ? error.message : 'Something went wrong while processing. Try a smaller batch.');
+			if (isStaleChunkError(error)) {
+				setNeedsReload(true);
+				setRunError('This page is out of date — reload it and add your files again. Your settings are saved.');
+			} else {
+				setRunError(error instanceof Error ? error.message : 'Something went wrong while processing. Try a smaller batch.');
+			}
 			setStatus('error');
 		} finally {
 			setProgressEvent(null);
@@ -183,7 +261,7 @@ export function MeeshoToolApp() {
 
 	if (!browserSupported) {
 		return (
-			<div className="mx-auto max-w-2xl rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-center">
+			<div className="mx-auto max-w-2xl rounded-3xl border border-destructive/30 bg-destructive/5 p-6 text-center">
 				<AlertTriangleIcon className="mx-auto size-6 text-destructive" />
 				<p className="mt-3 font-semibold">Your browser doesn't support the features this tool needs.</p>
 				<p className="mt-1.5 text-sm text-muted-foreground">Try the latest Chrome, Edge, Firefox, or Safari.</p>
@@ -191,81 +269,186 @@ export function MeeshoToolApp() {
 		);
 	}
 
-	const view: 'done' | 'configure' | 'upload' = status === 'done' && result ? 'done' : stage;
-
 	return (
 		<MotionConfig reducedMotion="user">
-			<AnimatePresence mode="wait">
-				{view === 'done' && result && (
-					<motion.div key="done" {...STAGE_TRANSITION} className="mx-auto max-w-2xl">
-						<ResultsPanel result={result} failures={failures} onReset={handleReset} />
-					</motion.div>
-				)}
+			<div ref={rootRef} className="scroll-mt-20">
+				<StepIndicator
+					current={stepIndex}
+					onStepClick={
+						processing
+							? undefined
+							: (index) => {
+									if (index === 0) handleBackToUpload();
+									if (index === 1) handleEditOptions();
+								}
+					}
+				/>
 
-				{view === 'upload' && (
-					<motion.div key="upload" {...STAGE_TRANSITION} className="mx-auto max-w-xl space-y-4">
-						<h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">1. Upload your PDFs</h2>
-						<UploadDropzone files={files} onFilesAdded={handleFilesAdded} onRemove={handleRemove} />
+				<div className="mt-6 sm:mt-8">
+					<AnimatePresence mode="wait" initial={false}>
+						{view === 'upload' && (
+							<motion.div key="upload" {...STAGE_TRANSITION} className="mx-auto max-w-xl">
+								<UploadDropzone files={files} onFilesAdded={handleFilesAdded} onRemove={handleRemove} />
 
-						{totalBytes > LARGE_BATCH_BYTES && (
-							<p className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-muted-foreground">
-								<AlertTriangleIcon className="mt-0.5 size-4 shrink-0 text-amber-600" />
-								This is a large batch — processing may take a little while and use noticeable memory. It'll still work, just be patient.
-							</p>
+								<AnimatePresence>
+									{totalBytes > LARGE_BATCH_BYTES && (
+										<motion.p
+											initial={{ opacity: 0, height: 0 }}
+											animate={{ opacity: 1, height: 'auto' }}
+											exit={{ opacity: 0, height: 0 }}
+											className="mt-3 flex items-start gap-2 overflow-hidden rounded-2xl border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-muted-foreground"
+										>
+											<AlertTriangleIcon className="mt-0.5 size-4 shrink-0 text-amber-600" />
+											This is a large batch — it may take a little while on a phone. It'll still work, just keep this tab open.
+										</motion.p>
+									)}
+								</AnimatePresence>
+
+								<AnimatePresence>
+									{files.length > 0 && (
+										<ActionBar>
+											<motion.button type="button" onClick={handleContinue} whileTap={{ scale: 0.97 }} className={cn(primaryCta, 'w-full')}>
+												Continue
+												<span className="font-normal opacity-80">
+													· {files.length} file{files.length === 1 ? '' : 's'}, {formatSize(totalBytes)}
+												</span>
+												<ArrowRightIcon className="size-5" />
+											</motion.button>
+										</ActionBar>
+									)}
+								</AnimatePresence>
+							</motion.div>
 						)}
 
-						<div className="flex flex-col items-center gap-2.5 pt-2">
-							<p className="text-sm text-muted-foreground">
-								{files.length === 0
-									? 'Add at least one PDF to continue.'
-									: `${files.length} file${files.length === 1 ? '' : 's'} ready — ${formatSize(totalBytes)}`}
-							</p>
-							<Button
-								type="button"
-								size="lg"
-								onClick={handleContinue}
-								disabled={files.length === 0}
-								className="w-full sm:w-auto sm:min-w-56"
-							>
-								Preview
-							</Button>
-						</div>
-					</motion.div>
-				)}
+						{view === 'configure' && (
+							<motion.div key="configure" {...STAGE_TRANSITION} className="mx-auto max-w-5xl">
+								<div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-8">
+									<div className="min-w-0 sm:rounded-3xl sm:border sm:border-border sm:bg-card sm:p-6">
+										<OptionsForm
+											fields={MEESHO_OPTIONS}
+											config={config}
+											advancedOpen={advancedOpen}
+											onAdvancedOpenChange={setAdvancedOpen}
+											onChange={handleOptionChange}
+											disabled={processing}
+										/>
+									</div>
 
-				{view === 'configure' && (
-					<motion.div key="configure" {...STAGE_TRANSITION} className="mx-auto max-w-5xl">
-						{/* Splits into two columns well before Tailwind's `lg` (1024px): the grid only needs ~420px a side
-						 * to stay comfortable, and waiting for 1024px left the two panels stacked on a zoomed-in or
-						 * half-width window — exactly the case where the side-by-side preview is most useful. */}
-						<div className="grid items-stretch gap-6 min-[880px]:grid-cols-2">
-							<div className="space-y-4 rounded-2xl border border-border bg-card p-5 sm:p-6">
-								<div className="flex flex-wrap items-center justify-between gap-3">
-									<h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">2. Choose your options</h2>
-									<Tabs value={mode} onValueChange={(v) => setMode(v as 'simple' | 'advanced')}>
-										<TabsList>
-											<TabsTrigger value="simple">Simple</TabsTrigger>
-											<TabsTrigger value="advanced">Advanced</TabsTrigger>
-										</TabsList>
-									</Tabs>
+									{/* Desktop: the preview sits in the right column, pinned while the options scroll. Phones hide
+									 * this card (the canvas still renders off-screen) and show a live thumbnail in the action bar
+									 * instead, so the options get the whole screen and the result of each tap stays in view. */}
+									<div className="hidden lg:block">
+										<div className="lg:sticky lg:top-24">
+											<PreviewCard status={previewStatus} updating={previewUpdating} canvasRef={canvasRef} summary={configSummary} />
+										</div>
+									</div>
 								</div>
-								<OptionsForm fields={MEESHO_OPTIONS} config={config} mode={mode} onChange={handleOptionChange} />
-							</div>
 
-							<ConfirmStep
-								fileCount={files.length}
-								previewStatus={previewStatus}
-								canvasRef={canvasRef}
-								processing={status === 'processing'}
-								progressEvent={progressEvent}
-								runError={runError}
-								onEdit={handleEdit}
-								onConfirm={handleProcess}
-							/>
-						</div>
-					</motion.div>
-				)}
-			</AnimatePresence>
+								<ActionBar>
+									<AnimatePresence>
+										{runError && !processing && (
+											<motion.p
+												initial={{ opacity: 0, y: 8 }}
+												animate={{ opacity: 1, y: 0 }}
+												exit={{ opacity: 0, y: 8 }}
+												role="alert"
+												className="mb-2.5 flex items-start gap-2 rounded-2xl border border-destructive/30 bg-background p-3 text-sm text-destructive"
+											>
+												<AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />
+												{runError}
+											</motion.p>
+										)}
+									</AnimatePresence>
+									<div className="mx-auto max-w-xl">
+										<AnimatePresence mode="wait" initial={false}>
+											{processing ? (
+												<motion.div
+													key="progress"
+													initial={{ opacity: 0, scale: 0.97 }}
+													animate={{ opacity: 1, scale: 1 }}
+													exit={{ opacity: 0, scale: 0.97 }}
+													transition={{ duration: 0.2 }}
+												>
+													<ProcessProgress event={progressEvent} />
+												</motion.div>
+											) : (
+												<motion.div
+													key="actions"
+													initial={{ opacity: 0, scale: 0.97 }}
+													animate={{ opacity: 1, scale: 1 }}
+													exit={{ opacity: 0, scale: 0.97 }}
+													transition={{ duration: 0.2 }}
+													className="flex gap-2.5"
+												>
+													<motion.button
+														type="button"
+														onClick={handleBackToUpload}
+														whileTap={{ scale: 0.94 }}
+														aria-label="Back to files"
+														className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'size-14 shrink-0 rounded-2xl bg-background')}
+													>
+														<ArrowLeftIcon className="size-5" />
+													</motion.button>
+													<PreviewThumb
+														status={previewStatus}
+														updating={previewUpdating}
+														src={previewSnapshot}
+														onOpen={() => setPreviewSheetOpen(true)}
+													/>
+													{needsReload ? (
+														<motion.button
+															type="button"
+															onClick={() => window.location.reload()}
+															whileTap={{ scale: 0.97 }}
+															className={primaryCta}
+														>
+															<RotateCwIcon className="size-5" />
+															Reload page
+														</motion.button>
+													) : (
+														<motion.button
+															type="button"
+															onClick={handleProcess}
+															disabled={previewStatus === 'loading'}
+															whileTap={{ scale: 0.97 }}
+															className={primaryCta}
+														>
+															<SparklesIcon className="size-5" />
+															{runError ? 'Try again' : 'Create my labels'}
+														</motion.button>
+													)}
+												</motion.div>
+											)}
+										</AnimatePresence>
+									</div>
+								</ActionBar>
+								<PreviewSheet
+									open={previewSheetOpen}
+									onClose={closePreviewSheet}
+									src={previewSnapshot}
+									updating={previewUpdating}
+									summary={configSummary}
+									onCreate={handleProcess}
+									createDisabled={previewStatus === 'loading' || needsReload}
+								/>
+							</motion.div>
+						)}
+
+						{view === 'done' && result && (
+							<motion.div key="done" {...STAGE_TRANSITION} className="mx-auto max-w-xl">
+								<ResultsPanel
+									result={result}
+									failures={failures}
+									labelsPerPage={labelsPerPage}
+									summary={configSummary}
+									onEditOptions={handleEditOptions}
+									onReset={handleReset}
+								/>
+							</motion.div>
+						)}
+					</AnimatePresence>
+				</div>
+			</div>
 		</MotionConfig>
 	);
 }

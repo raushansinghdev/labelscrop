@@ -3,6 +3,11 @@ export type OptionControlType = 'segmented' | 'select' | 'toggle' | 'text' | 'ra
 export interface OptionChoice {
 	value: string;
 	label: string;
+	/** Short secondary line shown under the label when the choice renders as a card (e.g. "Label + invoice"). */
+	description?: string;
+	/** Names a glyph from the UI's small icon registry (see `OptionsForm.tsx`). A segmented field whose choices
+	 * all carry an icon renders as tappable cards instead of a compact pill switcher. */
+	icon?: string;
 }
 
 /** A config value keyed by option id. Values are always strings/booleans at this layer — a platform's
@@ -51,4 +56,19 @@ export function visibleFields(
 		if (field.visibleIf && !field.visibleIf(config)) return false;
 		return true;
 	});
+}
+
+/** Keeps only the saved values that still fit the current field list: known ids, the same value type as the
+ * field's default, and — for choice fields — a value that's still one of the choices. A field that changed
+ * shape between releases (e.g. a Yes/No segmented control that became a toggle) then falls back to its
+ * default instead of feeding a stale string into a boolean control. */
+export function sanitizeConfig(fields: OptionField[], saved: OptionConfig): OptionConfig {
+	const clean: OptionConfig = {};
+	for (const field of fields) {
+		const value = saved[field.id];
+		if (value === undefined || typeof value !== typeof field.default) continue;
+		if (field.choices && !field.choices.some((choice) => choice.value === value)) continue;
+		clean[field.id] = value;
+	}
+	return clean;
 }

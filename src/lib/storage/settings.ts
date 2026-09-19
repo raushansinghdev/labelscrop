@@ -57,3 +57,17 @@ export function saveUiMode(mode: 'simple' | 'advanced'): void {
 		// Non-critical — see savePlatformSettings.
 	}
 }
+
+/** Asks the browser to mark this site's storage as persistent, so saved options aren't wiped when the device
+ * runs low on space (by default localStorage is "best effort" and can be evicted). Chrome and Safari decide
+ * silently from how often the site is used, so daily users get it without any prompt. Firefox would show a
+ * permission popup instead, which is too much for a settings nicety, so it's skipped there. Never throws. */
+export async function requestPersistentStorage(): Promise<void> {
+	try {
+		if (/Firefox\//.test(navigator.userAgent) || !navigator.storage?.persist) return;
+		if (await navigator.storage.persisted()) return;
+		await navigator.storage.persist();
+	} catch {
+		// Unsupported or denied — the options are still saved, just without the eviction guarantee.
+	}
+}

@@ -1,4 +1,5 @@
 ---
+import { feedbackMailto } from '@/lib/feedback';
 import { url } from '@/lib/url';
 const navItems = [
 	{ href: url('/tools/meesho-label-cropper'), label: 'Meesho Label Cropper' },
@@ -7,6 +8,10 @@ const navItems = [
 ];
 
 const currentPath = Astro.url.pathname;
+// Static fallback; the script below fills in the page URL and device when the link is clicked.
+const feedbackHref = feedbackMailto(new URL(Astro.url.pathname, Astro.site).href);
+const feedbackIcon =
+	'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7v6M9 10h6"/></svg>';
 ---
 
 <header
@@ -49,10 +54,13 @@ const currentPath = Astro.url.pathname;
 
 		<div class="hidden md:block">
 			<a
-				href={url('/tools/meesho-label-cropper')}
-				class="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.03] active:scale-[0.98]"
+				href={feedbackHref}
+				data-feedback-link
+				title="Opens your email app with a short template"
+				class="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-semibold text-foreground shadow-xs transition-[transform,background-color,border-color] duration-150 hover:border-primary/40 hover:bg-primary/5 hover:text-primary active:scale-[0.98]"
 			>
-				Open the tool
+				<Fragment set:html={feedbackIcon} />
+				Request a feature
 			</a>
 		</div>
 
@@ -88,10 +96,12 @@ const currentPath = Astro.url.pathname;
 					</a>
 				))}
 				<a
-					href={url('/tools/meesho-label-cropper')}
-					class="mt-2 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
+					href={feedbackHref}
+					data-feedback-link
+					class="mt-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground active:bg-muted"
 				>
-					Open the tool
+					<Fragment set:html={feedbackIcon} />
+					Request a feature or report a bug
 				</a>
 			</nav>
 		</div>
@@ -99,12 +109,23 @@ const currentPath = Astro.url.pathname;
 </header>
 
 <script>
-	const toggle = document.getElementById('menu-toggle');
-	const menu = document.getElementById('mobile-menu');
-	const iconOpen = document.getElementById('menu-icon-open');
-	const iconClose = document.getElementById('menu-icon-close');
+	import { describeDevice, feedbackMailto } from '@/lib/feedback';
 
+	// Fill the current page and device into the email template at click time, so bug reports arrive with the
+	// context needed to reproduce them without the user having to look any of it up.
+	document.addEventListener('click', (event) => {
+		const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[data-feedback-link]');
+		if (link) link.href = feedbackMailto(window.location.href, describeDevice(navigator.userAgent));
+	});
+
+	// Astro's view transitions replace the header on every navigation, so listeners bound to the old
+	// elements would go dead after the first page change. Delegate from `document` (which persists) and look
+	// the elements up fresh each time instead.
 	function setOpen(open: boolean) {
+		const toggle = document.getElementById('menu-toggle');
+		const menu = document.getElementById('mobile-menu');
+		const iconOpen = document.getElementById('menu-icon-open');
+		const iconClose = document.getElementById('menu-icon-close');
 		if (!toggle || !menu || !iconOpen || !iconClose) return;
 		toggle.setAttribute('aria-expanded', String(open));
 		menu.classList.toggle('grid-rows-[1fr]', open);
@@ -113,11 +134,10 @@ const currentPath = Astro.url.pathname;
 		iconClose.classList.toggle('hidden', !open);
 	}
 
-	toggle?.addEventListener('click', () => {
-		const isOpen = toggle.getAttribute('aria-expanded') === 'true';
-		setOpen(!isOpen);
+	document.addEventListener('click', (event) => {
+		const toggle = (event.target as Element | null)?.closest('#menu-toggle');
+		if (toggle) setOpen(toggle.getAttribute('aria-expanded') !== 'true');
 	});
 
-	// Astro view-transitions swap the DOM; re-close the menu after navigation.
 	document.addEventListener('astro:after-swap', () => setOpen(false));
 </script>

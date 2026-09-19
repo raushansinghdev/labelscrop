@@ -17,6 +17,27 @@ export default defineConfig({
   integrations: [react(), sitemap(), partytown()],
 
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    // The tool imports these lazily (only once a file is added / Create is pressed), so without this Vite's
+    // dev server discovers them mid-session, re-optimizes, and bumps their ?v= hash — an already-open tab
+    // then fails with "error loading dynamically imported module". Pre-bundling them at startup avoids that.
+    // The same happens when a component starts using a UI primitive the page didn't use before (the island
+    // fails to hydrate and every button goes dead), so every Base UI entry used in src/components/ui is listed too.
+    optimizeDeps: {
+      include: [
+        'comlink',
+        'pdf-lib',
+        'pdfjs-dist/legacy/build/pdf.mjs',
+        '@base-ui/react/button',
+        '@base-ui/react/dialog',
+        '@base-ui/react/progress',
+        '@base-ui/react/radio',
+        '@base-ui/react/radio-group',
+        '@base-ui/react/select',
+        '@base-ui/react/switch',
+        '@base-ui/react/tabs',
+        '@base-ui/react/tooltip'
+      ]
+    }
   }
 });
