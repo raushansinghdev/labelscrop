@@ -106,7 +106,9 @@ function OptionFieldControl({
 		return (
 			<div className="flex flex-col gap-1.5">
 				<FieldLabel field={field} />
-				<Select value={value as string} onValueChange={(v) => onChange(v as string)}>
+				{/* `items` is what makes the trigger show the choice's label ("SKU ID") rather than the raw stored
+				 * value ("sku") — Base UI's Select.Value falls back to the value when it has no item map. */}
+				<Select items={field.choices} value={value as string} onValueChange={(v) => onChange(v as string)}>
 					<SelectTrigger id={field.id} className="h-10 w-full shadow-xs sm:w-72">
 						<SelectValue />
 					</SelectTrigger>

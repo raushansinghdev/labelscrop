@@ -16,10 +16,8 @@ interface ConfirmStepProps {
 	onConfirm: () => void;
 }
 
-/** The step shown after the user clicks "Preview" on the configure screen: a full-size render of how the
- * first label will look, gating the actual (worker-driven) processing run behind an explicit confirmation —
- * per the plan's two-step "configure → confirm → process" flow, chosen over inline editing next to a live
- * preview so a first-time visitor always sees what they're about to get before it happens. */
+/** Right-hand column of the configure stage: the live preview of the first label, with the button that
+ * kicks off the actual (worker-driven) processing run below it. */
 export function ConfirmStep({
 	fileCount,
 	previewStatus,
@@ -31,7 +29,7 @@ export function ConfirmStep({
 	onConfirm,
 }: ConfirmStepProps) {
 	return (
-		<div className="mx-auto max-w-md space-y-5">
+		<div className="flex flex-col gap-5 rounded-2xl border border-border bg-card p-5 sm:p-6">
 			<PreviewCard status={previewStatus} canvasRef={canvasRef} />
 
 			<AnimatePresence mode="wait">
@@ -66,12 +64,27 @@ export function ConfirmStep({
 								Building your preview…
 							</p>
 						)}
-						<div className="flex flex-col gap-2.5 sm:flex-row">
-							<Button type="button" size="lg" variant="outline" onClick={onEdit} className="flex-1">
-								Edit options
+						{/* Stacked on phones, where two equally-weighted full-width bars read as a wall: `flex-col-reverse`
+						 * lifts the primary action to the top and "Change files" drops to a quiet ghost beneath it.
+						 * From `sm` up there's room for the conventional side-by-side pair. */}
+						<div className="flex flex-col-reverse gap-2 sm:flex-row sm:gap-2.5">
+							<Button
+								type="button"
+								size="lg"
+								variant="outline"
+								onClick={onEdit}
+								className="max-sm:h-11 max-sm:border-transparent max-sm:bg-transparent sm:flex-1"
+							>
+								Change files
 							</Button>
-							<Button type="button" size="lg" onClick={onConfirm} disabled={previewStatus === 'loading'} className="flex-1">
-								{runError ? 'Try again' : `Looks good — Process ${fileCount} file${fileCount === 1 ? '' : 's'}`}
+							<Button
+								type="button"
+								size="lg"
+								onClick={onConfirm}
+								disabled={previewStatus === 'loading'}
+								className="max-sm:h-11 sm:flex-1"
+							>
+								{runError ? 'Try again' : `Proceed — ${fileCount} file${fileCount === 1 ? '' : 's'}`}
 							</Button>
 						</div>
 					</motion.div>

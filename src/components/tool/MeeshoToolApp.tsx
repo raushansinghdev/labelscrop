@@ -18,9 +18,8 @@ import { formatSize, UploadDropzone, type UploadedFile } from './UploadDropzone'
 // heads-up here sets expectations before the user waits through a long run on a slow connection/device.
 const LARGE_BATCH_BYTES = 30 * 1024 * 1024;
 
-// Render target for the confirm-step preview — larger than a sidebar thumbnail since it's now the sole
-// focus of its own step rather than sharing the screen with the options form.
-const PREVIEW_TARGET_WIDTH_PX = 380;
+// Render target for the live preview shown beside the options form.
+const PREVIEW_TARGET_WIDTH_PX = 260;
 
 // Shared fade+slide used for every top-level stage swap (configure/confirm/done), so switching stages
 // reads as one deliberate motion language rather than each screen inventing its own.
@@ -42,10 +41,9 @@ export function MeeshoToolApp() {
 	const [config, setConfig] = useState<OptionConfig>(() => resolveDefaultConfig(MEESHO_OPTIONS));
 	const [settingsLoaded, setSettingsLoaded] = useState(false);
 
-	// 'configure' = upload + options; 'confirm' = preview shown, awaiting confirmation (or edit) before the
-	// real worker run. Kept separate from `status` below so "processing"/"done"/"error" can be layered inside
-	// the confirm step without re-deriving them from a single combined enum.
-	const [stage, setStage] = useState<'configure' | 'confirm'>('configure');
+	// 'upload' = just the dropzone; 'configure' = options on the left with a live preview + proceed button on
+	// the right. "processing"/"done"/"error" are layered on top via `status` below.
+	const [stage, setStage] = useState<'upload' | 'configure'>('upload');
 	const [previewStatus, setPreviewStatus] = useState<PreviewStatus>('empty');
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -92,36 +90,50 @@ export function MeeshoToolApp() {
 
 	const totalBytes = files.reduce((sum, f) => sum + f.sizeBytes, 0);
 
-	// Generates the confirm-step preview on demand (no more continuous live-updating preview) — moves to the
-	// confirm stage immediately so the loading state renders there, rather than blocking the configure screen.
-	async function handlePreview() {
-		const firstFile = files[0];
-		if (!firstFile) return;
-		setStage('confirm');
-		setPreviewStatus('loading');
-		try {
-			const [{ buildFirstPagePreview }, { renderPdfFirstPageToCanvas }, { meeshoAdapter }, { resolveMeeshoProcessOptions }] =
-				await Promise.all([
-					import('@/lib/engine/preview'),
-					import('@/lib/engine/renderPreview'),
-					import('@/lib/platforms/meesho/adapter'),
-					import('@/lib/platforms/meesho/resolveOptions'),
-				]);
-			const { layout, cropMode, overlay } = resolveMeeshoProcessOptions(config);
-			const preview = await buildFirstPagePreview(firstFile.bytes, meeshoAdapter, layout, cropMode ?? 'label', overlay);
-			if (!preview || !canvasRef.current) {
-				setPreviewStatus('unavailable');
-				return;
+	// Live preview: re-renders the first label whenever the options (or first file) change while on the configure
+	// stage. Debounced, and a run counter drops results from superseded renders so a slow older render can't
+	// overwrite a newer one.
+	const previewRunRef = useRef(0);
+	const firstFile = files[0];
+	useEffect(() => {
+		if (stage !== 'configure' || !firstFile) return;
+		const run = ++previewRunRef.current;
+		const timer = setTimeout(async () => {
+			// Keep the current canvas visible while re-rendering; only show the spinner for the first render.
+			setPreviewStatus((prev) => (prev === 'ready' ? prev : 'loading'));
+			try {
+				const [{ buildFirstPagePreview }, { renderPdfFirstPageToCanvas }, { meeshoAdapter }, { resolveMeeshoProcessOptions }] =
+					await Promise.all([
+						import('@/lib/engine/preview'),
+						import('@/lib/engine/renderPreview'),
+						import('@/lib/platforms/meesho/adapter'),
+						import('@/lib/platforms/meesho/resolveOptions'),
+					]);
+				const { layout, cropMode, overlay } = resolveMeeshoProcessOptions(config);
+				const preview = await buildFirstPagePreview(firstFile.bytes, meeshoAdapter, layout, cropMode ?? 'label', overlay);
+				if (run !== previewRunRef.current) return;
+				if (!preview || !canvasRef.current) {
+					setPreviewStatus('unavailable');
+					return;
+				}
+				await renderPdfFirstPageToCanvas(preview.pdfBytes, canvasRef.current, PREVIEW_TARGET_WIDTH_PX);
+				if (run !== previewRunRef.current) return;
+				setPreviewStatus('ready');
+			} catch {
+				if (run === previewRunRef.current) setPreviewStatus('unavailable');
 			}
-			await renderPdfFirstPageToCanvas(preview.pdfBytes, canvasRef.current, PREVIEW_TARGET_WIDTH_PX);
-			setPreviewStatus('ready');
-		} catch {
-			setPreviewStatus('unavailable');
-		}
+		}, 250);
+		return () => clearTimeout(timer);
+	}, [stage, firstFile, config]);
+
+	function handleContinue() {
+		if (files.length === 0) return;
+		setPreviewStatus('empty');
+		setStage('configure');
 	}
 
 	function handleEdit() {
-		setStage('configure');
+		setStage('upload');
 		setStatus('idle');
 		setRunError(null);
 		setProgressEvent(null);
@@ -165,7 +177,7 @@ export function MeeshoToolApp() {
 		setFailures([]);
 		setStatus('idle');
 		setRunError(null);
-		setStage('configure');
+		setStage('upload');
 		setPreviewStatus('empty');
 	}
 
@@ -179,7 +191,7 @@ export function MeeshoToolApp() {
 		);
 	}
 
-	const view: 'done' | 'confirm' | 'configure' = status === 'done' && result ? 'done' : stage === 'confirm' ? 'confirm' : 'configure';
+	const view: 'done' | 'configure' | 'upload' = status === 'done' && result ? 'done' : stage;
 
 	return (
 		<MotionConfig reducedMotion="user">
@@ -190,53 +202,43 @@ export function MeeshoToolApp() {
 					</motion.div>
 				)}
 
-				{view === 'confirm' && (
-					<motion.div key="confirm" {...STAGE_TRANSITION}>
-						<ConfirmStep
-							fileCount={files.length}
-							previewStatus={previewStatus}
-							canvasRef={canvasRef}
-							processing={status === 'processing'}
-							progressEvent={progressEvent}
-							runError={runError}
-							onEdit={handleEdit}
-							onConfirm={handleProcess}
-						/>
+				{view === 'upload' && (
+					<motion.div key="upload" {...STAGE_TRANSITION} className="mx-auto max-w-xl space-y-4">
+						<h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">1. Upload your PDFs</h2>
+						<UploadDropzone files={files} onFilesAdded={handleFilesAdded} onRemove={handleRemove} />
+
+						{totalBytes > LARGE_BATCH_BYTES && (
+							<p className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-muted-foreground">
+								<AlertTriangleIcon className="mt-0.5 size-4 shrink-0 text-amber-600" />
+								This is a large batch — processing may take a little while and use noticeable memory. It'll still work, just be patient.
+							</p>
+						)}
+
+						<div className="flex flex-col items-center gap-2.5 pt-2">
+							<p className="text-sm text-muted-foreground">
+								{files.length === 0
+									? 'Add at least one PDF to continue.'
+									: `${files.length} file${files.length === 1 ? '' : 's'} ready — ${formatSize(totalBytes)}`}
+							</p>
+							<Button
+								type="button"
+								size="lg"
+								onClick={handleContinue}
+								disabled={files.length === 0}
+								className="w-full sm:w-auto sm:min-w-56"
+							>
+								Preview
+							</Button>
+						</div>
 					</motion.div>
 				)}
 
 				{view === 'configure' && (
-					<motion.div key="configure" {...STAGE_TRANSITION} className="mx-auto max-w-5xl space-y-6">
-						<div className="grid items-start gap-6 lg:grid-cols-[1.05fr_1fr]">
-							<div className="space-y-4">
-								<h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">1. Upload your PDFs</h2>
-								<UploadDropzone files={files} onFilesAdded={handleFilesAdded} onRemove={handleRemove} />
-
-								{totalBytes > LARGE_BATCH_BYTES && (
-									<p className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-muted-foreground">
-										<AlertTriangleIcon className="mt-0.5 size-4 shrink-0 text-amber-600" />
-										This is a large batch — processing may take a little while and use noticeable memory. It'll still work, just be patient.
-									</p>
-								)}
-
-								<div className="flex flex-col items-center gap-2.5 pt-2">
-									<p className="text-sm text-muted-foreground">
-										{files.length === 0
-											? 'Add at least one PDF to continue.'
-											: `${files.length} file${files.length === 1 ? '' : 's'} ready — ${formatSize(totalBytes)}`}
-									</p>
-									<Button
-										type="button"
-										size="lg"
-										onClick={handlePreview}
-										disabled={files.length === 0}
-										className="w-full sm:w-auto sm:min-w-56"
-									>
-										Preview
-									</Button>
-								</div>
-							</div>
-
+					<motion.div key="configure" {...STAGE_TRANSITION} className="mx-auto max-w-5xl">
+						{/* Splits into two columns well before Tailwind's `lg` (1024px): the grid only needs ~420px a side
+						 * to stay comfortable, and waiting for 1024px left the two panels stacked on a zoomed-in or
+						 * half-width window — exactly the case where the side-by-side preview is most useful. */}
+						<div className="grid items-stretch gap-6 min-[880px]:grid-cols-2">
 							<div className="space-y-4 rounded-2xl border border-border bg-card p-5 sm:p-6">
 								<div className="flex flex-wrap items-center justify-between gap-3">
 									<h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">2. Choose your options</h2>
@@ -249,6 +251,17 @@ export function MeeshoToolApp() {
 								</div>
 								<OptionsForm fields={MEESHO_OPTIONS} config={config} mode={mode} onChange={handleOptionChange} />
 							</div>
+
+							<ConfirmStep
+								fileCount={files.length}
+								previewStatus={previewStatus}
+								canvasRef={canvasRef}
+								processing={status === 'processing'}
+								progressEvent={progressEvent}
+								runError={runError}
+								onEdit={handleEdit}
+								onConfirm={handleProcess}
+							/>
 						</div>
 					</motion.div>
 				)}
