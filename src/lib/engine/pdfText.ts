@@ -1,3 +1,4 @@
+import './readableStreamAsyncIterator';
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 // `?url` gets Vite to emit pdf.js's own worker script as a bundled asset and hand back its URL — required in
 // every real-browser context. pdf.js only auto-falls-back to a synchronous "fake worker" when `isNodeJS` is
