@@ -527,6 +527,12 @@ function splitMoney(value: number, decimals: number): { sign: string; digits: st
 	return { sign: rounded < 0 ? '-' : '', digits };
 }
 
+/** An amount as a plain string, for a label that is part of a longer sentence. */
+export function formatMoney(value: number, decimals = 0): string {
+	const { sign, digits } = splitMoney(value, decimals);
+	return sign + digits;
+}
+
 export async function createDocument(): Promise<{ doc: PDFDocument; fonts: Fonts }> {
 	const doc = await PDFDocument.create();
 	return {

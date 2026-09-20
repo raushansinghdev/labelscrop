@@ -105,6 +105,20 @@ describe('buildProfitReportPdf', () => {
 		);
 	});
 
+	/**
+	 * A long catalogue used to draw its continuation on top of the page it had just filled: the
+	 * table restarted its heading at the top of the same sheet, and the assumptions landed on top
+	 * of the rows. Forty-five rows is about what one page holds, so a page per forty-five is the
+	 * cheap way to assert that each continuation actually got a sheet of its own.
+	 */
+	it('gives a long product table a page per continuation', async () => {
+		const rows = Array.from({ length: 200 }, (_, i) => sku({ sku: `SKU_${i}`, profit: 5000 - i }));
+		const bytes = await buildProfitReportPdf({ result: result({ sku_rows: rows }), ...input });
+		const doc = await PDFDocument.load(bytes);
+
+		expect(doc.getPageCount()).toBeGreaterThanOrEqual(1 + Math.ceil(rows.length / 45));
+	});
+
 	it('handles a loss-making month and an empty file without throwing', async () => {
 		const loss = result({ overall: overall({ net_profit: -8000 }) });
 		await expect(buildProfitReportPdf({ result: loss, ...input })).resolves.toBeInstanceOf(Uint8Array);

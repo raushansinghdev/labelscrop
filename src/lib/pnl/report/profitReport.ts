@@ -20,7 +20,7 @@ import { buildStatusSlices } from '@/components/pnl/status';
 import type { ExpenseRow } from '@/components/pnl/expenses';
 import type { LossRates, PnlResult, SkuRow } from '@/components/pnl/types';
 import { ICONS } from './icons';
-import { COLORS, PAGE, Sheet, createDocument, fillClassToColor, mix, type Fonts, type Run } from './sheet';
+import { COLORS, PAGE, Sheet, createDocument, fillClassToColor, formatMoney, mix, type Fonts, type Run } from './sheet';
 import type { PDFDocument, RGB } from 'pdf-lib';
 
 export interface ProfitReportInput {
@@ -515,19 +515,14 @@ class Report {
 		height: number,
 		title: string,
 		caption: string,
-		/** A count in words, or an amount to be formatted as one. */
-		badge: string | { money: number },
+		/** The one figure the card resolves to, named — "707 orders", "Net 58". */
+		badge: string,
 	): number {
 		const s = this.sheet;
 		s.rect({ x, top, width, height, radius: 12, fill: COLORS.card, stroke: COLORS.border, strokeWidth: 0.8 });
-		const badgeW =
-			typeof badge === 'string' ? s.width(badge, 7.5) : s.moneyWidth(badge.money, 7.5);
+		const badgeW = s.width(badge, 7.5);
 		s.text(title, { x: x + 14, top: top + 14, size: 10.5, bold: true, maxWidth: width - 28 - badgeW - 8 });
-		if (typeof badge === 'string') {
-			s.text(badge, { x: x + width - 14, top: top + 15, size: 7.5, color: COLORS.mutedForeground, align: 'right' });
-		} else {
-			s.money(badge.money, { x: x + width - 14, top: top + 15, size: 7.5, color: COLORS.mutedForeground, align: 'right' });
-		}
+		s.text(badge, { x: x + width - 14, top: top + 15, size: 7.5, color: COLORS.mutedForeground, align: 'right' });
 		return s.paragraph(caption, {
 			x: x + 14,
 			top: top + 29,
@@ -630,7 +625,7 @@ class Report {
 			height,
 			'Where the money went',
 			'Start at what Meesho paid you, subtract every cost, and land on what you actually kept.',
-			{ money: net },
+			`Net ${formatMoney(net)}`,
 		);
 
 		const labelWidth = 62;
@@ -885,7 +880,21 @@ class Report {
 		const rates = result.loss_rates;
 		const rows = expenses.filter((row) => row.monthly > 0);
 
-		let y = this.fit(top, 190, 'Your assumptions');
+		const rateRows: { label: string; value: number }[] = [
+			{ label: 'Courier return — item', value: rates.rto },
+			{ label: 'Customer return — item', value: rates.return_rate },
+			{ label: 'Lost in transit — item', value: rates.lost },
+			{ label: 'Courier return — packaging', value: rates.rto_packaging_loss },
+			{ label: 'Customer return — packaging', value: rates.return_packaging_loss },
+		];
+
+		// Both boxes are as tall as the taller one's contents, so a seller who has entered one
+		// expense doesn't get the same half-empty card as one who has entered four.
+		const expensesBottom = rows.length > 0 ? 42 + rows.length * 12 + 16 : 42 + 28;
+		const boxHeight = Math.max(expensesBottom, 42 + rateRows.length * 12) + 12;
+		// Header, the boxes, and three lines of footnote — the whole block moves overleaf together
+		// or the footnote ends up orphaned under a page break.
+		let y = this.fit(top, 30 + boxHeight + 10 + 34, 'Your assumptions');
 		const s = this.sheet;
 
 		s.text('Your assumptions', { x: M, top: y, size: 12, bold: true });
@@ -900,7 +909,6 @@ class Report {
 
 		const gap = 12;
 		const width = (CONTENT - gap) / 2;
-		const boxHeight = 118;
 
 		// Business expenses, and the share of them this payment window carries.
 		s.rect({ x: M, top: y, width, height: boxHeight, radius: 9, fill: COLORS.card, stroke: COLORS.border, strokeWidth: 0.8 });
@@ -915,12 +923,14 @@ class Report {
 
 		let rowTop = y + 42;
 		if (rows.length === 0) {
-			s.text('None entered. The profit above is trading profit only — it does not yet pay your rent.', {
+			// Wrapped, not clipped: this is a sentence, and half of it is worse than none of it.
+			s.paragraph('None entered. The profit above is trading profit only — it does not yet pay your rent.', {
 				x: M + 12,
 				top: rowTop,
 				size: 7.5,
 				color: COLORS.mutedForeground,
 				maxWidth: width - 24,
+				lineHeight: 11,
 			});
 		} else {
 			s.text('MONTHLY', { x: M + width - 74, top: rowTop - 11, size: 6, bold: true, color: COLORS.faint, align: 'right', tracking: 0.4 });
@@ -948,13 +958,6 @@ class Report {
 			maxWidth: width - 24,
 		});
 
-		const rateRows: { label: string; value: number }[] = [
-			{ label: 'Courier return — item', value: rates.rto },
-			{ label: 'Customer return — item', value: rates.return_rate },
-			{ label: 'Lost in transit — item', value: rates.lost },
-			{ label: 'Courier return — packaging', value: rates.rto_packaging_loss },
-			{ label: 'Customer return — packaging', value: rates.return_packaging_loss },
-		];
 		let rateTop = y + 42;
 		for (const rate of rateRows) {
 			s.text(rate.label, { x: rx + 12, top: rateTop, size: 7.5, maxWidth: width - 70 });
