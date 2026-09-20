@@ -1,46 +1,92 @@
 ---
 import { url } from '@/lib/url';
+import { SITE } from '@/lib/site';
 import Layout from '@/layouts/Layout.astro';
 
-const title = 'Free Meesho Label Cropper & Sorter — LabelsCrop';
+const title = 'Free Meesho Seller Tools — Label Cropper & Profit Calculator';
 const description =
-	'Crop, resize, and sort your Meesho shipping labels for free, right in your browser. No login, no upload to any server, no watermarks — just clean, print-ready PDFs.';
+	'Two free browser tools for Meesho sellers: crop and sort your shipping labels for printing, and work out your real profit from the payment file. No login, no uploads, no watermarks.';
 
-const features = [
+const iconAttrs =
+	'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"';
+
+/*
+ * The two tools, as equals.
+ *
+ * This page used to be the label cropper's page with a site wrapped around it — one headline, one
+ * button, four features that all described cropping. The profit calculator was reachable only from
+ * the header. Presenting them as one workflow with two halves is the honest description: the same
+ * seller, the same batch of orders, before it ships and after it settles.
+ */
+const tools = [
 	{
-		title: 'Crop the invoice away',
-		body: 'Meesho bundles the tax invoice with every shipping label on the same page. LabelsCrop finds the split automatically and gives you a clean label.',
-		icon: 'crop',
+		href: url('/tools/meesho-label-cropper'),
+		eyebrow: 'Before it ships',
+		name: 'Meesho Label Cropper',
+		pitch: 'Turn the label PDF from your supplier panel into a clean, print-ready file sorted the way you pack.',
+		points: [
+			'Crops the tax invoice off every label automatically',
+			'3x5" and 4x6" thermal printers, or 1 / 2 / 4 labels per A4 sheet',
+			'Sort by SKU, courier, pickup hub, or colour and size',
+			'SKU pick list showing how many of each to pack',
+		],
+		cta: 'Crop my labels',
+		icon: `<svg ${iconAttrs}><path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/></svg>`,
 	},
 	{
-		title: 'Fits your printer',
-		body: 'Choose 3x5" or 4x6" thermal labels, or pack multiple labels per A4 sheet — auto-rotated to fill the page.',
-		icon: 'printer',
-	},
-	{
-		title: 'Sort however you pack',
-		body: 'Reorder your labels by SKU, courier, or pickup so packing matches the pile in front of you, not the order Meesho exported them in.',
-		icon: 'sort',
-	},
-	{
-		title: 'SKU order summary',
-		body: 'See how many units of each SKU you need to pack today, and download that summary as its own PDF.',
-		icon: 'list',
+		href: url('/tools/meesho-profit-calculator'),
+		eyebrow: 'After it settles',
+		name: 'Meesho Profit Calculator',
+		pitch: 'Read your payment file and find out what the month actually earned you — Meesho never tells you this.',
+		points: [
+			'Real payout from the Final Settlement Amount, fees already taken out',
+			'Per-SKU margin once you add making and packing costs',
+			'Ads spend, RTO and returns subtracted honestly',
+			'Rent, salary and bills counted too, prorated to the period',
+		],
+		cta: 'Check my profit',
+		icon: `<svg ${iconAttrs}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
 	},
 ];
 
 const trustPoints = [
-	'Your PDF never leaves your device — everything runs in your browser.',
+	'Your files never leave your device — everything runs in your browser.',
 	'No account, no login, no email required.',
 	'Free forever. No watermarks, no page limits designed to push you to a paid plan.',
 ];
+
+const reasons = [
+	{
+		title: 'Built for the daily grind',
+		body: 'Not a one-time converter. These are the two jobs a Meesho seller does every single day, and both are built to be opened again tomorrow.',
+		icon: `<svg ${iconAttrs}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`,
+	},
+	{
+		title: 'Nothing is uploaded',
+		body: 'Customer addresses and settlement figures are the two most sensitive files a seller has. Neither is sent anywhere — there is no server to send them to.',
+		icon: `<svg ${iconAttrs}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+	},
+	{
+		title: 'Works on the phone',
+		body: 'Most sellers pack with a phone in hand, so both tools are built mobile-first — large targets, no hover-only controls, and the next step always within reach.',
+		icon: `<svg ${iconAttrs}><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>`,
+	},
+	{
+		title: 'One batch, both ends',
+		body: 'Crop the labels for the orders going out today, then check what last month’s orders actually paid you. Same seller, same batch, both halves in one place.',
+		icon: `<svg ${iconAttrs}><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`,
+	},
+];
+
+const homeUrl = new URL(url('/'), Astro.site).toString();
 
 const schema = [
 	{
 		'@context': 'https://schema.org',
 		'@type': 'WebSite',
-		name: 'LabelsCrop',
-		url: new URL(url('/'), Astro.site).toString(),
+		name: SITE.name,
+		url: homeUrl,
+		description,
 		potentialAction: {
 			'@type': 'SearchAction',
 			target: `${new URL(url('/faq'), Astro.site)}?q={search_term_string}`,
@@ -49,16 +95,21 @@ const schema = [
 	},
 	{
 		'@context': 'https://schema.org',
-		'@type': 'SoftwareApplication',
-		name: 'LabelsCrop — Meesho Label Cropper',
-		applicationCategory: 'BusinessApplication',
-		operatingSystem: 'Any (runs in browser)',
-		offers: {
-			'@type': 'Offer',
-			price: '0',
-			priceCurrency: 'INR',
-		},
-		description,
+		'@type': 'ItemList',
+		name: `${SITE.name} tools for Meesho sellers`,
+		itemListElement: tools.map((tool, index) => ({
+			'@type': 'ListItem',
+			position: index + 1,
+			item: {
+				'@type': 'SoftwareApplication',
+				name: tool.name,
+				url: new URL(tool.href, Astro.site).toString(),
+				applicationCategory: 'BusinessApplication',
+				operatingSystem: 'Any (runs in browser)',
+				description: tool.pitch,
+				offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR' },
+			},
+		})),
 	},
 ];
 ---
@@ -77,7 +128,7 @@ const schema = [
 			</div>
 		</div>
 
-		<div class="mx-auto max-w-4xl px-4 pb-16 pt-16 text-center sm:px-6 sm:pb-24 sm:pt-24">
+		<div class="mx-auto max-w-4xl px-4 pt-16 pb-12 text-center sm:px-6 sm:pt-24 sm:pb-16">
 			<p
 				data-reveal
 				class="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground"
@@ -87,12 +138,12 @@ const schema = [
 			</p>
 
 			<h1 data-reveal class="mt-6 text-balance text-4xl font-bold tracking-tight sm:text-6xl">
-				Crop &amp; sort your <span class="text-primary">Meesho shipping labels</span> in seconds
+				Free tools for <span class="text-primary">Meesho sellers</span>
 			</h1>
 
 			<p data-reveal class="mx-auto mt-5 max-w-2xl text-balance text-lg text-muted-foreground">
-				Upload your label PDF, pick your printer size, and download a clean, print-ready file —
-				sorted the way you actually pack. Nothing is ever uploaded to a server.
+				Get today's labels printed the way you pack, and find out what last month actually earned
+				you. Both run entirely in your browser — nothing is ever uploaded to a server.
 			</p>
 
 			<div data-reveal class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -100,16 +151,19 @@ const schema = [
 					href={url('/tools/meesho-label-cropper')}
 					class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98] sm:w-auto"
 				>
-					Open the Meesho Label Cropper
+					Crop my labels
 					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
 						<path d="M5 12h14M13 6l6 6-6 6" />
 					</svg>
 				</a>
 				<a
-					href={url('/how-it-works')}
-					class="inline-flex w-full items-center justify-center rounded-md border border-border px-6 py-3 text-base font-medium text-foreground transition-colors hover:bg-muted sm:w-auto"
+					href={url('/tools/meesho-profit-calculator')}
+					class="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border px-6 py-3 text-base font-medium text-foreground transition-colors hover:bg-muted sm:w-auto"
 				>
-					See how it works
+					Check my profit
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+						<path d="M5 12h14M13 6l6 6-6 6" />
+					</svg>
 				</a>
 			</div>
 		</div>
@@ -131,54 +185,103 @@ const schema = [
 		</div>
 	</section>
 
-	<!-- Features -->
-	<section class="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+	<!-- The two tools -->
+	<section class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
 		<div class="mx-auto max-w-2xl text-center">
 			<h2 data-reveal class="text-3xl font-bold tracking-tight sm:text-4xl">
-				Everything you need to prep labels for packing
+				One order, two jobs
 			</h2>
 			<p data-reveal class="mt-4 text-muted-foreground">
-				Built for sellers who do this every single day — not a one-time conversion tool.
+				Everything a Meesho order needs from you happens at two moments: when it goes out of the
+				door, and when the money lands. There is a tool for each.
 			</p>
 		</div>
 
-		<div class="mt-12 grid gap-6 sm:grid-cols-2">
-			{features.map((feature) => (
-				<div data-reveal class="rounded-xl border border-border bg-card p-6 shadow-sm">
-					<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
-							{feature.icon === 'crop' && <path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2" />}
-							{feature.icon === 'printer' && (
-								<>
-									<path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-									<rect x="6" y="14" width="12" height="8" />
-								</>
-							)}
-							{feature.icon === 'sort' && <path d="M11 5h10M11 9h7M11 13h4M3 17l3 3 3-3M6 18V4" />}
-							{feature.icon === 'list' && <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />}
-						</svg>
+		<div class="mt-12 grid gap-5 lg:grid-cols-2">
+			{tools.map((tool) => (
+				<div data-reveal class="flex flex-col rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-7">
+					<div class="flex items-center gap-3">
+						<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+							<Fragment set:html={tool.icon} />
+						</span>
+						<div>
+							<p class="text-xs font-semibold tracking-wide text-primary uppercase">{tool.eyebrow}</p>
+							<h3 class="text-lg font-bold tracking-tight">{tool.name}</h3>
+						</div>
 					</div>
-					<h3 class="mt-4 font-semibold">{feature.title}</h3>
-					<p class="mt-2 text-sm text-muted-foreground">{feature.body}</p>
+
+					<p class="mt-4 text-sm leading-relaxed text-muted-foreground">{tool.pitch}</p>
+
+					<ul class="mt-4 space-y-2">
+						{tool.points.map((point) => (
+							<li class="flex items-start gap-2 text-sm">
+								<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-success" aria-hidden="true">
+									<path d="M20 6 9 17l-5-5" />
+								</svg>
+								<span class="text-muted-foreground">{point}</span>
+							</li>
+						))}
+					</ul>
+
+					<a
+						href={tool.href}
+						class="mt-6 inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+					>
+						{tool.cta}
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true">
+							<path d="M5 12h14M13 6l6 6-6 6" />
+						</svg>
+					</a>
 				</div>
 			))}
 		</div>
 	</section>
 
+	<!-- Why -->
+	<section class="border-t border-border/80 bg-muted/20">
+		<div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+			<div class="mx-auto max-w-2xl text-center">
+				<h2 data-reveal class="text-3xl font-bold tracking-tight sm:text-4xl">
+					Why sellers keep them open
+				</h2>
+			</div>
+
+			<div class="mt-12 grid gap-5 sm:grid-cols-2">
+				{reasons.map((reason) => (
+					<div data-reveal class="rounded-xl border border-border bg-card p-6">
+						<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+							<Fragment set:html={reason.icon} />
+						</div>
+						<h3 class="mt-4 font-semibold">{reason.title}</h3>
+						<p class="mt-2 text-sm leading-relaxed text-muted-foreground">{reason.body}</p>
+					</div>
+				))}
+			</div>
+		</div>
+	</section>
+
 	<!-- CTA -->
-	<section class="mx-auto max-w-4xl px-4 pb-24 sm:px-6">
-		<div data-reveal class="rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-card to-card p-10 text-center">
-			<h2 class="text-2xl font-bold tracking-tight sm:text-3xl">Ready to clean up today's labels?</h2>
+	<section class="mx-auto max-w-4xl px-4 py-20 sm:px-6 sm:py-24">
+		<div data-reveal class="rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-card to-card p-8 text-center sm:p-10">
+			<h2 class="text-2xl font-bold tracking-tight sm:text-3xl">Start with whichever you need today</h2>
 			<p class="mx-auto mt-3 max-w-xl text-muted-foreground">
-				No signup, no watermark, no catch. Upload a PDF and see a preview before you download
+				No signup, no watermark, no catch. Both tools show you the result before you download
 				anything.
 			</p>
-			<a
-				href={url('/tools/meesho-label-cropper')}
-				class="mt-6 inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
-			>
-				Open the Meesho Label Cropper
-			</a>
+			<div class="mt-6 flex flex-col items-stretch justify-center gap-2.5 sm:flex-row sm:items-center">
+				<a
+					href={url('/tools/meesho-label-cropper')}
+					class="inline-flex min-h-12 items-center justify-center rounded-md bg-primary px-6 text-base font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+				>
+					Open the Label Cropper
+				</a>
+				<a
+					href={url('/tools/meesho-profit-calculator')}
+					class="inline-flex min-h-12 items-center justify-center rounded-md border border-border bg-background px-6 text-base font-semibold transition-colors hover:border-primary/40 hover:text-primary"
+				>
+					Open the Profit Calculator
+				</a>
+			</div>
 		</div>
 	</section>
 </Layout>

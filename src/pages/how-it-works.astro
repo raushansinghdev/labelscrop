@@ -1,57 +1,106 @@
 ---
+import { url } from '@/lib/url';
 import Layout from '@/layouts/Layout.astro';
 import PageCta from '@/components/site/PageCta.astro';
 
-const title = 'How LabelsCrop Works — Crop & Sort Meesho Labels';
+const title = 'How It Works — Meesho Label Cropper & Profit Calculator';
 const description =
-	'A step-by-step look at how LabelsCrop crops the invoice off your Meesho shipping labels, sorts them, and prepares a print-ready PDF — entirely in your browser.';
+	'Step by step: how the label cropper turns a Meesho label PDF into a print-ready file, and how the profit calculator turns a payment file into your real profit — both entirely in your browser.';
 
 const iconAttrs =
 	'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6" aria-hidden="true"';
 
-// Mirrors the tool's own three steps (Upload → Customize → Download) so the page and the UI tell the same story.
-const steps = [
+/*
+ * Two tools, two walkthroughs, one page.
+ *
+ * Each list mirrors its tool's own step indicator exactly — three steps for the cropper, four for
+ * the calculator — so a seller reading this page and a seller using the tool are being told the
+ * same story in the same words. If a tool's steps change, this page changes with it.
+ */
+const flows = [
 	{
-		name: 'Upload your label PDFs',
-		text: 'Add one or more label PDFs downloaded from the Meesho Supplier Panel — from one account or several, all at once.',
-		icon: `<svg ${iconAttrs}><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>`,
+		id: 'label-cropper',
+		eyebrow: '3 steps · under a minute',
+		heading: 'Meesho Label Cropper',
+		lead: 'From the label PDF in your supplier panel to a stack of labels sorted the way you pack.',
+		href: url('/tools/meesho-label-cropper'),
+		cta: 'Crop my labels',
+		howToName: 'How to crop and sort Meesho shipping labels',
+		steps: [
+			{
+				name: 'Upload your label PDFs',
+				text: 'Add one or more label PDFs downloaded from the Meesho Supplier Panel — from one account or several, all at once.',
+				icon: `<svg ${iconAttrs}><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>`,
+			},
+			{
+				name: 'Customize and preview',
+				text: 'Pick a 3x5" or 4x6" label printer, or A4 with 1, 2, or 4 labels per sheet. Crop the invoice or keep it, choose a sort order, and watch the live preview update.',
+				icon: `<svg ${iconAttrs}><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>`,
+			},
+			{
+				name: 'Download and print',
+				text: 'Get a print-ready PDF sized for your printer, plus an SKU pick list for packing. On a phone, share it straight to WhatsApp, Drive, or your printer app.',
+				icon: `<svg ${iconAttrs}><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>`,
+			},
+		],
 	},
 	{
-		name: 'Customize and preview',
-		text: 'Pick a 3x5" or 4x6" label printer, or A4 with 1, 2, or 4 labels per sheet. Crop the invoice or keep it, choose a sort order, and watch the live preview update.',
-		icon: `<svg ${iconAttrs}><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>`,
-	},
-	{
-		name: 'Download and print',
-		text: 'Get a print-ready PDF sized for your printer, plus an SKU pick list for packing. On a phone, share it straight to WhatsApp, Drive, or your printer app.',
-		icon: `<svg ${iconAttrs}><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>`,
+		id: 'profit-calculator',
+		eyebrow: '4 steps · one payment file',
+		heading: 'Meesho Profit Calculator',
+		lead: 'From the payment file Meesho sends you to the number Meesho never shows you.',
+		href: url('/tools/meesho-profit-calculator'),
+		cta: 'Check my profit',
+		howToName: 'How to work out your real Meesho profit from a payment file',
+		steps: [
+			{
+				name: 'Upload your payment file',
+				text: 'In your supplier panel: Payments → Download → Payments to Date → pick your dates. Add the *_PAYMENT_FILE_*.xlsx it gives you — or several, to cover a longer stretch.',
+				icon: `<svg ${iconAttrs}><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>`,
+			},
+			{
+				name: 'Enter your product costs',
+				text: 'What one unit costs you to make and to pack. Type them in, or export every SKU to Excel, fill it there, and import it back. They are saved on your device for next month.',
+				icon: `<svg ${iconAttrs}><path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"/><path d="M7 7h.01"/></svg>`,
+			},
+			{
+				name: 'Add your business expenses',
+				text: 'Rent, salaries, bills — the costs Meesho has never heard of. Enter them monthly and they are charged to the period your file covers. Return write-offs live here too.',
+				icon: `<svg ${iconAttrs}><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>`,
+			},
+			{
+				name: 'Read your real profit',
+				text: 'Net profit after everything, margin per order and per unit, which SKUs earn and which quietly lose, and a breakdown of where every rupee went.',
+				icon: `<svg ${iconAttrs}><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>`,
+			},
+		],
 	},
 ];
 
 const promises = [
-	{ title: 'Private', text: 'Customer names and addresses never leave your device — there is no server to send them to.' },
-	{ title: 'Fast', text: 'No waiting on uploads — most batches are ready in seconds.' },
+	{ title: 'Private', text: 'Customer addresses and settlement figures never leave your device — there is no server to send them to.' },
+	{ title: 'Fast', text: 'No waiting on uploads — most batches and payment files are ready in seconds.' },
 	{ title: 'No account', text: 'Nothing to sign up for or remember. Open the page and go.' },
 ];
 
-const schema = {
+const schema = flows.map((flow) => ({
 	'@context': 'https://schema.org',
 	'@type': 'HowTo',
-	name: 'How to crop and sort Meesho shipping labels',
-	description,
-	step: steps.map((step) => ({
+	name: flow.howToName,
+	description: flow.lead,
+	step: flow.steps.map((step) => ({
 		'@type': 'HowToStep',
 		name: step.name,
 		text: step.text,
 	})),
-};
+}));
 ---
 
 <Layout title={title} description={description} schema={schema}>
 	<section class="mx-auto max-w-5xl px-4 pt-10 pb-16 sm:px-6 sm:pt-16 sm:pb-24">
 		<div class="mx-auto max-w-2xl text-center">
 			<p data-reveal class="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-				3 steps · under a minute
+				Two tools · both free
 			</p>
 			<h1 data-reveal class="mt-4 text-3xl font-bold tracking-tight text-balance sm:text-5xl">How it works</h1>
 			<p data-reveal class="mt-3 text-base text-pretty text-muted-foreground sm:mt-4 sm:text-lg">
@@ -59,38 +108,71 @@ const schema = {
 			</p>
 		</div>
 
-		<ol class="relative mt-12 grid gap-4 sm:mt-16 md:grid-cols-3 md:gap-6">
-			{/* Connector: vertical through the icons on phones, horizontal through them from md up. */}
-			<div
-				class="absolute top-8 bottom-8 left-[2.75rem] w-px bg-gradient-to-b from-primary/40 via-primary/20 to-transparent md:top-[3.25rem] md:right-[16%] md:bottom-auto md:left-[16%] md:h-px md:w-auto md:bg-gradient-to-r"
-				aria-hidden="true"
-			>
-			</div>
-			{steps.map((step, i) => (
-				<li
-					data-reveal
-					style={`transition-delay: ${i * 90}ms`}
-					class="relative flex gap-4 rounded-3xl border border-border bg-card p-5 md:flex-col md:items-center md:p-6 md:text-center"
-				>
-					<span class="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25">
-						<Fragment set:html={step.icon} />
-						<span class="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-background text-[11px] font-bold text-primary ring-2 ring-primary">
-							{i + 1}
-						</span>
-					</span>
-					<div class="min-w-0">
-						<h2 class="font-semibold">{step.name}</h2>
-						<p class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{step.text}</p>
+		{
+			flows.map((flow) => (
+				<div id={flow.id} class="mt-14 scroll-mt-20 sm:mt-20">
+					<div class="mx-auto max-w-2xl text-center">
+						<p data-reveal class="text-xs font-semibold tracking-wide text-primary uppercase">{flow.eyebrow}</p>
+						<h2 data-reveal class="mt-2 text-2xl font-bold tracking-tight text-balance sm:text-3xl">
+							{flow.heading}
+						</h2>
+						<p data-reveal class="mt-2 text-sm text-pretty text-muted-foreground sm:text-base">{flow.lead}</p>
 					</div>
-				</li>
-			))}
-		</ol>
+
+					<ol
+						class:list={[
+							'relative mt-8 grid gap-4 sm:mt-10 md:gap-6',
+							flow.steps.length === 4 ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3',
+						]}
+					>
+						{/* Connector: vertical through the icons on phones, horizontal through them from md up. */}
+						<div
+							class="absolute top-8 bottom-8 left-[2.75rem] w-px bg-gradient-to-b from-primary/40 via-primary/20 to-transparent md:hidden"
+							aria-hidden="true"
+						>
+						</div>
+						{flow.steps.map((step, i) => (
+							<li
+								data-reveal
+								style={`transition-delay: ${i * 90}ms`}
+								class="relative flex gap-4 rounded-3xl border border-border bg-card p-5 md:flex-col md:items-center md:p-6 md:text-center"
+							>
+								<span class="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25">
+									<Fragment set:html={step.icon} />
+									<span class="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-background text-[11px] font-bold text-primary ring-2 ring-primary">
+										{i + 1}
+									</span>
+								</span>
+								<div class="min-w-0">
+									<h3 class="font-semibold">{step.name}</h3>
+									<p class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{step.text}</p>
+								</div>
+							</li>
+						))}
+					</ol>
+
+					<div class="mt-6 text-center">
+						<a
+							data-reveal
+							href={flow.href}
+							class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-background px-5 text-sm font-semibold transition-colors hover:border-primary/40 hover:text-primary"
+						>
+							{flow.cta}
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true">
+								<path d="M5 12h14M13 6l6 6-6 6" />
+							</svg>
+						</a>
+					</div>
+				</div>
+			))
+		}
 
 		<div data-reveal class="mt-16 rounded-3xl bg-muted/50 p-6 sm:p-8">
 			<h2 class="text-center text-xl font-bold tracking-tight">Why it only runs in your browser</h2>
 			<p class="mx-auto mt-2 max-w-2xl text-center text-sm text-pretty text-muted-foreground">
-				Shipping labels carry your customers' names, addresses, and phone numbers. So all cropping, sorting,
-				and PDF building happens on your own device.
+				Shipping labels carry your customers' names, addresses and phone numbers; a payment file
+				carries every rupee your business earned. So all cropping, sorting, parsing and PDF
+				building happens on your own device.
 			</p>
 			<dl class="mt-6 grid gap-3 sm:grid-cols-3">
 				{promises.map((item) => (

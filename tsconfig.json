@@ -10,6 +10,10 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "react",
+    // The P&L calculation layer (src/lib/pnl/) is ported JavaScript. It stays JS for now so the
+    // ported arithmetic can be diffed against the original; the UI around it is TypeScript.
+    "allowJs": true,
+    "checkJs": false,
     "paths": {
       "@/*": ["./src/*"]
     }

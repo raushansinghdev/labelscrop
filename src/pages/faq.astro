@@ -2,56 +2,110 @@
 import Layout from '@/layouts/Layout.astro';
 import PageCta from '@/components/site/PageCta.astro';
 
-const title = 'Meesho Label Cropper FAQ — LabelsCrop';
+const title = 'FAQ — Meesho Label Cropper & Profit Calculator';
 const description =
-	"Answers to common questions about LabelsCrop's free Meesho label cropper: is it really free, does it work on mobile, is my data safe, and more.";
+	'Answers about the free Meesho label cropper and profit calculator: is it really free, is my data safe, which payment file to upload, how per-SKU margin is worked out, and more.';
 
-const faqs = [
+/*
+ * Grouped, because the site now hosts two tools and a flat list made every seller read eleven
+ * questions to find the two that were theirs. The groups are ordered the way a visitor arrives:
+ * the questions about the site itself apply to both tools, then each tool's own.
+ */
+const groups = [
 	{
-		q: 'Is LabelsCrop really free?',
-		a: 'Yes. LabelsCrop is free forever, with no page limits, no watermark, and no account required. The site is supported by ads placed away from the upload, preview, and download flow so they never get in your way.',
+		heading: 'About the site',
+		faqs: [
+			{
+				q: 'Is this really free?',
+				a: 'Yes. Both tools are free forever, with no page limits, no watermark, and no account required. The site is supported by ads placed away from the upload, preview, and download flow so they never get in your way.',
+			},
+			{
+				q: 'Do I need to create an account or sign in?',
+				a: 'No. There is no login, no signup, and no email required. Open a tool, add your file, and download your result.',
+			},
+			{
+				q: 'Is my order and customer data safe?',
+				a: "Your files are never uploaded anywhere. Label cropping, payment-file parsing, and every calculation happen locally in your browser using your device's own processing power — there is no server that ever sees a customer address or a settlement figure.",
+			},
+			{
+				q: 'Does it work on my phone?',
+				a: 'Yes. Both tools are built mobile-first and work in any modern mobile browser (Chrome, Safari, etc.), as well as on desktop and tablet.',
+			},
+			{
+				q: 'Will Amazon or Flipkart support be added?',
+				a: "It's on the roadmap. The site is built to support multiple marketplaces — Meesho is first, with Amazon and Flipkart label cropping planned as a later addition.",
+			},
+			{
+				q: 'I found a bug or want a new feature — how do I tell you?',
+				a: 'Tap "Request a feature" at the top of any page. It opens your email app with a short template — fill in what you need or what went wrong, and attach a screenshot if you can.',
+			},
+		],
 	},
 	{
-		q: 'Do I need to create an account or sign in?',
-		a: 'No. There is no login, no signup, and no email required. Open the tool, upload your PDF, and download your result.',
+		heading: 'Meesho Label Cropper',
+		faqs: [
+			{
+				q: 'Can I remove the tax invoice from my Meesho labels?',
+				a: 'Yes. Meesho prints the shipping label and tax invoice on the same page — the cropper finds the split automatically and crops the invoice away. You can also keep the invoice attached, or save all the invoices as a separate PDF.',
+			},
+			{
+				q: 'What printer sizes are supported?',
+				a: 'You can print on 3x5" and 4x6" thermal label printers, or on regular A4 paper with 1, 2, or 4 labels per sheet — with or without the invoice attached to each label.',
+			},
+			{
+				q: 'Can I sort my labels by SKU or courier?',
+				a: "Yes. Sort by SKU, courier, pickup hub, colour then size, or size then colour — or keep Meesho's original order. You also get an SKU pick list showing how many of each item to pack.",
+			},
+			{
+				q: 'Can I upload labels from more than one Meesho account?',
+				a: 'Yes. You can add several label PDFs at once, so sellers running more than one account or exporting in batches can process everything together.',
+			},
+			{
+				q: 'How many labels can I process at once?',
+				a: "Because everything runs in your browser rather than on a server, the practical limit depends on your device's memory rather than any limit we impose. Large batches are processed in chunks, and you'll be warned before an upload big enough to strain your browser.",
+			},
+		],
 	},
 	{
-		q: 'Is my order and customer data safe?',
-		a: "Your PDF is never uploaded anywhere. All cropping, sorting, and file generation happens locally in your browser using your device's own processing power — LabelsCrop has no server that ever sees your file.",
-	},
-	{
-		q: 'Does LabelsCrop work on my phone?',
-		a: 'Yes. LabelsCrop is built mobile-first and works in any modern mobile browser (Chrome, Safari, etc.), in addition to desktop and tablet.',
-	},
-	{
-		q: 'What printer sizes are supported?',
-		a: 'You can print on 3x5" and 4x6" thermal label printers, or on regular A4 paper with 1, 2, or 4 labels per sheet — with or without the invoice attached to each label.',
-	},
-	{
-		q: 'Can I remove the tax invoice from my Meesho labels?',
-		a: "Yes. Meesho prints the shipping label and tax invoice on the same page — LabelsCrop finds the split automatically and crops the invoice away. You can also keep the invoice attached, or save all the invoices as a separate PDF.",
-	},
-	{
-		q: 'Can I sort my labels by SKU or courier?',
-		a: "Yes. Sort by SKU, courier, pickup hub, color then size, or size then color — or keep Meesho's original order. You also get an SKU pick list showing how many of each item to pack.",
-	},
-	{
-		q: 'Can I upload labels from more than one Meesho account?',
-		a: 'Yes. LabelsCrop supports uploading multiple PDF files at once, so sellers running more than one account or exporting in batches can process everything together.',
-	},
-	{
-		q: 'How many labels can I process at once?',
-		a: "Because everything runs in your browser rather than on a server, the practical limit depends on your device's memory rather than any limit we impose. LabelsCrop processes large batches in chunks and will warn you before a very large upload might strain your browser.",
-	},
-	{
-		q: 'Will Amazon or Flipkart label support be added?',
-		a: "It's on the roadmap. LabelsCrop is built to support multiple platforms — Meesho is first, with Amazon and Flipkart label cropping planned as a later addition.",
-	},
-	{
-		q: 'I found a bug or want a new feature — how do I tell you?',
-		a: 'Tap "Request a feature" at the top of any page. It opens your email app with a short template — fill in what you need or what went wrong, and attach a screenshot if you can.',
+		heading: 'Meesho Profit Calculator',
+		faqs: [
+			{
+				q: 'Which file do I upload to the profit calculator?',
+				a: 'In your Meesho supplier panel: Payments → Download → Payments to Date → pick your dates. It downloads as a *_PAYMENT_FILE_*.xlsx spreadsheet, and that one file is everything the calculator needs. The other downloads behind that button (GST Report, Tax Invoice, Supplier Tax Invoice, Outstanding Payments) do not carry the per-order settlement rows, so they cannot be read.',
+			},
+			{
+				q: 'Does it already include commission, shipping and GST?',
+				a: "Yes. The calculator works from Meesho's own Final Settlement Amount — the figure actually paid into your bank — so commission, shipping, GST and TCS/TDS have already been taken out before the tool sees it. It then subtracts what Meesho does not know about: your cost of goods, ads spend, returns, and your business expenses.",
+			},
+			{
+				q: 'Do I have to enter a cost for every SKU?',
+				a: 'No, but any SKU without one has its profit overstated, and the tool says so — on the product card, on the chart, and as a count on the Costs tab. You can type costs in, or export every SKU to a spreadsheet, fill it in Excel, and import it back.',
+			},
+			{
+				q: 'Where are my SKU costs saved?',
+				a: "On your device, in your browser, so next month's payment file reuses them. Nothing is sent anywhere. Because browser storage can be cleared — and Safari expires it after a week of not visiting — the tool offers you an Excel backup after you save, which you can import again on any device.",
+			},
+			{
+				q: 'Can I include rent, salary and other business expenses?',
+				a: 'Yes. Enter them once as monthly amounts and they are charged to each payment file in proportion to the days it covers, with the arithmetic shown. They are deliberately not divided between SKUs — no single order causes your rent, so any split would be invented.',
+			},
+			{
+				q: 'How are RTO and returns handled?',
+				a: 'Both are counted. Packaging is treated as consumed whether or not the item comes back, and you set how much of the item itself you really write off on an RTO, a customer return, or a parcel lost in transit — so the profit reflects what happened rather than a best case.',
+			},
+			{
+				q: 'Why does my profit differ from the figure in the Meesho panel?',
+				a: "Because Meesho only knows what it paid you. It has no idea what your products cost to make or pack, what you pay in rent and salaries, or how much of a returned item you can resell. This tool starts from Meesho's settlement figure and subtracts the rest, which is why the answer is usually lower — and closer to what your bank balance does.",
+			},
+			{
+				q: 'Can I upload more than one payment file?',
+				a: 'Yes. Add several at once to cover a longer stretch. Note that the dates in the file name are payment dates, not order dates, so a file usually includes orders placed weeks earlier.',
+			},
+		],
 	},
 ];
+
+const faqs = groups.flatMap((group) => group.faqs);
 
 const schema = {
 	'@context': 'https://schema.org',
@@ -73,31 +127,41 @@ const schema = {
 			<p data-reveal class="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">FAQ</p>
 			<h1 data-reveal class="mt-4 text-3xl font-bold tracking-tight text-balance sm:text-5xl">Questions, answered</h1>
 			<p data-reveal class="mx-auto mt-3 max-w-xl text-base text-pretty text-muted-foreground sm:mt-4 sm:text-lg">
-				The things sellers ask most — about privacy, printers, and getting labels out the door.
+				The things sellers ask most — about privacy, printers, payment files, and what the profit
+				figure actually means.
 			</p>
 		</div>
 
-		<div class="mt-10 space-y-3 sm:mt-12">
-			{faqs.map((faq, i) => (
-				<details
-					data-reveal
-					open={i === 0}
-					class="faq-item group rounded-2xl border border-border bg-card transition-[border-color,box-shadow] duration-200 open:border-primary/30 open:shadow-sm"
-				>
-					<summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-semibold marker:content-none [&::-webkit-details-marker]:hidden">
-						{faq.q}
-						<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground transition-[transform,background-color,color] duration-300 group-open:rotate-45 group-open:bg-primary group-open:text-primary-foreground">
-							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="h-4 w-4" aria-hidden="true">
-								<path d="M12 5v14M5 12h14" />
-							</svg>
-						</span>
-					</summary>
-					<p class="px-5 pb-5 text-sm leading-relaxed text-muted-foreground sm:text-[0.95rem]">{faq.a}</p>
-				</details>
-			))}
-		</div>
+		{
+			groups.map((group, groupIndex) => (
+				<div class="mt-10 sm:mt-12">
+					<h2 data-reveal class="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+						{group.heading}
+					</h2>
+					<div class="mt-4 space-y-3">
+						{group.faqs.map((faq, i) => (
+							<details
+								data-reveal
+								open={groupIndex === 0 && i === 0}
+								class="faq-item group rounded-2xl border border-border bg-card transition-[border-color,box-shadow] duration-200 open:border-primary/30 open:shadow-sm"
+							>
+								<summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-semibold marker:content-none [&::-webkit-details-marker]:hidden">
+									{faq.q}
+									<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground transition-[transform,background-color,color] duration-300 group-open:rotate-45 group-open:bg-primary group-open:text-primary-foreground">
+										<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="h-4 w-4" aria-hidden="true">
+											<path d="M12 5v14M5 12h14" />
+										</svg>
+									</span>
+								</summary>
+								<p class="px-5 pb-5 text-sm leading-relaxed text-muted-foreground sm:text-[0.95rem]">{faq.a}</p>
+							</details>
+						))}
+					</div>
+				</div>
+			))
+		}
 
-		<PageCta title="Still have a question?" text="Email us — we read every message. Or jump straight into the tool and try it with your own labels." />
+		<PageCta title="Still have a question?" text="Email us — we read every message. Or open a tool and try it with your own file." />
 	</section>
 </Layout>
 

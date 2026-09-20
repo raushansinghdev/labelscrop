@@ -1,5 +1,6 @@
 ---
 import { url } from '@/lib/url';
+import { SITE } from '@/lib/site';
 import { ClientRouter } from 'astro:transitions';
 import Header from '@/components/site/Header.astro';
 import Footer from '@/components/site/Footer.astro';
@@ -15,6 +16,11 @@ interface Props {
 
 const { title, description, schema, noindex = false } = Astro.props;
 
+// The GitHub Pages deploy is a staging mirror of the production site. A project page can't
+// serve /robots.txt (that lives at the user-site root), so a meta tag is the only way to keep
+// it out of the index — without it, the mirror competes with production for the same queries.
+const isStagingMirror = process.env.GITHUB_PAGES === 'true';
+
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const schemaList = schema ? (Array.isArray(schema) ? schema : [schema]) : [];
 ---
@@ -27,7 +33,7 @@ const schemaList = schema ? (Array.isArray(schema) ? schema : [schema]) : [];
 		<meta name="theme-color" content="#ffffff" />
 		<link rel="icon" type="image/svg+xml" href={url('/favicon.svg')} />
 		<link rel="canonical" href={canonicalURL} />
-		{noindex && <meta name="robots" content="noindex, nofollow" />}
+		{(noindex || isStagingMirror) && <meta name="robots" content="noindex, nofollow" />}
 
 		<title>{title}</title>
 		<meta name="description" content={description} />
@@ -36,7 +42,7 @@ const schemaList = schema ? (Array.isArray(schema) ? schema : [schema]) : [];
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
 		<meta property="og:url" content={canonicalURL} />
-		<meta property="og:site_name" content="LabelsCrop" />
+		<meta property="og:site_name" content={SITE.name} />
 		<meta name="twitter:card" content="summary" />
 		<meta name="twitter:title" content={title} />
 		<meta name="twitter:description" content={description} />

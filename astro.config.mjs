@@ -14,7 +14,17 @@ const isGitHubPages = process.env.GITHUB_PAGES === 'true';
 export default defineConfig({
   site: isGitHubPages ? 'https://raushansinghdev.github.io' : 'https://labelscrop.com',
   base: isGitHubPages ? '/labelscrop' : '/',
-  integrations: [react(), sitemap(), partytown()],
+  // The Amazon/Flipkart pages are roadmap placeholders carrying almost no content. They're
+  // marked noindex until the adapters ship, so they must stay out of the sitemap too —
+  // submitting a noindex URL is a contradictory signal Search Console flags as an error.
+  integrations: [
+    react(),
+    sitemap({
+      filter: (page) =>
+        !/\/tools\/(amazon|flipkart)-label-cropper\/?$/.test(new URL(page).pathname)
+    }),
+    partytown()
+  ],
 
   vite: {
     plugins: [tailwindcss()],

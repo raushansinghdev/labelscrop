@@ -71,11 +71,15 @@
     --ring: oklch(0.55 0.22 264 / 0.5);
     --success: oklch(0.62 0.17 148);
     --success-foreground: oklch(0.985 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
+    /* Categorical palette for the profit charts. Deliberately semantic rather than arbitrary:
+       1 is the brand blue (neutral flow), 2 green (money in), 3 red (money out), 4 amber
+       (ads/returns), 5 teal (everything else). The shadcn defaults these replaced were five
+       greys that were identical in both themes, so half of them vanished into the background. */
+    --chart-1: oklch(0.55 0.22 264);
+    --chart-2: oklch(0.62 0.17 148);
+    --chart-3: oklch(0.577 0.245 27.325);
+    --chart-4: oklch(0.72 0.16 75);
+    --chart-5: oklch(0.62 0.12 208);
     --radius: 0.625rem;
     --sidebar: oklch(0.985 0 0);
     --sidebar-foreground: oklch(0.145 0 0);
@@ -108,11 +112,11 @@
     --ring: oklch(0.65 0.2 264 / 0.5);
     --success: oklch(0.7 0.16 148);
     --success-foreground: oklch(0.145 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
+    --chart-1: oklch(0.65 0.2 264);
+    --chart-2: oklch(0.7 0.16 148);
+    --chart-3: oklch(0.704 0.191 22.216);
+    --chart-4: oklch(0.82 0.15 75);
+    --chart-5: oklch(0.72 0.11 208);
     --sidebar: oklch(0.205 0 0);
     --sidebar-foreground: oklch(0.985 0 0);
     --sidebar-primary: oklch(0.488 0.243 264.376);

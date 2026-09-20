@@ -4,7 +4,7 @@ import Layout from '@/layouts/Layout.astro';
 
 const title = 'About LabelsCrop';
 const description =
-	'LabelsCrop is a free, browser-only toolkit for Indian e-commerce sellers to prep shipping labels for printing — no login, no uploads, no watermarks.';
+	'LabelsCrop is a free, browser-only toolkit for Indian e-commerce sellers: crop and sort shipping labels for printing, and work out your real profit from the marketplace payment file — no login, no uploads, no watermarks.';
 ---
 
 <Layout title={title} description={description}>
@@ -13,41 +13,61 @@ const description =
 
 		<div data-reveal class="prose prose-neutral mt-8 max-w-none text-muted-foreground dark:prose-invert">
 			<p>
-				LabelsCrop exists because packing orders shouldn't mean fighting with a PDF. Meesho — and
-				most Indian marketplaces — export shipping labels with a tax invoice glued to the same
-				page, in whatever order your orders happened to sync in. Every seller ends up needing the
-				same three things: a clean label sized for their printer, sorted the way they actually
-				pack, with the invoice handled sensibly.
+				LabelsCrop exists because running a Meesho shop means doing two thankless jobs over and over.
+				The first is getting orders out of the door: Meesho — like most Indian marketplaces — exports
+				shipping labels with a tax invoice glued to the same page, in whatever order your orders
+				happened to sync in. The second is finding out whether any of it made money, which the
+				supplier panel will not tell you: it reports what it paid you, and stops there.
 			</p>
+			<p>So there are two tools, for the two ends of the same order:</p>
+			<ul>
+				<li>
+					<strong><a href={url('/tools/meesho-label-cropper')}>The label cropper</a></strong> crops the
+					invoice away, fits the label to your printer, and sorts the batch the way you actually pack —
+					with a pick list of how many of each SKU to pull off the shelf.
+				</li>
+				<li>
+					<strong><a href={url('/tools/meesho-profit-calculator')}>The profit calculator</a></strong>
+					reads your payment file and works out what you really earned — after cost of goods, ads,
+					returns and the rent and salaries no marketplace has ever heard of — down to the margin on
+					each individual SKU.
+				</li>
+			</ul>
 			<p>A few things we think matter enough to say plainly:</p>
 			<ul>
 				<li>
-					<strong>Nothing you upload leaves your device.</strong> LabelsCrop has no server that
-					processes your files. Cropping, sorting, and PDF generation all happen locally in your
-					browser, using code that runs on your machine — not ours.
+					<strong>Nothing you add leaves your device.</strong> There is no server that processes your
+					files. Cropping, sorting, PDF building and every profit calculation happen locally in your
+					browser, using code that runs on your machine — not ours. That matters twice over here:
+					one file holds your customers' addresses, the other holds your entire revenue.
 				</li>
 				<li>
 					<strong>No account, ever.</strong> There's nothing to sign up for and nothing to forget
-					a password for. Open the tool, use it, close the tab.
+					a password for. Open a tool, use it, close the tab.
 				</li>
 				<li>
-					<strong>Free forever, funded by ads.</strong> LabelsCrop is supported by advertising
-					placed away from the upload, preview, and download flow, so it never gets in the way of
-					actually getting your labels done.
+					<strong>Free forever, funded by ads.</strong> Advertising is placed away from the upload,
+					preview, and download flow, so it never gets in the way of actually getting the work done.
 				</li>
 			</ul>
 			<p>
-				LabelsCrop started with Meesho label cropping and sorting. Support for other marketplaces
-				is on the roadmap — see the <a href={url('/faq')}>FAQ</a> for details.
+				Both tools start with Meesho. Support for other marketplaces is on the roadmap — see the
+				<a href={url('/faq')}>FAQ</a> for details.
 			</p>
 		</div>
 
-		<div data-reveal class="mt-10 text-center">
+		<div data-reveal class="mt-10 flex flex-col items-stretch justify-center gap-2.5 sm:flex-row sm:items-center">
 			<a
 				href={url('/tools/meesho-label-cropper')}
-				class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+				class="inline-flex min-h-12 items-center justify-center rounded-md bg-primary px-6 text-base font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
 			>
-				Open the tool
+				Open the Label Cropper
+			</a>
+			<a
+				href={url('/tools/meesho-profit-calculator')}
+				class="inline-flex min-h-12 items-center justify-center rounded-md border border-border bg-background px-6 text-base font-semibold transition-colors hover:border-primary/40 hover:text-primary"
+			>
+				Open the Profit Calculator
 			</a>
 		</div>
 	</section>

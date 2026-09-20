@@ -1,0 +1,126 @@
+---
+import { url } from '@/lib/url';
+import { SITE } from '@/lib/site';
+import Layout from '@/layouts/Layout.astro';
+import { ProfitToolApp } from '@/components/pnl/ProfitToolApp';
+
+const title = 'Meesho Profit Calculator — Real P&L From Your Payment File';
+const description =
+	'Work out your true Meesho profit from the payment file itself — settlement, COGS, ads spend and per-SKU margin. Free, runs in your browser, no login.';
+
+const capabilities = [
+	{
+		label: 'Reads the real payout',
+		detail: "Uses Meesho's own Final Settlement Amount, so commission, shipping, GST and TCS/TDS are already accounted for.",
+	},
+	{
+		label: 'Counts every settlement leg',
+		detail: 'Meesho splits some orders across two rows, the second with a blank status. Those adjustment rows are included, not dropped.',
+	},
+	{
+		label: 'Subtracts ads spend',
+		detail: 'Campaign spend is an account-level cost and is deducted from net profit rather than quietly ignored.',
+	},
+	{
+		label: 'Per-SKU margin',
+		detail: 'Add your making and packaging cost once and see which products actually earn, and which ones only look busy.',
+	},
+	{
+		label: 'Handles RTO and returns',
+		detail: 'Set how much of an RTO or return you really lose, so profit reflects what happened, not a best case.',
+	},
+	{
+		label: 'Charts that show the leak',
+		detail: 'A breakdown of where every rupee went, how your orders ended up, and which SKUs make or lose the most.',
+	},
+	{
+		label: 'Costs in and out as Excel',
+		detail: 'Export every SKU to a spreadsheet, fill the costs in Excel, and import it back — no typing them one by one.',
+	},
+	{
+		label: 'Private by design',
+		detail: 'Your payment file is parsed in the browser. It is never uploaded, and your SKU costs stay on your device.',
+	},
+];
+
+const schema = {
+	'@context': 'https://schema.org',
+	'@type': 'SoftwareApplication',
+	name: 'Meesho Profit Calculator',
+	applicationCategory: 'FinanceApplication',
+	operatingSystem: 'Any (runs in browser)',
+	url: new URL(url('/tools/meesho-profit-calculator'), Astro.site).toString(),
+	description,
+	offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR' },
+	isPartOf: {
+		'@type': 'WebSite',
+		name: SITE.name,
+		url: new URL(url('/'), Astro.site).toString(),
+	},
+};
+---
+
+<Layout title={title} description={description} schema={schema}>
+	<section class="mx-auto max-w-3xl px-4 pt-10 text-center sm:px-6 sm:pt-12">
+		<h1 data-reveal class="text-3xl font-bold tracking-tight text-balance sm:text-4xl">Meesho Profit Calculator</h1>
+		<p data-reveal class="mx-auto mt-3 max-w-xl text-base text-pretty text-muted-foreground sm:mt-4 sm:text-lg">
+			Your real profit from the payment file itself — settlement, costs, ads and per-SKU margin.
+		</p>
+		{/* Same three chips as the label cropper. Two tools on one site should answer "what will
+		    this cost me and where do my files go?" in the same words, in the same place. */}
+		<ul class="mt-4 flex flex-wrap justify-center gap-2 text-xs font-medium text-muted-foreground" aria-label="Highlights">
+			<li class="rounded-full bg-muted px-3 py-1">100% free</li>
+			<li class="rounded-full bg-muted px-3 py-1">No login</li>
+			<li class="rounded-full bg-muted px-3 py-1">Files never leave your device</li>
+		</ul>
+	</section>
+
+	{/* Wider than the prose around it: once a file is loaded this is a data tool, and a 3xl column
+	    forced the cost table into 39 cramped rows with no room for the product name. The upload
+	    stage re-narrows itself from the inside so the empty state still reads as a hero. */}
+	<section class="mx-auto mt-8 max-w-6xl px-4 pb-4 sm:mt-10 sm:px-6">
+		<ProfitToolApp client:load />
+	</section>
+
+	<section class="mx-auto max-w-4xl px-4 py-14 sm:px-6">
+		<h2 class="text-center text-2xl font-semibold tracking-tight">What it works out</h2>
+		<dl class="mt-8 grid gap-5 sm:grid-cols-2">
+			{
+				capabilities.map((item) => (
+					<div data-reveal class="rounded-2xl border border-border bg-card p-5">
+						<dt class="font-semibold">{item.label}</dt>
+						<dd class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{item.detail}</dd>
+					</div>
+				))
+			}
+		</dl>
+	</section>
+
+	<section class="mx-auto max-w-3xl px-4 pb-16 sm:px-6">
+		<div class="rounded-2xl border border-border bg-muted/40 p-6">
+			<h2 class="text-lg font-semibold">Which file do I upload?</h2>
+			<p class="mt-2 text-sm leading-relaxed text-muted-foreground">
+				In the Meesho supplier panel, open <strong class="text-foreground">Payments</strong>, press <strong
+					class="text-foreground">Download</strong
+				> and choose <strong class="text-foreground">Payments to Date</strong>, then pick the period you want. It
+				arrives as a <code class="rounded bg-background px-1 py-0.5 text-xs">*_PAYMENT_FILE_*.xlsx</code> spreadsheet,
+				and that one file is everything the calculator needs.
+			</p>
+			<p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+				The same Download button also offers GST Report, Tax Invoice, Supplier Tax Invoice and Outstanding
+				Payments. None of those carry the per-order settlement rows, so the calculator can't read them — it is
+				specifically <em>Payments to Date</em> you want.
+			</p>
+			<p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+				The dates in the file name are payment dates, not order dates, so a file usually includes orders placed
+				weeks earlier. You can add more than one payment file at once to cover a longer stretch.
+			</p>
+			<p class="mt-4 text-sm leading-relaxed text-muted-foreground">
+				Just sorted your labels? The <a
+					href={url('/tools/meesho-label-cropper')}
+					class="font-medium text-primary underline-offset-4 hover:underline">Meesho label cropper</a
+				> handles the packing side of the same batch.
+			</p>
+		</div>
+	</section>
+</Layout>

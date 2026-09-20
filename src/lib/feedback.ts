@@ -1,13 +1,15 @@
+import { SITE } from '@/lib/site';
+
 export const FEEDBACK_EMAIL = 'singhraushan2410@gmail.com';
 
-const SUBJECT = 'LabelsCrop: Feature request / Bug report';
+const SUBJECT = `${SITE.name}: Feature request / Bug report`;
 
 /** Builds a `mailto:` link that opens the user's mail app with a short fill-in-the-blanks template, so
  * requests and bug reports arrive in a consistent shape. `page` and `device` are filled in on the client
  * (see Header.astro) — the static fallback href leaves them for the user. */
 export function feedbackMailto(page = '', device = ''): string {
 	const body = [
-		'Hi LabelsCrop team,',
+		`Hi ${SITE.name} team,`,
 		'',
 		'Type (feature request / bug report):',
 		'',
