@@ -15,6 +15,7 @@ import { cn } from 'cn';
 import { StepIndicator } from '@/components/tool/StepIndicator';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { ChartsBoundary } from './ChartsBoundary';
+import { DownloadReport } from './DownloadReport';
 import { CostEditor } from './CostEditor';
 import { DEFAULT_EXPENSES, totalProrated, windowDays, type ExpenseRow } from './expenses';
 import { ExpensesPanel } from './ExpensesPanel';
@@ -393,11 +394,11 @@ export function ProfitToolApp() {
 
 					{stage === 'dashboard' && result && (
 						<motion.div key="dashboard" {...STAGE_TRANSITION} className="mt-6 space-y-3 sm:mt-8">
-							<div className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2">
-								<FileSpreadsheetIcon className="size-3.5 shrink-0 text-chart-2" aria-hidden="true" />
+							<div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-2.5">
+								<FileSpreadsheetIcon className="size-4 shrink-0 text-chart-2" aria-hidden="true" />
 								<div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2">
-									<p className="truncate text-xs font-medium">{fileLabel}</p>
-									<p className="truncate text-[11px] text-muted-foreground">
+									<p className="truncate text-sm font-medium">{fileLabel}</p>
+									<p className="truncate text-sm text-muted-foreground">
 										{formatDateRange(
 											result.overall.payment_window_start,
 											result.overall.payment_window_end,
@@ -429,7 +430,7 @@ export function ProfitToolApp() {
 								</div>
 
 								<TabsContent value="overview" className="pt-3">
-									<motion.div key="overview" {...panelMotion} className="space-y-3">
+									<motion.div key="overview" {...panelMotion} className="space-y-4">
 										<KpiCards overall={result.overall} overheads={overheads} />
 
 										<AnimatePresence>
@@ -441,16 +442,16 @@ export function ProfitToolApp() {
 													animate={{ opacity: 1, height: 'auto' }}
 													exit={{ opacity: 0, height: 0 }}
 													className={cn(
-														'flex w-full items-center gap-2.5 rounded-xl border border-chart-4/30 bg-chart-4/10 px-3 py-2.5 text-left',
+														'flex w-full items-center gap-3 rounded-xl border border-chart-4/30 bg-chart-4/10 px-4 py-3 text-left',
 														'transition-colors hover:bg-chart-4/15',
 														'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
 													)}
 												>
 													<AlertTriangleIcon
-														className="size-4 shrink-0 text-chart-4"
+														className="size-5 shrink-0 text-chart-4"
 														aria-hidden="true"
 													/>
-													<span className="min-w-0 flex-1 text-xs">
+													<span className="min-w-0 flex-1 text-sm">
 														<strong className="font-semibold">
 															{unmappedCount}{' '}
 															{unmappedCount === 1 ? 'product has' : 'products have'} no
@@ -461,7 +462,7 @@ export function ProfitToolApp() {
 														</span>
 													</span>
 													<ArrowRightIcon
-														className="size-3.5 shrink-0 text-muted-foreground"
+														className="size-4 shrink-0 text-muted-foreground"
 														aria-hidden="true"
 													/>
 												</motion.button>
@@ -469,18 +470,31 @@ export function ProfitToolApp() {
 										</AnimatePresence>
 
 										{/* Between the totals and the charts, because it answers the question the
-									  * totals provoke: fine, but which product, and what do I change? */}
-									<ProfitInsights
-										result={result}
-										onOpenProducts={() => goToTab('products')}
-										onOpenExpenses={() => goToTab('expenses')}
-									/>
+									  * totals provoke: fine, but which product? Each card explains its own
+									  * arithmetic on hover; the trip to the full table is offered once, from
+									  * the SKU chart below. */}
+									<ProfitInsights result={result} />
 
 									<ChartsBoundary>
 											<Suspense fallback={<ChartsFallback />}>
-												<ProfitCharts result={result} overheads={overheads} />
+												<ProfitCharts
+													result={result}
+													overheads={overheads}
+													onOpenProducts={() => goToTab('products')}
+												/>
 											</Suspense>
 										</ChartsBoundary>
+
+										{/* Last, deliberately. Everything above is the answer; this is the
+										  * offer to keep it, and it only makes sense to someone who has
+										  * read what they would be keeping. */}
+										<DownloadReport
+											result={result}
+											overheads={overheads}
+											expenses={expenses}
+											expenseDays={expenseDays}
+											fileNames={files.map((f) => f.file.name)}
+										/>
 									</motion.div>
 								</TabsContent>
 
@@ -554,15 +568,15 @@ function FileSummary({
 			variants={STAGGER_LIST}
 			initial="hidden"
 			animate="show"
-			className="flex flex-wrap items-baseline gap-x-5 gap-y-1 rounded-xl border border-border bg-card px-3.5 py-2.5"
+			className="flex flex-wrap items-baseline gap-x-6 gap-y-2 rounded-xl border border-border bg-card px-4 py-3"
 		>
-			<FileSpreadsheetIcon className="size-3.5 shrink-0 self-center text-chart-2" aria-hidden="true" />
+			<FileSpreadsheetIcon className="size-4 shrink-0 self-center text-chart-2" aria-hidden="true" />
 			{cells.map((cell) => (
 				<motion.div key={cell.label} variants={STAGGER_ITEM} className="flex min-w-0 items-baseline gap-1.5">
-					<dt className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">{cell.label}</dt>
+					<dt className="shrink-0 text-xs uppercase tracking-wide text-muted-foreground">{cell.label}</dt>
 					<dd
 						className={cn(
-							'text-xs font-medium tabular-nums',
+							'text-sm font-medium tabular-nums',
 							cell.truncate && 'max-w-[14rem] truncate',
 						)}
 						title={cell.truncate ? cell.value : undefined}
@@ -576,18 +590,31 @@ function FileSummary({
 }
 
 /** Placeholder cards while the recharts chunk downloads, sized so the page doesn't jump when it lands. */
+/**
+ * Placeholders shaped like the charts that replace them — same grid, same heights — so the swap
+ * doesn't shunt the page. Three equal stacked blocks stood in for a two-column row plus a wide
+ * one, which meant everything below jumped the moment recharts arrived.
+ */
 function ChartsFallback() {
 	return (
-		<div className="space-y-3" aria-live="polite" aria-busy="true">
+		<div className="space-y-4" aria-live="polite" aria-busy="true">
 			<p className="sr-only">Drawing your charts</p>
-			{[224, 180, 200].map((height, index) => (
+			<div className="grid gap-4 lg:grid-cols-[22rem_minmax(0,1fr)]">
 				<div
-					key={height}
-					className="animate-pulse rounded-xl border border-border bg-card"
-					style={{ height, animationDelay: `${index * 120}ms` }}
+					className="h-[30rem] animate-pulse rounded-2xl border border-border bg-card"
 					aria-hidden="true"
 				/>
-			))}
+				<div
+					className="h-[30rem] animate-pulse rounded-2xl border border-border bg-card"
+					style={{ animationDelay: '120ms' }}
+					aria-hidden="true"
+				/>
+			</div>
+			<div
+				className="h-[27rem] animate-pulse rounded-2xl border border-border bg-card"
+				style={{ animationDelay: '240ms' }}
+				aria-hidden="true"
+			/>
 		</div>
 	);
 }

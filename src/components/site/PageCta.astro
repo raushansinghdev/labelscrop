@@ -21,7 +21,7 @@ const feedbackHref = feedbackMailto(new URL(Astro.url.pathname, Astro.site).href
  * they find next.
  */
 const arrow =
-	'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+	'<svg data-arrow viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
 ---
 
 <div
@@ -33,14 +33,14 @@ const arrow =
 	<div class="mt-6 flex flex-col items-stretch justify-center gap-2.5 sm:flex-row sm:items-center">
 		<a
 			href={url('/tools/meesho-label-cropper')}
-			class="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-transform duration-150 hover:-translate-y-0.5 active:translate-y-0"
+			class="press nudge inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30"
 		>
 			Crop my labels
 			<Fragment set:html={arrow} />
 		</a>
 		<a
 			href={url('/tools/meesho-profit-calculator')}
-			class="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-background px-6 text-base font-semibold transition-colors duration-150 hover:border-primary/40 hover:text-primary"
+			class="press nudge inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-background px-6 text-base font-semibold hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
 		>
 			Check my profit
 			<Fragment set:html={arrow} />

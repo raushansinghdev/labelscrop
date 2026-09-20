@@ -48,12 +48,12 @@ export function buildWaterfall(overall: PnlOverall, overheads = 0): WaterfallBar
 		{
 			name: 'Packaging lost',
 			delta: -overall.cogs_packaging_lost,
-			detail: `Packaging consumed on orders that came back.\nRTO ${formatCurrency(overall.packaging_loss_rto)} · Returns ${formatCurrency(overall.packaging_loss_return)}`,
+			detail: `Packaging consumed on orders that came back.\nCourier returns ${formatCurrency(overall.packaging_loss_rto)} · Customer returns ${formatCurrency(overall.packaging_loss_return)}`,
 		},
 		{
 			name: 'Stock lost',
 			delta: -overall.cogs_making_lost,
-			detail: `Item cost written off on returns, at your loss rates.\nRTO ${formatCurrency(overall.making_loss_rto)} · Returns ${formatCurrency(overall.making_loss_return)}\n\nReverse shipping of ${formatCurrency(Math.abs(overall.return_shipping_charge))} was already taken out of settlement.`,
+			detail: `Item cost written off on returns, at your loss rates.\nCourier returns ${formatCurrency(overall.making_loss_rto)} · Customer returns ${formatCurrency(overall.making_loss_return)}\n\nReverse shipping of ${formatCurrency(Math.abs(overall.return_shipping_charge))} was already taken out of settlement.`,
 		},
 		{ name: 'Ads', delta: overall.ads_cost, detail: 'Account-level ad spend for the period.' },
 		{ name: 'Referral', delta: overall.referral_income, detail: 'Referral income credited to the account.' },

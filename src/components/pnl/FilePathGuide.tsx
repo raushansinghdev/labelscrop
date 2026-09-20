@@ -38,7 +38,7 @@ export function FilePathGuide() {
 
 			{/* A wrapping row rather than a numbered list down the page: it is one path, and five
 			  * stacked lines make five clicks look like five chores. */}
-			<ol className="mt-2.5 flex flex-wrap items-center gap-x-1 gap-y-1.5">
+			<ol className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-2">
 				{PATH.map((step, index) => (
 					<motion.li
 						key={step}
@@ -47,9 +47,9 @@ export function FilePathGuide() {
 						transition={{ duration: 0.3, ease: EASE_OUT, delay: 0.15 + index * 0.06 }}
 						className="flex items-center gap-1"
 					>
-						<span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-1 text-[11px] font-medium sm:text-xs">
+						<span className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm font-medium">
 							<span
-								className="flex size-4 items-center justify-center rounded-full bg-primary/10 text-[9px] font-bold text-primary"
+								className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary"
 								aria-hidden="true"
 							>
 								{index + 1}
@@ -57,13 +57,13 @@ export function FilePathGuide() {
 							{step}
 						</span>
 						{index < PATH.length - 1 && (
-							<ChevronRightIcon className="size-3 shrink-0 text-muted-foreground" aria-hidden="true" />
+							<ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
 						)}
 					</motion.li>
 				))}
 			</ol>
 
-			<p className="mt-2.5 text-[11px] leading-relaxed text-muted-foreground">
+			<p className="mt-3 text-sm leading-relaxed text-muted-foreground">
 				It downloads as <code className="rounded bg-background px-1 py-0.5 font-mono">*_PAYMENT_FILE_*.xlsx</code>.
 				Those dates are <strong className="font-medium text-foreground">payment</strong> dates, not order dates, so
 				the file usually holds orders placed weeks earlier.

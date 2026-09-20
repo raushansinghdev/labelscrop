@@ -48,7 +48,7 @@ export function TabBar<T extends string>({ tabs, active }: TabBarProps<T>) {
 						key={tab.value}
 						value={tab.value}
 						className={cn(
-							'relative h-10 min-w-0 flex-1 rounded-lg px-2 text-[13px] font-medium transition-colors duration-200 sm:h-9 sm:px-3',
+							'relative h-11 min-w-0 flex-1 rounded-lg px-2 text-sm font-medium transition-colors duration-200 sm:h-10 sm:px-3',
 							// The "line" variant already keeps the trigger's own background transparent,
 							// which the moving pill needs — but it also draws an underline on the active
 							// tab. Two selection indicators for one selection, so the underline goes.
@@ -69,7 +69,7 @@ export function TabBar<T extends string>({ tabs, active }: TabBarProps<T>) {
 							{/* Icons are dropped on phones. Four labelled tabs with icons overflow a
 							  * 390px screen, and the row then opens scrolled with the first tab
 							  * sliced in half — which reads as broken, not as scrollable. */}
-							<Icon className="hidden size-3.5 sm:block" aria-hidden="true" />
+							<Icon className="hidden size-4 sm:block" aria-hidden="true" />
 							<span>{tab.label}</span>
 							{tab.badge !== undefined && tab.badge > 0 && (
 								<motion.span
@@ -77,7 +77,7 @@ export function TabBar<T extends string>({ tabs, active }: TabBarProps<T>) {
 									initial={{ scale: 0 }}
 									animate={{ scale: 1 }}
 									transition={SPRING}
-									className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold tabular-nums text-white"
+									className="ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-bold tabular-nums text-white"
 								>
 									{tab.badge}
 								</motion.span>

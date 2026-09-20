@@ -8,21 +8,26 @@ interface ChartCardProps {
 	caption: string;
 	/** Shown at the top right, e.g. a total. */
 	badge?: string;
+	/** The one way out of this card — a link to wherever the full data behind it lives. */
+	action?: ReactNode;
 	children: ReactNode;
 }
 
-export function ChartCard({ title, caption, badge, children }: ChartCardProps) {
+export function ChartCard({ title, caption, badge, action, children }: ChartCardProps) {
 	return (
 		<motion.section
 			variants={STAGGER_ITEM}
-			className="rounded-2xl border border-border bg-card p-3.5 transition-colors hover:border-foreground/15 sm:p-4"
+			className="flex flex-col rounded-2xl border border-border bg-card p-4 transition-colors hover:border-foreground/15 sm:p-5"
 		>
-			<div className="flex items-baseline justify-between gap-3">
-				<h3 className="text-sm font-semibold tracking-tight">{title}</h3>
-				{badge && <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{badge}</span>}
+			<div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+				<h3 className="text-base font-semibold tracking-tight">{title}</h3>
+				<div className="flex shrink-0 items-baseline gap-3">
+					{badge && <span className="text-sm tabular-nums text-muted-foreground">{badge}</span>}
+					{action}
+				</div>
 			</div>
-			<p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{caption}</p>
-			<div className="mt-3">{children}</div>
+			<p className="mt-1 text-sm leading-relaxed text-muted-foreground">{caption}</p>
+			<div className="mt-4 flex-1">{children}</div>
 		</motion.section>
 	);
 }
@@ -33,9 +38,9 @@ export function ChartCard({ title, caption, badge, children }: ChartCardProps) {
  */
 export function ChartTooltip({ label, children }: { label: string; children: ReactNode }) {
 	return (
-		<div className="pointer-events-none max-w-56 rounded-xl border border-border bg-popover px-3 py-2 text-xs shadow-lg">
-			<p className="font-medium text-popover-foreground">{label}</p>
-			<div className="mt-1 space-y-0.5 text-muted-foreground">{children}</div>
+		<div className="pointer-events-none max-w-64 rounded-xl border border-border bg-popover px-3.5 py-2.5 text-sm shadow-lg">
+			<p className="font-semibold text-popover-foreground">{label}</p>
+			<div className="mt-1 space-y-0.5 leading-relaxed text-muted-foreground">{children}</div>
 		</div>
 	);
 }

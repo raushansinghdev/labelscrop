@@ -48,7 +48,7 @@ interface Draft {
  * One template for the heading row and every data row. They were separate strings once and drifted
  * apart, which put the values under the wrong headings — visibly wrong only if you measured.
  */
-const COST_COLS = 'md:grid-cols-[minmax(0,1fr)_4.5rem_5.75rem_5.75rem_4.5rem]';
+const COST_COLS = 'md:grid-cols-[minmax(0,1fr)_4.5rem_6rem_6rem_4.5rem]';
 
 /** What one unit costs all in — the figure the P&L actually charges against each order. */
 function unitTotal(draft: Draft): number {
@@ -263,12 +263,12 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 	}
 
 	return (
-		<div className="space-y-3">
+		<div className="space-y-4">
 			<section className="overflow-hidden rounded-2xl border border-border bg-card">
 				<header className="flex flex-col gap-3 border-b border-border p-3.5 sm:flex-row sm:items-center sm:justify-between sm:p-4">
 					<div className="min-w-0">
-						<h2 className="text-sm font-semibold tracking-tight">Product costs</h2>
-						<p className="mt-0.5 text-xs text-muted-foreground">
+						<h2 className="text-lg font-semibold tracking-tight">Product costs</h2>
+						<p className="mt-1 text-sm text-muted-foreground">
 							What one unit costs you to make and to pack ·{' '}
 							<span className={cn('font-semibold', allDone ? 'text-success' : 'text-foreground')}>
 								{doneCount}/{rows.length} entered
@@ -298,7 +298,7 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 					</div>
 				</header>
 
-				<div className="px-3.5 pt-2.5 sm:px-4">
+				<div className="px-4 pt-3">
 					<ProgressMeter
 						value={rows.length > 0 ? doneCount / rows.length : 0}
 						className={cn('h-full rounded-full', allDone ? 'bg-success' : 'bg-primary')}
@@ -317,7 +317,7 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 						>
 							<p
 								className={cn(
-									'mt-3 flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-xs',
+									'mt-3 flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm',
 									notice.kind === 'error'
 										? 'bg-destructive/10 text-destructive'
 										: 'bg-success/10 text-foreground',
@@ -330,17 +330,17 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 									aria-label="Dismiss"
 									className="shrink-0 rounded-md p-0.5 opacity-60 transition-opacity hover:opacity-100"
 								>
-									<XIcon className="size-3.5" />
+									<XIcon className="size-4" />
 								</button>
 							</p>
 						</motion.div>
 					)}
 				</AnimatePresence>
 
-				<div className="flex flex-col gap-2 p-3.5 sm:flex-row sm:items-center sm:p-4">
+				<div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
 					<div className="relative flex-1">
 						<SearchIcon
-							className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+							className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
 							aria-hidden="true"
 						/>
 						<input
@@ -349,12 +349,12 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 							onChange={(e) => setQuery(e.target.value)}
 							placeholder="Search product or SKU"
 							aria-label="Search products"
-							className="h-10 w-full rounded-lg border border-border bg-background pl-8 pr-3 text-sm outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring sm:h-9"
+							className="h-11 w-full rounded-lg border border-border bg-background pl-10 pr-3 text-base outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring sm:h-10"
 						/>
 					</div>
 					<label
 						className={cn(
-							'flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-lg border px-3 text-xs font-medium transition-colors sm:h-9',
+							'flex h-11 shrink-0 cursor-pointer items-center gap-2 rounded-lg border px-3.5 text-sm font-medium transition-colors sm:h-10',
 							onlyMissing
 								? 'border-primary/40 bg-primary/10 text-foreground'
 								: 'border-border hover:bg-muted',
@@ -423,8 +423,8 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 											exit={{ opacity: 0 }}
 											transition={{ duration: 0.2, ease: EASE_OUT }}
 											className={cn(
-												'border-b border-border px-4 py-2.5 transition-colors',
-												'md:grid md:items-center md:gap-2.5 md:py-1.5',
+												'border-b border-border px-4 py-3 transition-colors',
+												'md:grid md:items-center md:gap-3 md:py-2',
 												COST_COLS,
 												// The left-hand column needs a rule down its right edge; only the
 												// odd-numbered rows land there once the list flows across.
@@ -437,18 +437,18 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 											  * which no longer has a column of its own. */}
 											<div className="flex items-baseline justify-between gap-2 md:contents">
 												<p
-													className="min-w-0 truncate font-mono text-[13px] font-semibold"
-													title={row.product_name || row.sku}
+													className="min-w-0 truncate font-mono text-sm font-semibold"
+													title={row.product_name ? `${row.sku} — ${row.product_name}` : row.sku}
 												>
 													{row.sku}
 												</p>
-												<span className="shrink-0 text-[11px] tabular-nums text-muted-foreground md:text-right md:text-[13px]">
+												<span className="shrink-0 text-sm tabular-nums text-muted-foreground md:text-right">
 													{formatCurrency(row.avg_sale_price)}
 													<span className="md:sr-only"> listed</span>
 												</span>
 											</div>
 
-											<div className="mt-1.5 flex items-center gap-2 md:mt-0 md:contents">
+											<div className="mt-2 flex items-center gap-2 md:mt-0 md:contents">
 												<CostField
 													label={`Making cost for ${row.product_name || row.sku}`}
 													placeholder="Making"
@@ -469,7 +469,7 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 												  * figure that just looks slightly off. */}
 												<p
 													className={cn(
-														'w-14 shrink-0 text-right text-[13px] tabular-nums md:w-full',
+														'w-16 shrink-0 text-right text-sm tabular-nums md:w-full',
 														filled ? 'font-semibold' : 'text-muted-foreground',
 													)}
 												>
@@ -519,8 +519,8 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 					<div className="flex items-center gap-2.5 rounded-xl border border-border bg-muted/40 px-3 py-2.5">
 						<FileSpreadsheetIcon className="size-4 shrink-0 text-success" aria-hidden="true" />
 						<div className="min-w-0 flex-1">
-							<p className="truncate font-mono text-xs font-medium">sku-costs.xlsx</p>
-							<p className="text-[11px] text-muted-foreground">
+							<p className="truncate font-mono text-sm font-medium">sku-costs.xlsx</p>
+							<p className="text-sm text-muted-foreground">
 								{formatNumber(rows.length)} products · opens in Excel
 							</p>
 						</div>
@@ -578,7 +578,7 @@ function EmptyTable({
 }) {
 	if (query.trim() || !filtered) {
 		return (
-			<p className="px-4 pb-6 text-center text-sm text-muted-foreground">
+			<p className="px-4 pb-6 text-center text-base text-muted-foreground">
 				No product matches “{query}”.
 			</p>
 		);
@@ -600,14 +600,14 @@ function EmptyTable({
 			>
 				<CheckIcon className="size-5" strokeWidth={2.5} />
 			</motion.span>
-			<p className="mt-2 text-sm font-semibold">Every product has a cost</p>
-			<p className="mt-0.5 text-xs text-muted-foreground">
+			<p className="mt-3 text-base font-semibold">Every product has a cost</p>
+			<p className="mt-1 text-sm text-muted-foreground">
 				All {formatNumber(total)} of them — your profit is working from real numbers.
 			</p>
 			<button
 				type="button"
 				onClick={onShowAll}
-				className="mt-2.5 inline-flex h-9 items-center rounded-lg border border-border px-3 text-xs font-medium transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+				className="mt-4 inline-flex h-10 items-center rounded-lg border border-border px-4 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 			>
 				Show all {formatNumber(total)} products
 			</button>
@@ -619,8 +619,8 @@ function HeadRow({ className }: { className?: string }) {
 	return (
 		<div
 			className={cn(
-				'grid items-center gap-2.5 px-4 py-1.5',
-				'text-[10px] font-medium uppercase tracking-wide text-muted-foreground',
+				'grid items-center gap-3 px-4 py-2.5',
+				'text-xs font-medium uppercase tracking-wide text-muted-foreground',
 				COST_COLS,
 				className,
 			)}
@@ -647,9 +647,9 @@ function SecondaryButton({
 		<button
 			type="button"
 			onClick={onClick}
-			className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-medium sm:h-8 sm:px-2.5 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+			className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-background px-3.5 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 		>
-			<Icon className="size-3.5" aria-hidden="true" />
+			<Icon className="size-4" aria-hidden="true" />
 			{children}
 		</button>
 	);
@@ -671,7 +671,7 @@ function CostField({
 	return (
 		<div className={cn('relative', className ?? 'w-28')}>
 			<span
-				className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground"
+				className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-base text-muted-foreground"
 				aria-hidden="true"
 			>
 				₹
@@ -685,7 +685,7 @@ function CostField({
 				onChange={(e) => onChange(e.target.value)}
 				placeholder={placeholder ?? '—'}
 				aria-label={label}
-				className="h-10 w-full rounded-md border border-border bg-background pl-5 pr-2 text-right text-[13px] md:h-8 tabular-nums outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring md:placeholder:text-transparent [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+				className="h-11 w-full rounded-md border border-border bg-background pl-6 pr-2.5 text-right text-base md:h-10 tabular-nums outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring md:placeholder:text-transparent [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
 				style={{ MozAppearance: 'textfield' }}
 			/>
 		</div>

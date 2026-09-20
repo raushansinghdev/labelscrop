@@ -134,8 +134,7 @@ const schema = flows.map((flow) => ({
 						{flow.steps.map((step, i) => (
 							<li
 								data-reveal
-								style={`transition-delay: ${i * 90}ms`}
-								class="relative flex gap-4 rounded-3xl border border-border bg-card p-5 md:flex-col md:items-center md:p-6 md:text-center"
+								class="relative flex gap-4 rounded-3xl border border-border bg-card p-5 transition-[transform,box-shadow] duration-300 ease-[var(--ease-fluid)] hover:-translate-y-0.5 hover:shadow-md md:flex-col md:items-center md:p-6 md:text-center"
 							>
 								<span class="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25">
 									<Fragment set:html={step.icon} />
@@ -155,10 +154,10 @@ const schema = flows.map((flow) => ({
 						<a
 							data-reveal
 							href={flow.href}
-							class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-background px-5 text-sm font-semibold transition-colors hover:border-primary/40 hover:text-primary"
+							class="press nudge inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-background px-5 text-sm font-semibold hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
 						>
 							{flow.cta}
-							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true">
+							<svg data-arrow viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true">
 								<path d="M5 12h14M13 6l6 6-6 6" />
 							</svg>
 						</a>

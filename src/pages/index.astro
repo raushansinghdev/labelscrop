@@ -10,6 +10,10 @@ const description =
 const iconAttrs =
 	'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"';
 
+// `data-arrow` is the hook the `nudge` utility moves on hover and on tap.
+const arrowAttrs =
+	'data-arrow viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true"';
+
 /*
  * The two tools, as equals.
  *
@@ -149,19 +153,19 @@ const schema = [
 			<div data-reveal class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
 				<a
 					href={url('/tools/meesho-label-cropper')}
-					class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98] sm:w-auto"
+					class="press nudge inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 sm:w-auto"
 				>
 					Crop my labels
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+					<svg data-arrow viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true">
 						<path d="M5 12h14M13 6l6 6-6 6" />
 					</svg>
 				</a>
 				<a
 					href={url('/tools/meesho-profit-calculator')}
-					class="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border px-6 py-3 text-base font-medium text-foreground transition-colors hover:bg-muted sm:w-auto"
+					class="press nudge inline-flex w-full items-center justify-center gap-2 rounded-md border border-border px-6 py-3 text-base font-medium text-foreground hover:border-primary/40 hover:bg-muted sm:w-auto"
 				>
 					Check my profit
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+					<svg data-arrow viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true">
 						<path d="M5 12h14M13 6l6 6-6 6" />
 					</svg>
 				</a>
@@ -199,7 +203,7 @@ const schema = [
 
 		<div class="mt-12 grid gap-5 lg:grid-cols-2">
 			{tools.map((tool) => (
-				<div data-reveal class="flex flex-col rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-7">
+				<div data-reveal class="card-interactive nudge group flex flex-col rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-7">
 					<div class="flex items-center gap-3">
 						<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
 							<Fragment set:html={tool.icon} />
@@ -225,10 +229,10 @@ const schema = [
 
 					<a
 						href={tool.href}
-						class="mt-6 inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+						class="press mt-6 inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm"
 					>
 						{tool.cta}
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true">
+						<svg data-arrow viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true">
 							<path d="M5 12h14M13 6l6 6-6 6" />
 						</svg>
 					</a>
@@ -248,7 +252,7 @@ const schema = [
 
 			<div class="mt-12 grid gap-5 sm:grid-cols-2">
 				{reasons.map((reason) => (
-					<div data-reveal class="rounded-xl border border-border bg-card p-6">
+					<div data-reveal class="rounded-xl border border-border bg-card p-6 transition-[transform,box-shadow] duration-300 ease-[var(--ease-fluid)] hover:-translate-y-0.5 hover:shadow-md">
 						<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
 							<Fragment set:html={reason.icon} />
 						</div>
@@ -271,13 +275,13 @@ const schema = [
 			<div class="mt-6 flex flex-col items-stretch justify-center gap-2.5 sm:flex-row sm:items-center">
 				<a
 					href={url('/tools/meesho-label-cropper')}
-					class="inline-flex min-h-12 items-center justify-center rounded-md bg-primary px-6 text-base font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+					class="press inline-flex min-h-12 items-center justify-center rounded-md bg-primary px-6 text-base font-semibold text-primary-foreground shadow-sm shadow-primary/20 hover:shadow-lg hover:shadow-primary/30"
 				>
 					Open the Label Cropper
 				</a>
 				<a
 					href={url('/tools/meesho-profit-calculator')}
-					class="inline-flex min-h-12 items-center justify-center rounded-md border border-border bg-background px-6 text-base font-semibold transition-colors hover:border-primary/40 hover:text-primary"
+					class="press inline-flex min-h-12 items-center justify-center rounded-md border border-border bg-background px-6 text-base font-semibold hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
 				>
 					Open the Profit Calculator
 				</a>

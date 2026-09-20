@@ -28,8 +28,8 @@ const GROUPS: { title: string; caption: string; icon: typeof RotateCcwIcon; fiel
 		fields: [
 			{
 				key: 'rto',
-				label: 'RTO',
-				hint: "Came back unopened. If it's resellable, your real loss is 0%.",
+				label: 'Courier return',
+				hint: "Meesho calls this RTO. It came back unopened, so if it's resellable your real loss is 0%.",
 			},
 			{
 				key: 'return_rate',
@@ -55,7 +55,7 @@ const GROUPS: { title: string; caption: string; icon: typeof RotateCcwIcon; fiel
 		fields: [
 			{
 				key: 'rto_packaging_loss',
-				label: 'Packaging on RTO',
+				label: 'Packaging on courier returns',
 				hint: 'You cannot reuse a torn courier bag.',
 			},
 			{
@@ -67,36 +67,43 @@ const GROUPS: { title: string; caption: string; icon: typeof RotateCcwIcon; fiel
 	},
 ];
 
-/** 0% is money kept, 100% is money gone — the readout is coloured so the row reads before it's read. */
+/**
+ * 0% is money kept, 100% is money gone — the readout is coloured so the row reads before it's read.
+ *
+ * The middle band wears `--warning` rather than `--chart-4`. They are both amber and they are not
+ * interchangeable: a chart colour is tuned to stand off the card as a *mark* at 3:1, which as
+ * 14px text on its own tint measured 2.86:1. The colour never carries the meaning alone anyway —
+ * the chip spells out "70% lost" beside it.
+ */
 function severityClass(pct: number): string {
 	if (pct === 0) return 'bg-success/15 text-success';
 	if (pct >= 75) return 'bg-destructive/15 text-destructive';
-	return 'bg-chart-4/15 text-chart-4';
+	return 'bg-warning/15 text-warning';
 }
 
 export function LossRatesPanel({ value, onChange }: LossRatesPanelProps) {
 	return (
 		<motion.div variants={STAGGER_LIST} initial="hidden" animate="show" className="space-y-3">
 			{GROUPS.map((group) => (
-				<motion.section key={group.title} variants={STAGGER_ITEM} className="space-y-2">
+				<motion.section key={group.title} variants={STAGGER_ITEM} className="space-y-3">
 					<div className="flex items-start gap-2 px-1">
-						<group.icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+						<group.icon className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
 						<div>
-							<h3 className="text-sm font-semibold tracking-tight">{group.title}</h3>
-							<p className="text-xs leading-snug text-muted-foreground">{group.caption}</p>
+							<h3 className="text-base font-semibold tracking-tight">{group.title}</h3>
+							<p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{group.caption}</p>
 						</div>
 					</div>
 
-					<div className="grid gap-2 sm:grid-cols-2">
+					<div className="grid gap-3 sm:grid-cols-2">
 						{group.fields.map((field) => {
 							const pct = Math.round(value[field.key] * 100);
 							return (
 								<div
 									key={field.key}
-									className="rounded-xl border border-border bg-card p-3.5 transition-colors hover:border-foreground/20"
+									className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-foreground/20"
 								>
 									<div className="flex items-center justify-between gap-3">
-										<label htmlFor={`loss-${field.key}`} className="text-sm font-medium">
+										<label htmlFor={`loss-${field.key}`} className="text-base font-medium">
 											{field.label}
 										</label>
 										{/* Keyed on the value so the chip re-springs on every step —
@@ -107,7 +114,7 @@ export function LossRatesPanel({ value, onChange }: LossRatesPanelProps) {
 											animate={{ scale: 1 }}
 											transition={SPRING}
 											className={cn(
-												'shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums',
+												'shrink-0 rounded-full px-2.5 py-1 text-sm font-semibold tabular-nums',
 												severityClass(pct),
 											)}
 										>
@@ -127,9 +134,9 @@ export function LossRatesPanel({ value, onChange }: LossRatesPanelProps) {
 										onChange={(e) =>
 											onChange({ ...value, [field.key]: Number(e.target.value) / 100 })
 										}
-										className="mt-2.5 h-6 w-full cursor-pointer accent-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+										className="mt-3 h-7 w-full cursor-pointer accent-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
 									/>
-									<p className="mt-1.5 text-xs leading-snug text-muted-foreground">{field.hint}</p>
+									<p className="mt-2 text-sm leading-relaxed text-muted-foreground">{field.hint}</p>
 								</div>
 							);
 						})}
@@ -143,14 +150,14 @@ export function LossRatesPanel({ value, onChange }: LossRatesPanelProps) {
 				variants={STAGGER_ITEM}
 				className="group rounded-xl border border-border bg-muted/30 [&_summary::-webkit-details-marker]:hidden"
 			>
-				<summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+				<summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-base font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
 					How much of this is actually measured?
 					<ChevronDownIcon
-						className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180"
+						className="size-5 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180"
 						aria-hidden="true"
 					/>
 				</summary>
-				<div className="space-y-2 px-3 pb-3 text-xs leading-relaxed text-muted-foreground">
+				<div className="space-y-2.5 px-4 pb-4 text-sm leading-relaxed text-muted-foreground">
 					<p>
 						Your settlement and ads figures come straight from Meesho's payment file — those are exact, and
 						reconcile against your bank statement to the paisa.

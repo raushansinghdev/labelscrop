@@ -1,102 +1,170 @@
-import { ArrowRightIcon, RotateCcwIcon, TrendingDownIcon, TrophyIcon } from 'lucide-react';
+import { RotateCcwIcon, TrendingDownIcon, TrophyIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from 'cn';
-import { formatCurrency, formatNumber } from './format';
+import { deriveInsights } from './derive';
+import { formatCurrency, formatNumber, formatPercent } from './format';
+import { MetricTooltip, MetricTooltipProvider, type MetricRow } from './MetricTooltip';
 import { STAGGER_ITEM, STAGGER_LIST } from './motion';
-import type { PnlResult } from './types';
+import type { PnlResult, SkuRow } from './types';
 
 interface ProfitInsightsProps {
 	result: PnlResult;
-	/** Where "which SKU?" is answered. */
-	onOpenProducts: () => void;
-	/** Where the return write-off rates live. */
-	onOpenExpenses: () => void;
 }
 
 /**
  * The three questions a seller opens this tool with, answered before any chart.
  *
- * The KPI tiles above say what happened; these say what to *do* about it. A total settlement figure
- * is not actionable — "this SKU lost you ₹2,400" is. Each card is a button that lands on the screen
- * where the thing it names can be changed, so noticing a problem and fixing it are one gesture.
+ * The KPI tiles above say what happened; these name the SKU it happened to. Each one used to be a
+ * button that jumped to another tab, which meant a curious hover cost you your place on the page —
+ * and the figure itself was never explained, only labelled. So they explain themselves on hover
+ * instead, and the trip to the full SKU table is offered once, from the chart that lists SKUs.
  */
-export function ProfitInsights({ result, onOpenProducts, onOpenExpenses }: ProfitInsightsProps) {
-	const { overall, sku_rows } = result;
-	if (sku_rows.length === 0) return null;
-
-	const sorted = [...sku_rows].sort((a, b) => b.profit - a.profit);
-	const best = sorted[0];
-	const worst = sorted[sorted.length - 1];
+export function ProfitInsights({ result }: ProfitInsightsProps) {
+	const { overall } = result;
 	// Only a genuine loss-maker is worth naming. A "worst" SKU that still earns money is just the
 	// bottom of a healthy list, and calling it out would send sellers hunting for a problem that
-	// isn't there.
-	const drain = worst && worst.profit < 0 ? worst : null;
-	const losers = sku_rows.filter((r) => r.profit < 0).length;
-
-	const returnedOrders = sku_rows.reduce((sum, r) => sum + r.rto_orders + r.return_orders, 0);
-	const returnRate = overall.total_orders > 0 ? (returnedOrders / overall.total_orders) * 100 : 0;
-	// What came back actually cost: the item written off plus the packaging consumed. Reverse
-	// shipping isn't added here — Meesho already deducted it before settling, so it is inside the
-	// settlement figure and counting it again would double it.
-	const returnCost = overall.cogs_making_lost + overall.cogs_packaging_lost;
+	// isn't there — so `drain` is null unless it really loses money. The arithmetic lives in
+	// `derive.ts` so the downloaded report names the same SKUs.
+	const insights = deriveInsights(result);
+	if (!insights) return null;
+	const { best, worst, drain, losers, redTotal, rtoOrders, customerReturns, returnedOrders, returnRate, returnCost, returnFee } =
+		insights;
 
 	return (
-		<motion.div
-			variants={STAGGER_LIST}
-			initial="hidden"
-			animate="show"
-			className="grid gap-2 sm:grid-cols-3"
-		>
-			<InsightCard
-				icon={TrophyIcon}
-				tone="good"
-				label="Best earner"
-				value={formatCurrency(best.profit)}
-				detail={best.sku}
-				hint={`${formatNumber(best.orders)} orders · this SKU is carrying you`}
-				onClick={onOpenProducts}
-			/>
-
-			{drain ? (
+		<MetricTooltipProvider>
+			<motion.div
+				variants={STAGGER_LIST}
+				initial="hidden"
+				animate="show"
+				className="grid gap-3 sm:grid-cols-3"
+			>
 				<InsightCard
-					icon={TrendingDownIcon}
-					tone="bad"
-					label="Losing you money"
-					value={formatCurrency(drain.profit)}
-					detail={drain.sku}
-					hint={
-						losers > 1
-							? `${formatNumber(losers)} SKUs are in the red`
-							: `${formatNumber(drain.orders)} orders, all at a loss`
-					}
-					onClick={onOpenProducts}
-				/>
-			) : (
-				<InsightCard
-					icon={TrendingDownIcon}
+					icon={TrophyIcon}
 					tone="good"
-					label="Losing you money"
-					value="None"
-					detail="Every SKU earns"
-					plainDetail
-					hint={`Thinnest is ${worst.sku} at ${formatCurrency(worst.profit)}`}
-					onClick={onOpenProducts}
+					label="Best earner"
+					value={formatCurrency(best.profit)}
+					detail={best.sku}
+					hint={`${formatNumber(best.orders)} orders · this SKU is carrying you`}
+					tooltipTitle={`Best earner · ${best.sku}`}
+					meaning="The SKU that put the most money in your pocket this period, counting only what it earned and what it cost to make and pack."
+					rows={skuRows(best)}
+					footnote={
+						best.cost_mapped
+							? 'Ads spend and business expenses are account-wide, so they sit outside this figure.'
+							: 'No making or packing cost is recorded for this SKU, so this profit is overstated.'
+					}
 				/>
-			)}
 
-			<InsightCard
-				icon={RotateCcwIcon}
-				tone={returnRate >= 20 ? 'bad' : 'warn'}
-				label="Returns cost you"
-				value={formatCurrency(returnCost)}
-				detail={`${returnRate.toFixed(0)}% came back`}
-				plainDetail
-				hint={`${formatNumber(returnedOrders)} of ${formatNumber(overall.total_orders)} orders · stock and packaging written off`}
-				onClick={onOpenExpenses}
-			/>
-		</motion.div>
+				{drain ? (
+					<InsightCard
+						icon={TrendingDownIcon}
+						tone="bad"
+						label="Losing you money"
+						value={formatCurrency(drain.profit)}
+						detail={drain.sku}
+						hint={
+							losers > 1
+								? `${formatNumber(losers)} SKUs are in the red`
+								: `${formatNumber(drain.orders)} orders, all at a loss`
+						}
+						tooltipTitle={`Losing you money · ${drain.sku}`}
+						meaning="The SKU that cost you more than it brought in. Every order of it this period made your month slightly worse."
+						rows={[
+							...skuRows(drain),
+							{
+								term: `All ${formatNumber(losers)} loss-making SKUs`,
+								value: formatCurrency(redTotal),
+								tone: 'bad' as const,
+								when: losers > 1,
+							},
+						]}
+						footnote={
+							drain.cost_mapped
+								? 'Returns are the usual cause: the item comes back unsellable while the packing and reverse shipping stay spent.'
+								: 'No making or packing cost is recorded for this SKU, so the real loss may be larger.'
+						}
+					/>
+				) : (
+					<InsightCard
+						icon={TrendingDownIcon}
+						tone="good"
+						label="Losing you money"
+						value="None"
+						detail="Every SKU earns"
+						plainDetail
+						hint={`Thinnest is ${worst.sku} at ${formatCurrency(worst.profit)}`}
+						tooltipTitle="Losing you money · none"
+						meaning="No SKU you sold this period cost more than it brought in. The thinnest one still earns, it just earns least."
+						rows={[
+							{ term: 'Thinnest SKU', value: worst.sku },
+							{ term: 'Its profit', value: formatCurrency(worst.profit), tone: 'good' },
+							{ term: 'Its margin', value: formatPercent(worst.margin_pct) },
+							{ term: 'Its orders', value: formatNumber(worst.orders) },
+						]}
+						footnote="Worth watching all the same: a SKU this thin turns loss-making the moment its return rate rises."
+					/>
+				)}
+
+				<InsightCard
+					icon={RotateCcwIcon}
+					tone={returnRate >= 20 ? 'bad' : 'warn'}
+					label="Returns cost you"
+					value={formatCurrency(returnCost)}
+					detail={`${returnRate.toFixed(0)}% came back`}
+					plainDetail
+					hint={`${formatNumber(returnedOrders)} of ${formatNumber(overall.total_orders)} orders · stock and packaging written off`}
+					tooltipTitle="Returns cost you"
+					meaning="What the orders that came back took off your shelf: the item you can no longer sell, plus the packaging it went out in."
+					rows={[
+						{
+							term: 'Courier return (RTO)',
+							value: `${formatNumber(rtoOrders)} orders`,
+						},
+						{
+							term: 'Customer returned',
+							value: `${formatNumber(customerReturns)} orders`,
+						},
+						{ term: 'Return rate', value: `${returnRate.toFixed(1)}%`, tone: returnRate >= 20 ? 'bad' : undefined },
+						{ term: 'Item cost written off', value: formatCurrency(overall.cogs_making_lost), tone: 'bad' },
+						{
+							term: 'Packaging written off',
+							value: formatCurrency(overall.cogs_packaging_lost),
+							tone: 'bad',
+						},
+						{
+							term: 'Meesho return fee',
+							value: formatCurrency(returnFee),
+							tone: 'bad',
+							when: returnFee > 0,
+						},
+					]}
+					footnote={
+						returnFee > 0
+							? `The ${formatCurrency(returnFee)} return fee is not inside the headline figure: Meesho took it out before settling you, so it is already reflected in your settlement.`
+							: 'How much of a returned item you actually lose is your call — set the write-off rates in Expenses.'
+					}
+				/>
+			</motion.div>
+		</MetricTooltipProvider>
 	);
+}
+
+/** The same six lines for whichever SKU is being explained — best or worst, the working is identical. */
+function skuRows(row: SkuRow): MetricRow[] {
+	return [
+		{ term: 'Orders', value: `${formatNumber(row.orders)} · ${formatNumber(row.units)} units` },
+		{ term: 'Delivered', value: formatNumber(row.delivered_orders) },
+		{
+			term: 'Came back',
+			value: formatNumber(row.rto_orders + row.return_orders),
+			tone: row.rto_orders + row.return_orders > 0 ? 'bad' : undefined,
+		},
+		{ term: 'Settlement received', value: formatCurrency(row.net_settlement) },
+		{ term: 'Making and packing', value: formatCurrency(row.cogs), tone: 'bad' },
+		{ term: 'Profit', value: formatCurrency(row.profit), tone: row.profit >= 0 ? 'good' : 'bad' },
+		{ term: 'Margin', value: formatPercent(row.margin_pct) },
+	];
 }
 
 const TONES = {
@@ -113,7 +181,10 @@ function InsightCard({
 	detail,
 	plainDetail,
 	hint,
-	onClick,
+	tooltipTitle,
+	meaning,
+	rows,
+	footnote,
 }: {
 	icon: LucideIcon;
 	tone: keyof typeof TONES;
@@ -125,54 +196,53 @@ function InsightCard({
 	plainDetail?: boolean;
 	/** One line of context, the part that makes the figure mean something. */
 	hint: string;
-	onClick: () => void;
+	tooltipTitle: string;
+	meaning: string;
+	rows: MetricRow[];
+	footnote?: string;
 }) {
 	const toneClasses = TONES[tone];
 
 	return (
-		<motion.button
-			variants={STAGGER_ITEM}
-			type="button"
-			onClick={onClick}
-			whileTap={{ scale: 0.99 }}
-			className={cn(
-				'group flex w-full min-w-0 items-start gap-2.5 rounded-xl border border-border bg-card p-3 text-left',
-				'transition-colors hover:border-foreground/20 hover:bg-muted/40',
-				'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-			)}
-		>
-			<span
-				className={cn('mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg', toneClasses.icon)}
-				aria-hidden="true"
+		<motion.div variants={STAGGER_ITEM} className="min-w-0">
+			<MetricTooltip
+				title={tooltipTitle}
+				meaning={meaning}
+				rows={rows}
+				footnote={footnote}
+				className={cn(
+					'flex w-full min-w-0 items-start gap-3 rounded-xl border border-border bg-card p-4',
+					'transition-colors hover:border-foreground/20 hover:bg-muted/40',
+				)}
 			>
-				<Icon className="size-4" />
-			</span>
+				<span
+					className={cn(
+						'mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg',
+						toneClasses.icon,
+					)}
+					aria-hidden="true"
+				>
+					<Icon className="size-5" />
+				</span>
 
-			<span className="min-w-0 flex-1">
-				<span className="flex items-center justify-between gap-2">
-					<span className="text-[11px] font-medium text-muted-foreground">{label}</span>
-					<ArrowRightIcon
-						className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
-						aria-hidden="true"
-					/>
-				</span>
-				<span className="mt-0.5 flex items-baseline gap-1.5">
-					<span className={cn('text-base font-bold tabular-nums tracking-tight', toneClasses.value)}>
-						{value}
+				<span className="min-w-0 flex-1">
+					<span className="block text-sm font-medium text-muted-foreground">{label}</span>
+					<span className="mt-1 flex items-baseline gap-2">
+						<span className={cn('text-xl font-bold tracking-tight', toneClasses.value)}>{value}</span>
+						{/* The SKU code sits beside the figure rather than under it: on a phone these cards
+						  * stack, and a third line each turns three cards into most of a screen. */}
+						<span
+							className={cn(
+								'min-w-0 truncate text-sm text-muted-foreground',
+								!plainDetail && 'font-mono',
+							)}
+						>
+							{detail}
+						</span>
 					</span>
-					{/* The SKU code sits beside the figure rather than under it: on a phone these cards
-					  * stack, and a third line each turns three cards into most of a screen. */}
-					<span
-						className={cn(
-							'min-w-0 truncate text-[11px] text-muted-foreground',
-							!plainDetail && 'font-mono',
-						)}
-					>
-						{detail}
-					</span>
+					<span className="mt-1 block text-sm leading-snug text-muted-foreground">{hint}</span>
 				</span>
-				<span className="mt-0.5 block truncate text-[11px] leading-snug text-muted-foreground">{hint}</span>
-			</span>
-		</motion.button>
+			</MetricTooltip>
+		</motion.div>
 	);
 }

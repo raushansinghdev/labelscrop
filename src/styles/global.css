@@ -27,6 +27,7 @@
     --color-destructive: var(--destructive);
     --color-success: var(--success);
     --color-success-foreground: var(--success-foreground);
+    --color-warning: var(--warning);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
     --color-muted-foreground: var(--muted-foreground);
@@ -41,6 +42,12 @@
     --color-card: var(--card);
     --color-foreground: var(--foreground);
     --color-background: var(--background);
+    /* Motion vocabulary. Mirrors src/components/pnl/motion.tsx so an Astro page and a React
+       island ease identically — the whole point of having one is that nothing gets to pick
+       its own curve. `--ease-fluid` is EASE_OUT; `--ease-exit` matches EASE_IN. */
+    --ease-fluid: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+    --ease-spring: cubic-bezier(0.22, 1.2, 0.36, 1);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -65,22 +72,39 @@
     --muted-foreground: oklch(0.556 0 0);
     --accent: oklch(0.96 0.03 264);
     --accent-foreground: oklch(0.35 0.15 264);
-    --destructive: oklch(0.577 0.245 27.325);
+    --destructive: oklch(0.50 0.20 27);     /* #bb0916 — 6.66:1; the same red the charts use */
     --border: oklch(0.922 0 0);
     --input: oklch(0.922 0 0);
     --ring: oklch(0.55 0.22 264 / 0.5);
-    --success: oklch(0.62 0.17 148);
+    /* Status text, not fills. These are read as words at 14-16px, so they are stepped to
+       WCAG AA for body text on the card: the old green was 3.39:1, which is below the 4.5:1
+       floor for anything under 24px — the per-order figures and SKU names wore it. */
+    --success: oklch(0.52 0.16 152);        /* #008135 — 5.00:1 on white */
     --success-foreground: oklch(0.985 0 0);
+    /* Amber for words, not for marks. --chart-4 is tuned to 3:1 against the card, which is the
+       bar-and-slice threshold; set as 14px text on its own 15% tint it came to 2.86:1. Text has
+       to clear 4.5:1, and that is a darker amber than any chart fill wants to be. */
+    --warning: oklch(0.52 0.13 70);         /* #975800 — 5.07:1 on a chart-4/15 chip */
     /* Categorical palette for the profit charts. Deliberately semantic rather than arbitrary:
        1 is the brand blue (neutral flow), 2 green (money in), 3 red (money out), 4 amber
        (ads/returns), 5 teal (everything else). The shadcn defaults these replaced were five
-       greys that were identical in both themes, so half of them vanished into the background. */
-    --chart-1: oklch(0.55 0.22 264);
-    --chart-2: oklch(0.62 0.17 148);
-    --chart-3: oklch(0.577 0.245 27.325);
-    --chart-4: oklch(0.72 0.16 75);
-    --chart-5: oklch(0.62 0.12 208);
+       greys that were identical in both themes, so half of them vanished into the background.
+
+       The steps are not eyeballed. The previous green and red sat at almost the same lightness
+       (0.62 vs 0.577), which is fine for full colour vision and useless without it: under
+       deuteranopia they separated by ΔE 4.8, so "kept" and "lost" — the one distinction this
+       whole tool exists to draw — were the same bar. Dropping the red to L 0.50 takes that to
+       ΔE 11.3, above the ΔE 8 target, with every slot still clearing 3:1 against the card.
+       Re-check with the dataviz validator before changing any of these. */
+    --chart-1: oklch(0.55 0.22 264);        /* #2b62ef */
+    --chart-2: oklch(0.62 0.18 152);        /* #00a34a */
+    --chart-3: oklch(0.50 0.20 27);         /* #bb0916 */
+    --chart-4: oklch(0.66 0.15 70);         /* #cb7f00 */
+    --chart-5: oklch(0.62 0.12 208);        /* #0099ac */
     --radius: 0.625rem;
+    --dur-fast: 150ms;
+    --dur-base: 240ms;
+    --dur-slow: 560ms;
     --sidebar: oklch(0.985 0 0);
     --sidebar-foreground: oklch(0.145 0 0);
     --sidebar-primary: oklch(0.205 0 0);
@@ -110,13 +134,16 @@
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.65 0.2 264 / 0.5);
-    --success: oklch(0.7 0.16 148);
+    --success: oklch(0.72 0.16 152);
     --success-foreground: oklch(0.145 0 0);
-    --chart-1: oklch(0.65 0.2 264);
-    --chart-2: oklch(0.7 0.16 148);
-    --chart-3: oklch(0.704 0.191 22.216);
-    --chart-4: oklch(0.82 0.15 75);
-    --chart-5: oklch(0.72 0.11 208);
+    --warning: oklch(0.80 0.13 70);
+    /* Selected against the dark card, not flipped from the light set: the validator's dark
+       lightness band is 0.48-0.67, which the old steps (up to 0.82) sat outside. ΔE 9.6 deutan. */
+    --chart-1: oklch(0.66 0.19 264);
+    --chart-2: oklch(0.64 0.15 152);
+    --chart-3: oklch(0.54 0.21 27);
+    --chart-4: oklch(0.66 0.13 70);
+    --chart-5: oklch(0.66 0.11 208);
     --sidebar: oklch(0.205 0 0);
     --sidebar-foreground: oklch(0.985 0 0);
     --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -138,9 +165,33 @@
     @apply font-sans;
     -webkit-tap-highlight-color: transparent;
     -webkit-text-size-adjust: 100%;
+    /* In-page anchors and the tool's own scrollIntoView calls glide rather than jump. The
+     * reduced-motion block at the foot of this file turns it back off. */
+    scroll-behavior: smooth;
+    /* Reserve the scrollbar's width on every page, short or long. Without it, navigating from
+     * a page that scrolls to one that doesn't shifts the whole layout sideways by 15px — the
+     * single most obvious way a multi-page site gives away that it is reloading. */
+    scrollbar-gutter: stable;
+    }
+  /* Anything the browser scrolls to — an anchor, a focused field, the tool's stage resets —
+   * clears the 64px sticky header instead of landing underneath it. */
+  :target,
+  [id] {
+    scroll-margin-top: 5rem;
     }
   button, a, label, [role="button"] {
     touch-action: manipulation;
+    }
+  /* Keyboard focus, stated once for the whole site.
+   *
+   * Tailwind's preflight sets `*{outline-color:var(--ring)}`, and `--ring` is already a 50%
+   * alpha, so the inherited `outline-ring/50` landed at 25% — a focus ring that is in the
+   * accessibility tree and not on the screen. This sits in `base` rather than outside the
+   * layers on purpose: it has the specificity to beat the `*` reset, while a component that
+   * wants its own ring can still override it with a utility class. */
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
     }
   /* Tailwind v4 resets buttons to the default arrow cursor; restore the hand on everything clickable.
    * Lives in the base layer, so a component can still opt out with a utility like `cursor-default`. */
@@ -183,24 +234,163 @@
   background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--background) 70%, transparent), transparent);
   animation: shimmer 1.4s ease-in-out infinite;
 }
-@media (prefers-reduced-motion: reduce) {
-  .shimmer::after { animation: none; }
+/* ---------------------------------------------------------------------------
+ * Scroll reveal for the static pages (no animation library on the marketing side).
+ *
+ * The hiding rule is gated on `html[data-motion]`, which the inline script in Layout.astro
+ * sets before the body parses. That gate is the whole design: an earlier version hid every
+ * `[data-reveal]` in plain CSS and un-hid it from a deferred module, so until that module ran
+ * — and forever, if it failed — the page was blank where its content should be. Measured on
+ * the home page it left eight above-the-fold elements at opacity 0 at the load event, and the
+ * two tool cards never appeared at all. Content is visible by default now; only a browser
+ * that has already proven it will run the script gets to hide anything.
+ * ------------------------------------------------------------------------ */
+html[data-motion] [data-reveal] {
+  opacity: 0;
+  /* translate3d rather than translateY: this promotes the element to its own layer for the
+   * duration of the transition, which keeps a grid of a dozen cards off the main thread. */
+  transform: translate3d(0, var(--reveal-y, 1rem), 0);
+  transition:
+    opacity var(--dur-slow) var(--ease-fluid) var(--reveal-delay, 0ms),
+    transform var(--dur-slow) var(--ease-fluid) var(--reveal-delay, 0ms);
+}
+html[data-motion] [data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
 }
 
-/* Lightweight scroll-reveal for static pages (no animation library). */
-[data-reveal] {
+/* ---------------------------------------------------------------------------
+ * Top progress bar: scroll position normally, navigation activity during a view transition.
+ *
+ * One element with two modes rather than two bars — two progress indicators stacked at the
+ * top of the window is a puzzle, not a status. `--scroll-progress` is driven by a scroll-
+ * timeline where one exists (off the main thread) and by a rAF-throttled fallback elsewhere.
+ * ------------------------------------------------------------------------ */
+#page-progress {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 50;
+  height: 2px;
+  pointer-events: none;
+  transform-origin: left center;
+  transform: scaleX(var(--scroll-progress, 0));
+  background: linear-gradient(90deg, var(--primary), color-mix(in oklch, var(--primary) 55%, var(--chart-5)));
   opacity: 0;
-  transform: translateY(14px);
-  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity var(--dur-base) ease;
 }
-[data-reveal].is-visible {
+/* Hidden at the very top of the page: a progress bar reading zero is noise. */
+html[data-scrolled] #page-progress {
   opacity: 1;
-  transform: translateY(0);
 }
+/*
+ * `--scroll-progress` is set from a rAF-throttled scroll listener in Layout.astro rather than a
+ * `scroll()` animation timeline. The timeline version was written first and silently did nothing
+ * in Chrome: Lightning CSS folds `animation` + `animation-timeline` into one shorthand, and
+ * `animation: linear both page-progress scroll(root)` is invalid — the timeline cannot be set
+ * through the shorthand — so the whole declaration was dropped and the bar never moved. One code
+ * path that behaves the same in every browser is worth more here than an off-main-thread one
+ * that only some browsers take; the handler writes a single custom property per frame.
+ */
+
+/* During a navigation the bar stops describing scroll and describes the wait instead. */
+html[data-navigating] #page-progress {
+  opacity: 1;
+  animation: route-progress 1.4s var(--ease-fluid) forwards;
+}
+@keyframes route-progress {
+  from { transform: scaleX(0.04); }
+  60%  { transform: scaleX(0.7); }
+  to   { transform: scaleX(0.92); }
+}
+
+/* ---------------------------------------------------------------------------
+ * Page-swap keyframes, referenced by `pageSwap` in Layout.astro. They animate the
+ * ::view-transition pseudo-elements for <main>, so the header and footer — which are
+ * `transition:persist`ed — stay put while only the content moves.
+ * ------------------------------------------------------------------------ */
+@keyframes page-out {
+  to { opacity: 0; transform: translateY(-6px); }
+}
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(12px); }
+}
+/* Going back moves the other way, so the Back button reads as retracing a step. */
+@keyframes page-in-back {
+  from { opacity: 0; transform: translateY(-12px); }
+}
+
+/* ---------------------------------------------------------------------------
+ * Shared interaction utilities for the static pages.
+ *
+ * Phones have no hover, so every one of these pairs its hover state with an `:active` state —
+ * a card that only responds to a pointer is a card that feels dead on the device most sellers
+ * open this on.
+ * ------------------------------------------------------------------------ */
+
+/* Cards that are themselves links, or contain one. Lifts on hover, presses on tap. */
+@utility card-interactive {
+  transition:
+    transform var(--dur-base) var(--ease-fluid),
+    border-color var(--dur-base) ease,
+    box-shadow var(--dur-base) ease;
+  &:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in oklch, var(--primary) 35%, var(--border));
+    box-shadow: 0 12px 28px -12px color-mix(in oklch, var(--primary) 30%, transparent);
+  }
+  &:active {
+    transform: translateY(0) scale(0.995);
+    transition-duration: var(--dur-fast);
+  }
+}
+
+/* Buttons and CTAs: a press you can feel, at a duration short enough to read as contact. */
+@utility press {
+  transition:
+    transform var(--dur-fast) var(--ease-fluid),
+    background-color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease,
+    box-shadow var(--dur-fast) ease,
+    color var(--dur-fast) ease;
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+/* Nudges a trailing arrow on hover/tap. Applied to the link; the arrow needs `data-arrow`. */
+@utility nudge {
+  & [data-arrow] {
+    transition: transform var(--dur-base) var(--ease-fluid);
+  }
+  &:hover [data-arrow],
+  &:active [data-arrow] {
+    transform: translateX(3px);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Reduced motion. One block for everything above, so there is a single place to check that
+ * the whole site honours the setting — and note that the reveal is *disabled*, not shortened:
+ * content still has to be there.
+ * ------------------------------------------------------------------------ */
 @media (prefers-reduced-motion: reduce) {
-  [data-reveal] {
+  .shimmer::after { animation: none; }
+  html[data-motion] [data-reveal],
+  html[data-motion] [data-reveal].is-visible {
     opacity: 1;
     transform: none;
     transition: none;
+  }
+  #page-progress { animation: none; }
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+  html[data-navigating] #page-progress { animation: none; transform: scaleX(1); }
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
   }
 }

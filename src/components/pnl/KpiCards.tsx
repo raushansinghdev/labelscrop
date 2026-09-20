@@ -10,7 +10,9 @@ import {
 import { motion } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from 'cn';
+import { deriveOverview } from './derive';
 import { formatCurrency, formatNumber, formatPercent } from './format';
+import { MetricTooltip, MetricTooltipProvider, type MetricRow } from './MetricTooltip';
 import { AnimatedNumber, ProgressMeter, SPRING, STAGGER_ITEM, STAGGER_LIST } from './motion';
 import type { PnlOverall } from './types';
 
@@ -26,22 +28,20 @@ interface Tile {
 	format: (value: number) => string;
 	hint: string;
 	icon: LucideIcon;
+	/** What the figure counts, shown on hover. */
+	meaning: string;
+	/** The working behind it. */
+	rows: MetricRow[];
+	footnote?: string;
 }
 
 export function KpiCards({ overall, overheads }: KpiCardsProps) {
 	// The headline is profit *after* rent and salary, because that is the number that reaches the
 	// seller's pocket. Trading profit before overheads is still shown, one line below, so the two
-	// never get confused — and so a seller who has entered no expenses sees them agree.
-	const realProfit = overall.net_profit - overheads;
-	// Margin is against settlement received, not gross sale value — settlement is the only
-	// number Meesho actually pays out, so it's the honest denominator.
-	const marginPct = overall.net_settlement !== 0 ? (realProfit / overall.net_settlement) * 100 : null;
-	const positive = realProfit >= 0;
-	// Divided by orders rather than units, and by units rather than orders, deliberately: an order
-	// is what gets packed and shipped, a unit is what gets made. Both are real questions a seller
-	// asks and they differ whenever anyone buys two of something.
-	const perOrder = overall.total_orders > 0 ? realProfit / overall.total_orders : 0;
-	const perUnit = overall.total_units > 0 ? realProfit / overall.total_units : 0;
+	// never get confused — and so a seller who has entered no expenses sees them agree. The
+	// arithmetic lives in `derive.ts` so the downloaded report quotes the same figures.
+	const { realProfit, marginPct, positive, perOrder, returnFee, settlementPerOrder, cogsWrittenOff, profitShare } =
+		deriveOverview(overall, overheads);
 
 	const tiles: Tile[] = [
 		{
@@ -50,6 +50,30 @@ export function KpiCards({ overall, overheads }: KpiCardsProps) {
 			format: formatCurrency,
 			hint: 'What Meesho actually paid out',
 			icon: BanknoteIcon,
+			meaning: 'The money Meesho transferred to you for this period, after its commission, forward shipping and return charges were taken off.',
+			rows: [
+				{ term: 'Orders settled', value: formatNumber(overall.total_orders) },
+				{ term: 'Average per order', value: formatCurrency(settlementPerOrder) },
+				{
+					term: 'Return fee already deducted',
+					value: formatCurrency(returnFee),
+					tone: 'bad',
+					when: returnFee > 0,
+				},
+				{
+					term: 'Referral income',
+					value: formatCurrency(overall.referral_income),
+					tone: 'good',
+					when: overall.referral_income !== 0,
+				},
+				{
+					term: 'Claims recovered',
+					value: formatCurrency(overall.compensation_recovery),
+					tone: 'good',
+					when: overall.compensation_recovery !== 0,
+				},
+			],
+			footnote: 'This is the honest starting point for everything below. The price on the listing is never what arrives in the bank.',
 		},
 		{
 			label: 'Cost of goods',
@@ -57,6 +81,18 @@ export function KpiCards({ overall, overheads }: KpiCardsProps) {
 			format: formatCurrency,
 			hint: `Making ${formatCurrency(overall.cogs_making)} · Packing ${formatCurrency(overall.cogs_packaging)}`,
 			icon: PackageIcon,
+			meaning: 'What the stock you shipped cost you — yarn, labour and time to make it, plus the packing material it went out in.',
+			rows: [
+				{ term: 'Making cost', value: formatCurrency(overall.cogs_making) },
+				{ term: 'Packing cost', value: formatCurrency(overall.cogs_packaging) },
+				{ term: 'Written off on returns', value: formatCurrency(cogsWrittenOff), tone: 'bad' },
+				{ term: 'Units', value: formatNumber(overall.total_units) },
+				{
+					term: 'Cost per unit',
+					value: formatCurrency(overall.total_units > 0 ? overall.cogs / overall.total_units : 0),
+				},
+			],
+			footnote: 'Returned stock still costs you. How much of it you actually lose is set by the write-off rates in Expenses.',
 		},
 		{
 			label: 'Ads spend',
@@ -64,6 +100,25 @@ export function KpiCards({ overall, overheads }: KpiCardsProps) {
 			format: formatCurrency,
 			hint: 'Account-level, not per SKU',
 			icon: MegaphoneIcon,
+			meaning: 'What Meesho charged for ads across the whole account this period.',
+			rows: [
+				{ term: 'Total charged', value: formatCurrency(Math.abs(overall.ads_cost)), tone: 'bad' },
+				{
+					term: 'Share of settlement',
+					value: formatPercent(
+						overall.net_settlement !== 0
+							? (Math.abs(overall.ads_cost) / overall.net_settlement) * 100
+							: null,
+					),
+				},
+				{
+					term: 'Per order',
+					value: formatCurrency(
+						overall.total_orders > 0 ? Math.abs(overall.ads_cost) / overall.total_orders : 0,
+					),
+				},
+			],
+			footnote: 'It is not split per SKU because the payment file never says which listing an ad sold. So a SKU\'s profit below is before ads.',
 		},
 		{
 			label: 'Business expenses',
@@ -71,166 +126,270 @@ export function KpiCards({ overall, overheads }: KpiCardsProps) {
 			format: formatCurrency,
 			hint: overheads > 0 ? 'Rent, salary and bills for this period' : 'Not set yet — add them in Expenses',
 			icon: BuildingIcon,
+			meaning: 'Your fixed running costs — rent, salary, internet, electricity — prorated to the length of this payment period.',
+			rows: [
+				{ term: 'Total for this period', value: formatCurrency(overheads), tone: 'bad', when: overheads > 0 },
+				{
+					term: 'Per order',
+					value: formatCurrency(overall.total_orders > 0 ? overheads / overall.total_orders : 0),
+					when: overheads > 0,
+				},
+			],
+			footnote:
+				overheads > 0
+					? 'These are charged whether you sell or not, which is why the headline profit is taken after them.'
+					: 'Nothing entered yet, so the headline profit above is trading profit only — it does not yet pay your rent.',
 		},
 		{
 			label: 'Orders',
 			value: overall.total_orders,
 			format: formatNumber,
-			hint: `${formatNumber(overall.total_units)} units shipped`,
+			hint: `${formatNumber(overall.total_units)} units in them`,
 			icon: ShoppingBagIcon,
+			meaning: 'Every order in the payment file for this period, delivered or returned, and the units inside them.',
+			rows: [
+				{ term: 'Orders', value: formatNumber(overall.total_orders) },
+				{ term: 'Units', value: formatNumber(overall.total_units) },
+				{
+					term: 'Units per order',
+					value:
+						overall.total_orders > 0
+							? (overall.total_units / overall.total_orders).toFixed(2)
+							: '—',
+				},
+				{ term: 'Settlement per order', value: formatCurrency(settlementPerOrder) },
+			],
+			footnote: 'An order is one parcel you packed; a unit is one thing you made. They differ whenever someone buys two.',
 		},
 	];
 
 	return (
-		<motion.div variants={STAGGER_LIST} initial="hidden" animate="show" className="space-y-2">
-			{/* The headline. Everything else on this screen exists to explain this one number, so it
-			  * gets the size and the colour and the rest stay monochrome. */}
-			<motion.section
-				variants={STAGGER_ITEM}
-				className={cn(
-					'relative overflow-hidden rounded-2xl border p-4',
-					positive ? 'border-success/25 bg-success/[0.06]' : 'border-destructive/25 bg-destructive/[0.06]',
-				)}
-			>
-				{/* A soft wash behind the figure rather than a solid fill — keeps the number readable
-				  * in both themes while still reading green or red at a glance. */}
-				<div
-					aria-hidden="true"
+		<MetricTooltipProvider>
+			<motion.div variants={STAGGER_LIST} initial="hidden" animate="show" className="space-y-3">
+				{/* The headline. Everything else on this screen exists to explain this one number, so it
+				  * gets the size and the colour and the rest stay monochrome. */}
+				<motion.section
+					variants={STAGGER_ITEM}
 					className={cn(
-						'pointer-events-none absolute -right-12 -top-16 size-40 rounded-full blur-3xl',
-						positive ? 'bg-success/20' : 'bg-destructive/20',
-					)}
-				/>
-
-				<div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
-				<div className="min-w-0 flex-1">
-				<div className="flex items-center gap-2">
-					<p className="text-xs font-medium text-muted-foreground">Net profit</p>
-					<motion.span
-						initial={{ opacity: 0, scale: 0.8 }}
-						animate={{ opacity: 1, scale: 1 }}
-						transition={{ ...SPRING, delay: 0.15 }}
-						className={cn(
-							'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums',
-							positive ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive',
-						)}
-					>
-						{positive ? (
-							<TrendingUpIcon className="size-3" aria-hidden="true" />
-						) : (
-							<TrendingDownIcon className="size-3" aria-hidden="true" />
-						)}
-						{formatPercent(marginPct)} margin
-					</motion.span>
-				</div>
-
-				<p
-					className={cn(
-						'mt-0.5 text-3xl font-bold tabular-nums tracking-tight sm:text-4xl',
-						positive ? 'text-success' : 'text-destructive',
+						'relative overflow-hidden rounded-2xl border p-5 sm:p-6',
+						positive
+							? 'border-success/25 bg-success/[0.06]'
+							: 'border-destructive/25 bg-destructive/[0.06]',
 					)}
 				>
-					<AnimatedNumber value={realProfit} format={formatCurrency} />
-				</p>
-
-				<p className="mt-1 text-xs text-muted-foreground">
-					kept from {formatCurrency(overall.net_settlement)} of settlement across{' '}
-					{formatNumber(overall.total_orders)} orders
-					{overheads > 0 && (
-						<>
-							{', after '}
-							<span className="tabular-nums">{formatCurrency(overheads)}</span> of business expenses
-						</>
-					)}
-				</p>
-
-				{/* How much of the payout survived to profit, as a bar. The percentage above says the
-				  * same thing, but a bar is read without arithmetic. */}
-				<div className="mt-3">
-					<ProgressMeter
-						value={overall.net_settlement > 0 ? realProfit / overall.net_settlement : 0}
-						className={cn('h-full rounded-full', positive ? 'bg-success' : 'bg-destructive')}
-						trackClassName="h-1.5 w-full overflow-hidden rounded-full bg-foreground/10"
-					/>
-					<p className="mt-1 text-[11px] text-muted-foreground">
-						{positive
-							? 'Share of your payout that stayed with you.'
-							: 'You paid out more than you were settled for this period.'}
-					</p>
-				</div>
-				</div>
-
-				{/* The right third of this card used to be empty — a ₹8,556 headline floating in a
-				  * quarter of the screen. Per-order economics are what a seller actually reasons with:
-				  * a total tells you how the month went, but ₹12 an order tells you whether the next
-				  * one is worth packing. Two cells on a phone, stacked on a laptop. */}
-				<dl
-					className={cn(
-						'grid shrink-0 grid-cols-2 overflow-hidden rounded-xl border sm:w-40 sm:grid-cols-1',
-						positive ? 'border-success/20 bg-background/60' : 'border-destructive/20 bg-background/60',
-					)}
-				>
-					<PerUnit label="Per order" value={perOrder} positive={positive} />
-					<PerUnit
-						label="Per unit"
-						value={perUnit}
-						positive={positive}
-						className="border-l sm:border-l-0 sm:border-t"
-					/>
-				</dl>
-				</div>
-			</motion.section>
-
-			<div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
-				{tiles.map((tile, index) => (
-					<motion.div
-						key={tile.label}
-						variants={STAGGER_ITEM}
+					{/* A soft wash behind the figure rather than a solid fill — keeps the number readable
+					  * in both themes while still reading green or red at a glance. */}
+					<div
+						aria-hidden="true"
 						className={cn(
-							'group rounded-xl border border-border bg-card p-3 transition-colors hover:border-foreground/20',
-							// Five tiles in two columns leaves the last one as a half-width orphan on a
-							// phone. It takes the whole row instead.
-							index === tiles.length - 1 && 'col-span-2 lg:col-span-1',
+							'pointer-events-none absolute -right-12 -top-16 size-48 rounded-full blur-3xl',
+							positive ? 'bg-success/20' : 'bg-destructive/20',
 						)}
-					>
-						<div className="flex items-center gap-1.5 text-muted-foreground">
-							<tile.icon className="size-3 shrink-0" aria-hidden="true" />
-							<p className="truncate text-[11px] font-medium">{tile.label}</p>
+					/>
+
+					<div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-8">
+						<div className="min-w-0 flex-1">
+							<div className="flex flex-wrap items-center gap-2.5">
+								<p className="text-sm font-medium text-muted-foreground">Net profit</p>
+								<motion.span
+									initial={{ opacity: 0, scale: 0.8 }}
+									animate={{ opacity: 1, scale: 1 }}
+									transition={{ ...SPRING, delay: 0.15 }}
+									className={cn(
+										'inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold tabular-nums',
+										positive ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive',
+									)}
+								>
+									{positive ? (
+										<TrendingUpIcon className="size-3.5" aria-hidden="true" />
+									) : (
+										<TrendingDownIcon className="size-3.5" aria-hidden="true" />
+									)}
+									{formatPercent(marginPct)} margin
+								</motion.span>
+							</div>
+
+							{/* Proportional figures, not tabular. `tabular-nums` gives every digit the width
+							  * of a zero, which is right in a column of numbers and wrong at display size —
+							  * it made the one number the page is about look gappy and loose. */}
+							<p
+								className={cn(
+									'mt-1 text-5xl font-bold tracking-tight sm:text-6xl',
+									positive ? 'text-success' : 'text-destructive',
+								)}
+							>
+								<AnimatedNumber value={realProfit} format={formatCurrency} />
+							</p>
+
+							<p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+								kept from {formatCurrency(overall.net_settlement)} of settlement across{' '}
+								{formatNumber(overall.total_orders)} orders
+								{overheads > 0 && (
+									<>
+										{', after '}
+										<span className="tabular-nums">{formatCurrency(overheads)}</span> of business
+										expenses
+									</>
+								)}
+							</p>
+
+							{/* How much of the payout survived to profit, as a bar. The percentage above says the
+							  * same thing, but a bar is read without arithmetic. */}
+							<div className="mt-4">
+								<ProgressMeter
+									value={profitShare}
+									className={cn('h-full rounded-full', positive ? 'bg-success' : 'bg-destructive')}
+									trackClassName="h-2 w-full overflow-hidden rounded-full bg-foreground/10"
+								/>
+								<p className="mt-2 text-sm text-muted-foreground">
+									{positive
+										? 'Share of your payout that stayed with you.'
+										: 'You paid out more than you were settled for this period.'}
+								</p>
+							</div>
 						</div>
-						<p className="mt-1 text-lg font-semibold tabular-nums tracking-tight sm:text-xl">
-							<AnimatedNumber value={tile.value} format={tile.format} />
-						</p>
-						<p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{tile.hint}</p>
-					</motion.div>
-				))}
-			</div>
-		</motion.div>
+
+						{/* The right third of this card used to be empty — a ₹8,556 headline floating in a
+						  * quarter of the screen. Two figures live there instead: what an order is worth to
+						  * you, and what Meesho charged you for the ones that came back. Per-unit profit used
+						  * to sit in the second slot and, at roughly one unit an order, it only ever restated
+						  * the first. The return fee is a number nothing else on this screen shows. */}
+						<div
+							className={cn(
+								'grid shrink-0 grid-cols-2 overflow-hidden rounded-xl border sm:w-48 sm:grid-cols-1',
+								positive
+									? 'border-success/20 bg-background/60'
+									: 'border-destructive/20 bg-background/60',
+							)}
+						>
+							<MiniStat
+								label="Per order"
+								value={perOrder}
+								valueClass={positive ? 'text-success' : 'text-destructive'}
+								borderClass={positive ? 'border-success/20' : 'border-destructive/20'}
+								title="Profit per order"
+								meaning="Your net profit divided by the number of orders — what one parcel, packed and shipped, is actually worth to you."
+								rows={[
+									{
+										term: 'Net profit',
+										value: formatCurrency(realProfit),
+										tone: positive ? 'good' : 'bad',
+									},
+									{ term: 'Orders', value: formatNumber(overall.total_orders) },
+									{ term: 'Settlement per order', value: formatCurrency(settlementPerOrder) },
+								]}
+								footnote="This is after ads and business expenses, so it is the figure to hold against the effort of packing one more."
+							/>
+							<MiniStat
+								label="Return fee"
+								value={returnFee}
+								valueClass="text-foreground"
+								borderClass={positive ? 'border-success/20' : 'border-destructive/20'}
+								className="border-l sm:border-l-0 sm:border-t"
+								title="Meesho return fee"
+								meaning="The total reverse-shipping fee Meesho charged you this period for orders the customer returned or that came back undelivered."
+								rows={[
+									{ term: 'Total charged', value: formatCurrency(returnFee), tone: 'bad' },
+									{
+										term: 'Share of settlement',
+										value: formatPercent(
+											overall.net_settlement !== 0
+												? (returnFee / overall.net_settlement) * 100
+												: null,
+										),
+									},
+									{
+										term: 'Across all orders',
+										value: formatCurrency(
+											overall.total_orders > 0 ? returnFee / overall.total_orders : 0,
+										),
+									},
+								]}
+								footnote="Meesho takes this out before paying you, so it is already inside the settlement figure — it is not subtracted from your profit a second time."
+							/>
+						</div>
+					</div>
+				</motion.section>
+
+				<div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+					{tiles.map((tile, index) => (
+						<motion.div
+							key={tile.label}
+							variants={STAGGER_ITEM}
+							className={cn(
+								'min-w-0',
+								// Five tiles in two columns leaves the last one as a half-width orphan on a
+								// phone. It takes the whole row instead.
+								index === tiles.length - 1 && 'col-span-2 lg:col-span-1',
+							)}
+						>
+							<MetricTooltip
+								title={tile.label}
+								meaning={tile.meaning}
+								rows={tile.rows}
+								footnote={tile.footnote}
+								className="block w-full rounded-xl border border-border bg-card p-4 transition-colors hover:border-foreground/20"
+							>
+								<span className="flex items-center gap-2 text-muted-foreground">
+									<tile.icon className="size-4 shrink-0" aria-hidden="true" />
+									<span className="truncate text-sm font-medium">{tile.label}</span>
+								</span>
+								<span className="mt-1.5 block text-2xl font-semibold tracking-tight">
+									<AnimatedNumber value={tile.value} format={tile.format} />
+								</span>
+								<span className="mt-1 block text-sm leading-snug text-muted-foreground">
+									{tile.hint}
+								</span>
+							</MetricTooltip>
+						</motion.div>
+					))}
+				</div>
+			</motion.div>
+		</MetricTooltipProvider>
 	);
 }
 
-/** One cell of the per-order panel. */
-function PerUnit({
+/** One cell of the two-figure panel beside the headline. */
+function MiniStat({
 	label,
 	value,
-	positive,
+	valueClass,
+	borderClass,
 	className,
+	title,
+	meaning,
+	rows,
+	footnote,
 }: {
 	label: string;
 	value: number;
-	positive: boolean;
+	valueClass: string;
+	borderClass: string;
 	className?: string;
+	title: string;
+	meaning: string;
+	rows: MetricRow[];
+	footnote?: string;
 }) {
 	return (
-		<div className={cn('px-3 py-2', positive ? 'border-success/20' : 'border-destructive/20', className)}>
-			<dt className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</dt>
-			<dd
-				className={cn(
-					'mt-0.5 text-base font-semibold tabular-nums tracking-tight',
-					positive ? 'text-success' : 'text-destructive',
-				)}
+		<div className={cn(borderClass, className)}>
+			<MetricTooltip
+				title={title}
+				meaning={meaning}
+				rows={rows}
+				footnote={footnote}
+				side="bottom"
+				className="block w-full px-4 py-3 transition-colors hover:bg-foreground/[0.04]"
 			>
-				<AnimatedNumber value={value} format={formatCurrency} />
-			</dd>
+				<span className="block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+					{label}
+				</span>
+				{/* These two stack into a column on a laptop, so tabular figures are right here —
+				  * the rupee signs and the digits line up under each other. */}
+				<span className={cn('mt-1 block text-xl font-semibold tabular-nums tracking-tight', valueClass)}>
+					<AnimatedNumber value={value} format={formatCurrency} />
+				</span>
+			</MetricTooltip>
 		</div>
 	);
 }

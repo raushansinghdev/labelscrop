@@ -1,19 +1,61 @@
-import { AlertTriangleIcon, ArrowUpDownIcon, SearchIcon } from 'lucide-react';
+import { AlertTriangleIcon, ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon, SearchIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useMemo, useState } from 'react';
 import { cn } from 'cn';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger } from '@/components/ui/select';
 import { formatCurrency, formatNumber, formatPercent } from './format';
 import { EASE_OUT } from './motion';
 import type { SkuRow } from './types';
 
-type SortKey = 'profit' | 'margin_pct' | 'orders' | 'net_settlement';
+type SortDirection = 'desc' | 'asc';
 
-const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-	{ value: 'profit', label: 'Net profit' },
-	{ value: 'margin_pct', label: 'Margin' },
-	{ value: 'orders', label: 'Orders' },
-	{ value: 'net_settlement', label: 'Settlement' },
+interface SortOption {
+	value: string;
+	label: string;
+	group: string;
+	/**
+	 * Null means "can't be computed for this SKU" — a margin with no settlement to divide by, a
+	 * return rate with no orders. Those sort to the bottom whichever way the list points, because
+	 * "unknown" is not the same as "worst" and shouldn't head the list when you flip to ascending.
+	 */
+	get: (row: SkuRow) => number | string | null;
+	/** Text sorts read A–Z by default; every number reads biggest-first. */
+	text?: boolean;
+}
+
+const SORT_OPTIONS: SortOption[] = [
+	{ value: 'profit', label: 'Net profit', group: 'Profit', get: (r) => r.profit },
+	{ value: 'margin_pct', label: 'Margin', group: 'Profit', get: (r) => r.margin_pct },
+	{ value: 'net_settlement', label: 'Settlement', group: 'Profit', get: (r) => r.net_settlement },
+	{ value: 'cogs', label: 'Item cost', group: 'Profit', get: (r) => r.cogs },
+
+	{ value: 'orders', label: 'Orders', group: 'Volume', get: (r) => r.orders },
+	{ value: 'units', label: 'Units', group: 'Volume', get: (r) => r.units },
+	{ value: 'delivered_orders', label: 'Delivered', group: 'Volume', get: (r) => r.delivered_orders },
+
+	{
+		value: 'return_rate',
+		label: 'Return rate',
+		group: 'Returns',
+		// Both kinds of return together, as a share of the SKU's own orders — the one figure that
+		// compares a 6-order product against a 300-order one fairly.
+		get: (r) => (r.orders > 0 ? ((r.rto_orders + r.return_orders) / r.orders) * 100 : null),
+	},
+	{ value: 'rto_orders', label: 'Courier returns', group: 'Returns', get: (r) => r.rto_orders },
+	{ value: 'return_orders', label: 'Customer returns', group: 'Returns', get: (r) => r.return_orders },
+
+	{ value: 'avg_sale_price', label: 'Listed price', group: 'Product', get: (r) => r.avg_sale_price },
+	{
+		value: 'product_name',
+		label: 'Product name',
+		group: 'Product',
+		text: true,
+		get: (r) => (r.product_name || r.sku).toLowerCase(),
+	},
+	{ value: 'sku', label: 'SKU', group: 'Product', text: true, get: (r) => r.sku.toLowerCase() },
 ];
+
+const SORT_GROUPS = [...new Set(SORT_OPTIONS.map((o) => o.group))];
 
 interface ProductsTableProps {
 	rows: SkuRow[];
@@ -28,8 +70,11 @@ const PAGE_SIZE = 12;
 
 export function ProductsTable({ rows }: ProductsTableProps) {
 	const [query, setQuery] = useState('');
-	const [sortKey, setSortKey] = useState<SortKey>('profit');
+	const [sortKey, setSortKey] = useState('profit');
+	const [direction, setDirection] = useState<SortDirection>('desc');
 	const [showAll, setShowAll] = useState(false);
+
+	const option = SORT_OPTIONS.find((o) => o.value === sortKey) ?? SORT_OPTIONS[0];
 
 	const visible = useMemo(() => {
 		const needle = query.trim().toLowerCase();
@@ -42,25 +87,40 @@ export function ProductsTable({ rows }: ProductsTableProps) {
 			: rows;
 
 		return [...filtered].sort((a, b) => {
-			if (sortKey === 'margin_pct') {
-				// SKUs with no computable margin sort last rather than pretending to be 0%.
-				const av = a.margin_pct ?? Number.NEGATIVE_INFINITY;
-				const bv = b.margin_pct ?? Number.NEGATIVE_INFINITY;
-				return bv - av;
+			const av = option.get(a);
+			const bv = option.get(b);
+
+			if (av === null || bv === null) {
+				if (av === bv) return 0;
+				return av === null ? 1 : -1;
 			}
-			return b[sortKey] - a[sortKey];
+
+			// Compared ascending, then flipped — one ordering to reason about instead of two.
+			const cmp =
+				typeof av === 'string' && typeof bv === 'string' ? av.localeCompare(bv) : (av as number) - (bv as number);
+			return direction === 'asc' ? cmp : -cmp;
 		});
-	}, [rows, query, sortKey]);
+	}, [rows, query, option, direction]);
 
 	const shown = showAll ? visible : visible.slice(0, PAGE_SIZE);
 	const hidden = visible.length - shown.length;
 
+	// Flipping to "lowest first" is usually the interesting half — the losing SKUs — so the label
+	// says what you'll get, not which way an arrow points.
+	const directionLabel = option.text
+		? direction === 'asc'
+			? 'A to Z'
+			: 'Z to A'
+		: direction === 'asc'
+			? 'Lowest first'
+			: 'Highest first';
+
 	return (
-		<div className="space-y-3">
-			<div className="flex flex-col gap-2 sm:flex-row">
+		<div className="space-y-4">
+			<div className="flex flex-col gap-3 sm:flex-row">
 				<div className="relative flex-1">
 					<SearchIcon
-						className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+						className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
 						aria-hidden="true"
 					/>
 					<input
@@ -69,34 +129,107 @@ export function ProductsTable({ rows }: ProductsTableProps) {
 						onChange={(e) => setQuery(e.target.value)}
 						placeholder="Search product or SKU"
 						aria-label="Search products"
-						className="h-10 w-full rounded-lg border border-border bg-background pl-8 pr-3 text-sm outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring sm:h-9"
+						className="h-11 w-full rounded-lg border border-border bg-background pl-10 pr-3 text-base outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring sm:h-10"
 					/>
 				</div>
 
-				<div className="relative">
-					<ArrowUpDownIcon
-						className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
-						aria-hidden="true"
-					/>
-					<select
+				<div className="flex gap-2">
+					<Select
 						value={sortKey}
-						onChange={(e) => setSortKey(e.target.value as SortKey)}
-						aria-label="Sort products by"
-						className="h-10 w-full cursor-pointer appearance-none rounded-lg border border-border bg-background pl-8 pr-8 text-sm outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring sm:h-9 sm:w-44"
+						onValueChange={(next) => {
+							if (next == null) return;
+							const chosen = SORT_OPTIONS.find((o) => o.value === next);
+							setSortKey(String(next));
+							// Each key starts the way you'd expect to read it — names A–Z, everything else
+							// biggest first — rather than inheriting the last key's direction.
+							setDirection(chosen?.text ? 'asc' : 'desc');
+						}}
 					>
-						{SORT_OPTIONS.map((opt) => (
-							<option key={opt.value} value={opt.value}>
-								Sort by {opt.label}
-							</option>
-						))}
-					</select>
+						<SelectTrigger
+							aria-label="Sort products by"
+							className="h-auto min-h-11 flex-1 gap-2 rounded-lg border-border bg-background px-3 text-sm transition-colors hover:border-foreground/20 data-popup-open:border-foreground/20 sm:min-h-10 sm:w-56 sm:flex-none"
+						>
+							<ArrowUpDownIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+							<span className="min-w-0 flex-1 truncate text-left">
+								<span className="text-muted-foreground">Sort by </span>
+								<motion.span
+									key={option.value}
+									initial={{ opacity: 0, y: 3 }}
+									animate={{ opacity: 1, y: 0 }}
+									transition={{ duration: 0.2, ease: EASE_OUT }}
+									className="inline-block font-medium"
+								>
+									{option.label}
+								</motion.span>
+							</span>
+						</SelectTrigger>
+
+						{/* Thirteen options run about 530px, which on a phone is the whole screen and on
+						  * desktop covers most of the card grid behind it. Capped at 304px — nine-ish rows,
+						  * with the next one cut so it reads as "there is more" — and Base UI scrolls the
+						  * selected option into view on open, so a sort near the bottom isn't lost. */}
+						<SelectContent
+							alignItemWithTrigger={false}
+							align="end"
+							sideOffset={6}
+							className="max-h-[min(19rem,var(--available-height))] w-auto min-w-(--anchor-width) rounded-xl p-1.5 shadow-xl"
+						>
+							{SORT_GROUPS.map((group) => (
+								<SelectGroup key={group} className="p-0 pt-2 first:pt-0">
+									<SelectLabel className="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
+										{group}
+									</SelectLabel>
+									{SORT_OPTIONS.filter((o) => o.group === group).map((opt) => (
+										<SelectItem
+											key={opt.value}
+											value={opt.value}
+											// The prefix lives in the trigger; repeating "Sort by" on thirteen
+											// rows under headings that already say "Profit" is just noise.
+											className="cursor-pointer rounded-lg py-1.5 pl-2.5 pr-9 text-sm data-selected:bg-primary/[0.06] data-selected:font-medium"
+										>
+											{opt.label}
+										</SelectItem>
+									))}
+								</SelectGroup>
+							))}
+						</SelectContent>
+					</Select>
+
+					<button
+						type="button"
+						onClick={() => setDirection((d) => (d === 'desc' ? 'asc' : 'desc'))}
+						title={directionLabel}
+						aria-label={`Sort order: ${directionLabel}. Activate to reverse.`}
+						className={cn(
+							'flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground sm:h-10 sm:w-10',
+							'transition-colors hover:border-foreground/20 hover:text-foreground',
+							'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+						)}
+					>
+						<AnimatePresence mode="wait" initial={false}>
+							<motion.span
+								key={direction}
+								initial={{ opacity: 0, y: direction === 'desc' ? -6 : 6 }}
+								animate={{ opacity: 1, y: 0 }}
+								exit={{ opacity: 0, y: direction === 'desc' ? 6 : -6 }}
+								transition={{ duration: 0.15, ease: EASE_OUT }}
+								className="flex"
+							>
+								{direction === 'desc' ? (
+									<ArrowDownIcon className="size-4" aria-hidden="true" />
+								) : (
+									<ArrowUpIcon className="size-4" aria-hidden="true" />
+								)}
+							</motion.span>
+						</AnimatePresence>
+					</button>
 				</div>
 			</div>
 
 			{/* Stated once, here, rather than on 39 cards. Rent and salary are deliberately not
 			  * divided between products — nothing about an order causes them, so any split would
 			  * be invented — which makes it important to say what these figures do and don't carry. */}
-			<p className="text-[11px] text-muted-foreground">
+			<p className="text-sm leading-relaxed text-muted-foreground">
 				Profit per product is after its own making, packing and return costs — before business
 				expenses like rent and salary.
 			</p>
@@ -106,12 +239,12 @@ export function ProductsTable({ rows }: ProductsTableProps) {
 					initial={{ opacity: 0, scale: 0.98 }}
 					animate={{ opacity: 1, scale: 1 }}
 					transition={{ duration: 0.3, ease: EASE_OUT }}
-					className="rounded-2xl border border-border bg-muted/30 px-4 py-10 text-center text-sm text-muted-foreground"
+					className="rounded-2xl border border-border bg-muted/30 px-4 py-12 text-center text-base text-muted-foreground"
 				>
 					No product matches “{query}”.
 				</motion.p>
 			) : (
-				<ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+				<ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
 					<AnimatePresence initial={false}>
 						{shown.map((row, index) => (
 							<ProductCard key={row.sku} row={row} index={index} />
@@ -125,7 +258,7 @@ export function ProductsTable({ rows }: ProductsTableProps) {
 					type="button"
 					onClick={() => setShowAll(true)}
 					className={cn(
-						'h-11 w-full rounded-lg border border-border text-[13px] font-medium sm:h-10',
+						'h-12 w-full rounded-lg border border-border text-sm font-medium sm:h-11',
 						'transition-colors hover:bg-muted',
 						'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
 					)}
@@ -173,7 +306,7 @@ function ProductCard({ row, index }: { row: SkuRow; index: number }) {
 			// `min-w-0` is load-bearing: a grid item defaults to `min-width: auto`, so without it the
 			// longest product name sets the column width and the card runs off a phone screen
 			// instead of truncating. It measured 885px wide in a 390px viewport.
-			className="flex min-w-0 flex-col rounded-xl border border-border bg-card p-3 transition-colors hover:border-foreground/20"
+			className="flex min-w-0 flex-col rounded-xl border border-border bg-card p-4 transition-colors hover:border-foreground/20"
 		>
 			{/* Profit sits in the header rather than at the foot of the card. It used to hang off the
 			  * bottom under its own "Net profit" label, which cost two lines and put the one number
@@ -182,17 +315,17 @@ function ProductCard({ row, index }: { row: SkuRow; index: number }) {
 			<div className="flex items-start justify-between gap-2">
 				<div className="min-w-0 flex-1">
 					<h3
-						className="truncate text-[13px] font-semibold leading-snug"
+						className="truncate text-base font-semibold leading-snug"
 						title={row.product_name || row.sku}
 					>
 						{row.product_name || row.sku}
 					</h3>
-					<p className="truncate font-mono text-[11px] text-muted-foreground">{row.sku}</p>
+					<p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">{row.sku}</p>
 				</div>
 				<div className="shrink-0 text-right">
 					<p
 						className={cn(
-							'text-lg font-bold tabular-nums leading-tight tracking-tight',
+							'text-xl font-bold tabular-nums leading-tight tracking-tight',
 							negative ? 'text-destructive' : 'text-success',
 						)}
 					>
@@ -200,7 +333,7 @@ function ProductCard({ row, index }: { row: SkuRow; index: number }) {
 					</p>
 					<p
 						className={cn(
-							'text-[11px] font-semibold tabular-nums',
+							'text-sm font-semibold tabular-nums',
 							negative ? 'text-destructive' : 'text-success',
 						)}
 					>
@@ -209,7 +342,7 @@ function ProductCard({ row, index }: { row: SkuRow; index: number }) {
 				</div>
 			</div>
 
-			<div className="mt-2 flex flex-wrap gap-1">
+			<div className="mt-3 flex flex-wrap gap-1.5">
 				<Chip className="bg-chart-1/10 text-chart-1">{formatCurrency(row.avg_sale_price)} listed</Chip>
 				{row.cost_mapped ? (
 					<Chip className="bg-muted text-muted-foreground">{formatCurrency(unitCost)} cost</Chip>
@@ -218,28 +351,28 @@ function ProductCard({ row, index }: { row: SkuRow; index: number }) {
 					 * uncosted SKU — which on a first run is nearly all of them. Same fact, one chip,
 					 * in the row that already answers "what does this cost?". */
 					<Chip
-						className="flex items-center gap-1 bg-chart-4/15 text-chart-4"
+						className="flex items-center gap-1 bg-warning/15 text-warning"
 						title="No cost recorded, so this product's profit is overstated."
 					>
-						<AlertTriangleIcon className="size-3" aria-hidden="true" />
+						<AlertTriangleIcon className="size-3.5" aria-hidden="true" />
 						no cost
 					</Chip>
 				)}
 			</div>
 
-			<dl className="mt-2.5 grid grid-cols-4 gap-1 text-center">
+			<dl className="mt-3.5 grid grid-cols-4 gap-1 text-center">
 				<Count label="Total" value={row.orders} />
 				<Count label="Delivered" value={row.delivered_orders} className="text-success" />
-				<Count label="RTO" value={row.rto_orders} className="text-destructive" />
-				<Count label="Return" value={row.return_orders} className="text-chart-4" />
+				<Count label="Courier" value={row.rto_orders} className="text-destructive" />
+				<Count label="Customer" value={row.return_orders} className="text-warning" />
 			</dl>
 
 			{/* The delivered / RTO / return split as one bar. The four numbers above say the same
 			  * thing, but the bar is what makes a bad SKU obvious from across the grid. */}
 			<div
-				className="mt-1.5 flex h-1 w-full gap-px overflow-hidden rounded-full bg-muted"
+				className="mt-2.5 flex h-1.5 w-full gap-px overflow-hidden rounded-full bg-muted"
 				role="img"
-				aria-label={`${row.delivered_orders} delivered, ${row.rto_orders} returned to you, ${row.return_orders} customer returns of ${row.orders} orders`}
+				aria-label={`${row.delivered_orders} delivered, ${row.rto_orders} courier returns, ${row.return_orders} customer returns of ${row.orders} orders`}
 			>
 				{segments.map((segment) => (
 					<motion.span
@@ -252,11 +385,11 @@ function ProductCard({ row, index }: { row: SkuRow; index: number }) {
 				))}
 			</div>
 
-			<dl className="mt-auto space-y-0.5 border-t border-border pt-2.5 text-[11px]">
+			<dl className="mt-auto space-y-1 border-t border-border pt-3 text-sm">
 				<Line label="Settlement" value={formatCurrency(row.net_settlement)} />
 				<Line label="Item cost" value={formatCurrency(row.cogs)} />
 				{row.rto_cost > 0 && (
-					<Line label="RTO cost" value={formatCurrency(row.rto_cost)} className="text-destructive" />
+					<Line label="Courier return cost" value={formatCurrency(row.rto_cost)} className="text-destructive" />
 				)}
 			</dl>
 		</motion.li>
@@ -274,7 +407,7 @@ function Chip({
 	children: React.ReactNode;
 }) {
 	return (
-		<span className={cn('rounded px-1.5 py-0.5 text-[10px] font-medium tabular-nums', className)} title={title}>
+		<span className={cn('rounded px-2 py-0.5 text-xs font-medium tabular-nums', className)} title={title}>
 			{children}
 		</span>
 	);
@@ -283,8 +416,8 @@ function Chip({
 function Count({ label, value, className }: { label: string; value: number; className?: string }) {
 	return (
 		<div>
-			<dd className={cn('text-sm font-semibold tabular-nums leading-tight', className)}>{formatNumber(value)}</dd>
-			<dt className="text-[9px] uppercase tracking-wide text-muted-foreground">{label}</dt>
+			<dd className={cn('text-base font-semibold tabular-nums leading-tight', className)}>{formatNumber(value)}</dd>
+			<dt className="mt-0.5 text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
 		</div>
 	);
 }

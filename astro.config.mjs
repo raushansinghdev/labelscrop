@@ -17,6 +17,15 @@ export default defineConfig({
   // The Amazon/Flipkart pages are roadmap placeholders carrying almost no content. They're
   // marked noindex until the adapters ship, so they must stay out of the sitemap too —
   // submitting a noindex URL is a contradictory signal Search Console flags as an error.
+  // Links are fetched before they are clicked, so a navigation is usually a swap of markup
+  // already in memory rather than a round trip. `viewport` rather than `hover` because the
+  // device this is mostly used on has no hover — on a phone, `hover` means "prefetch on tap",
+  // which is no prefetch at all. Astro skips this on Save-Data and 2G connections.
+  prefetch: {
+    prefetchAll: true,
+    defaultStrategy: 'viewport'
+  },
+
   integrations: [
     react(),
     sitemap({

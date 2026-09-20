@@ -15,13 +15,29 @@ const feedbackIcon =
 	'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7v6M9 10h6"/></svg>';
 ---
 
+{/*
+ * This header is `transition:persist`ed by Layout.astro — the same DOM node survives every
+ * navigation rather than being rebuilt. That is what stops it blinking between pages, but it
+ * also means the server-rendered `aria-current` below is only ever correct for the first page
+ * of a visit. `syncActive()` in the script re-reads the location after each swap and is the
+ * real source of truth; the markup's version is for the no-JS case and the first paint.
+ */}
 <header
-	class="sticky top-0 z-40 border-b border-border/80 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70"
+	transition:persist="site-header"
+	id="site-header"
+	class="sticky top-0 z-40 border-b border-transparent bg-background/90 backdrop-blur-xl transition-[border-color,box-shadow,background-color] duration-300 supports-[backdrop-filter]:bg-background/75"
 >
-	<div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-		<a href={url('/')} class="flex items-center gap-2 font-semibold tracking-tight" aria-label="LabelsCrop home">
+	<div
+		id="header-inner"
+		class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 transition-[height] duration-300 ease-out sm:px-6"
+	>
+		<a
+			href={url('/')}
+			class="press group flex items-center gap-2 font-semibold tracking-tight"
+			aria-label="LabelsCrop home"
+		>
 			<span
-				class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"
+				class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-transform duration-300 ease-out group-hover:-rotate-6 group-hover:scale-105"
 				aria-hidden="true"
 			>
 				<svg viewBox="0 0 24 24" fill="none" class="h-4.5 w-4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -33,17 +49,27 @@ const feedbackIcon =
 			<span class="text-base">LabelsCrop</span>
 		</a>
 
-		<nav class="hidden items-center gap-1 md:flex" aria-label="Primary">
+		{/*
+		 * The pill behind the nav is one element that slides between items rather than a
+		 * background that fades in on each — the same decision, and the same reason, as the
+		 * dashboard's tab bar: a thing that moves tells you where you came from. It follows the
+		 * pointer on hover and returns to the current page on leave.
+		 */}
+		<nav id="primary-nav" class="relative hidden items-center gap-1 md:flex" aria-label="Primary">
+			<span
+				id="nav-pill"
+				aria-hidden="true"
+				class="pointer-events-none absolute left-0 top-1/2 h-9 -translate-y-1/2 rounded-lg bg-muted opacity-0 transition-[transform,width,opacity] duration-300 ease-out"
+			></span>
 			{navItems.map((item) => {
 				const active = currentPath === item.href;
 				return (
 					<a
 						href={item.href}
+						data-nav-link
 						class:list={[
-							'rounded-md px-3 py-2 text-sm font-medium transition-colors',
-							active
-								? 'text-foreground'
-								: 'text-muted-foreground hover:text-foreground',
+							'relative z-10 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200',
+							active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
 						]}
 						aria-current={active ? 'page' : undefined}
 					>
@@ -58,7 +84,7 @@ const feedbackIcon =
 				href={feedbackHref}
 				data-feedback-link
 				title="Opens your email app with a short template"
-				class="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-semibold text-foreground shadow-xs transition-[transform,background-color,border-color] duration-150 hover:border-primary/40 hover:bg-primary/5 hover:text-primary active:scale-[0.98]"
+				class="press nudge inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-semibold text-foreground shadow-xs hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
 			>
 				<Fragment set:html={feedbackIcon} />
 				Request a feature
@@ -68,38 +94,59 @@ const feedbackIcon =
 		<button
 			id="menu-toggle"
 			type="button"
-			class="inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground md:hidden"
+			class="press -mr-1 inline-flex h-11 w-11 items-center justify-center rounded-lg text-foreground md:hidden"
 			aria-expanded="false"
 			aria-controls="mobile-menu"
 			aria-label="Toggle menu"
 		>
-			<svg id="menu-icon-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="h-5 w-5">
-				<path d="M4 7h16M4 12h16M4 17h16" />
-			</svg>
-			<svg id="menu-icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="hidden h-5 w-5">
-				<path d="M6 6l12 12M18 6 6 18" />
-			</svg>
+			{/*
+			 * One icon that morphs rather than two that swap. The three bars rotate and collapse
+			 * into the cross, so the button shows the transition between the two states instead of
+			 * cutting between them.
+			 */}
+			<span class="relative block h-4 w-5" aria-hidden="true">
+				<span
+					data-bar
+					class="absolute left-0 top-0 h-0.5 w-5 rounded-full bg-current transition-transform duration-300 ease-out"
+				></span>
+				<span
+					data-bar
+					class="absolute left-0 top-1/2 h-0.5 w-5 -translate-y-1/2 rounded-full bg-current transition-[opacity,transform] duration-200 ease-out"
+				></span>
+				<span
+					data-bar
+					class="absolute bottom-0 left-0 h-0.5 w-5 rounded-full bg-current transition-transform duration-300 ease-out"
+				></span>
+			</span>
 		</button>
 	</div>
 
+	{/*
+	 * `grid-rows-[0fr]` -> `[1fr]` animates to the panel's natural height without anyone having to
+	 * measure it. The links inside also slide in on a per-item delay, which is set in the script
+	 * rather than here so the stagger survives adding or removing a nav item.
+	 */}
 	<div
 		id="mobile-menu"
-		class="grid grid-rows-[0fr] overflow-hidden border-b border-border/80 transition-[grid-template-rows] duration-300 ease-out md:hidden"
+		class="grid grid-rows-[0fr] overflow-hidden border-b border-transparent bg-background/95 backdrop-blur-xl transition-[grid-template-rows,border-color] duration-300 ease-out md:hidden"
 	>
 		<div class="min-h-0">
 			<nav class="flex flex-col gap-1 px-4 pb-4" aria-label="Mobile">
 				{navItems.map((item) => (
 					<a
 						href={item.href}
-						class="rounded-md px-3 py-2.5 text-sm font-medium text-foreground/90 hover:bg-muted"
+						data-menu-item
+						data-nav-link
+						class="rounded-lg px-3 py-3 text-sm font-medium text-foreground/90 transition-[opacity,transform,background-color] duration-300 ease-out active:bg-muted aria-[current=page]:bg-muted aria-[current=page]:text-foreground"
 					>
 						{item.label}
 					</a>
 				))}
 				<a
 					href={feedbackHref}
+					data-menu-item
 					data-feedback-link
-					class="mt-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground active:bg-muted"
+					class="press mt-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition-[opacity,transform] duration-300 ease-out active:bg-muted"
 				>
 					<Fragment set:html={feedbackIcon} />
 					Request a feature or report a bug
@@ -108,6 +155,63 @@ const feedbackIcon =
 		</div>
 	</div>
 </header>
+
+<style>
+	/* Elevation on scroll. The attribute is set by an IntersectionObserver on a 1px sentinel in
+	 * Layout.astro, so there is no scroll handler behind any of this. */
+	:global(html[data-scrolled]) #site-header {
+		border-bottom-color: color-mix(in oklch, var(--border) 80%, transparent);
+		box-shadow: 0 1px 16px -8px color-mix(in oklch, var(--foreground) 40%, transparent);
+	}
+	/* The bar condenses once you are into the page — 8px of height back on a phone, and a small
+	 * continuous signal that the page is moving. Not applied while the menu is open, which would
+	 * shift the panel underneath it mid-animation. */
+	@media (min-width: 640px) {
+		:global(html[data-scrolled]) #site-header:not([data-menu-open]) #header-inner {
+			height: 3.5rem;
+		}
+	}
+
+	/* Menu open: bars morph into a cross. */
+	#menu-toggle[aria-expanded='true'] [data-bar]:first-child {
+		transform: translateY(0.4375rem) rotate(45deg);
+	}
+	#menu-toggle[aria-expanded='true'] [data-bar]:nth-child(2) {
+		opacity: 0;
+		transform: translateY(-50%) scaleX(0.4);
+	}
+	#menu-toggle[aria-expanded='true'] [data-bar]:last-child {
+		transform: translateY(-0.4375rem) rotate(-45deg);
+	}
+
+	/* Menu items rest slightly up and transparent, then fall in on their own delay. */
+	[data-menu-item] {
+		opacity: 0;
+		transform: translateY(-0.5rem);
+	}
+	#site-header[data-menu-open] [data-menu-item] {
+		opacity: 1;
+		transform: none;
+	}
+	#site-header[data-menu-open] #mobile-menu {
+		border-bottom-color: color-mix(in oklch, var(--border) 80%, transparent);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		#site-header,
+		#header-inner,
+		#nav-pill,
+		#mobile-menu,
+		[data-menu-item],
+		[data-bar] {
+			transition: none;
+		}
+		[data-menu-item] {
+			opacity: 1;
+			transform: none;
+		}
+	}
+</style>
 
 <script>
 	import { describeDevice, feedbackMailto } from '@/lib/feedback';
@@ -119,26 +223,110 @@ const feedbackIcon =
 		if (link) link.href = feedbackMailto(window.location.href, describeDevice(navigator.userAgent));
 	});
 
-	// Astro's view transitions replace the header on every navigation, so listeners bound to the old
-	// elements would go dead after the first page change. Delegate from `document` (which persists) and look
-	// the elements up fresh each time instead.
+	/*
+	 * Every listener here is delegated from `document`, which survives view transitions, and looks
+	 * its elements up fresh on each call. The header itself is persisted across navigations, so a
+	 * listener bound directly to it would in fact survive too — but the two rules together (bind to
+	 * document, query on use) are what make this correct whether or not the node is reused.
+	 */
+	const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
+
+	/** Moves the sliding pill behind a nav link. Passing nothing parks it on the current page. */
+	function moveNavPill(target?: HTMLElement) {
+		const nav = el('primary-nav');
+		const pill = el('nav-pill');
+		if (!nav || !pill) return;
+		const to = target ?? nav.querySelector<HTMLElement>('[data-nav-link][aria-current="page"]');
+		if (!to) {
+			pill.style.opacity = '0';
+			return;
+		}
+		pill.style.width = `${to.offsetWidth}px`;
+		// Horizontal only. The vertical centring belongs to the `-translate-y-1/2` class, and in
+		// Tailwind v4 that compiles to the `translate` *property* rather than to `transform` — the
+		// two compose, so repeating the -50% here applied it twice and parked the pill a full
+		// pill-height above the nav row.
+		pill.style.transform = `translateX(${to.offsetLeft}px)`;
+		pill.style.opacity = '1';
+	}
+
+	/**
+	 * Re-marks the current page in both navs.
+	 *
+	 * The header is persisted across navigations, so nothing else updates it — without this the
+	 * highlight would stay on whichever page the visitor happened to land on first, which is worse
+	 * than having no highlight at all.
+	 */
+	function syncActive() {
+		const here = window.location.pathname.replace(/\/$/, '');
+		for (const link of document.querySelectorAll<HTMLAnchorElement>('[data-nav-link]')) {
+			const target = new URL(link.href).pathname.replace(/\/$/, '');
+			const active = target === here;
+			link.toggleAttribute('aria-current', active);
+			if (active) link.setAttribute('aria-current', 'page');
+			link.classList.toggle('text-foreground', active);
+			link.classList.toggle('text-muted-foreground', !active && link.closest('#primary-nav') !== null);
+		}
+		moveNavPill();
+	}
+
+	function menuOpen(): boolean {
+		return el('menu-toggle')?.getAttribute('aria-expanded') === 'true';
+	}
+
 	function setOpen(open: boolean) {
-		const toggle = document.getElementById('menu-toggle');
-		const menu = document.getElementById('mobile-menu');
-		const iconOpen = document.getElementById('menu-icon-open');
-		const iconClose = document.getElementById('menu-icon-close');
-		if (!toggle || !menu || !iconOpen || !iconClose) return;
+		const toggle = el('menu-toggle');
+		const menu = el('mobile-menu');
+		const header = el('site-header');
+		if (!toggle || !menu || !header) return;
 		toggle.setAttribute('aria-expanded', String(open));
+		header.toggleAttribute('data-menu-open', open);
 		menu.classList.toggle('grid-rows-[1fr]', open);
 		menu.classList.toggle('grid-rows-[0fr]', !open);
-		iconOpen.classList.toggle('hidden', open);
-		iconClose.classList.toggle('hidden', !open);
+		// The links cascade on open and leave together on close — an exit that staggers makes the
+		// panel feel reluctant to close.
+		const items = menu.querySelectorAll<HTMLElement>('[data-menu-item]');
+		items.forEach((item, index) => {
+			item.style.transitionDelay = open ? `${60 + index * 45}ms` : '0ms';
+		});
+		// Safe to lock the page behind the panel: `scrollbar-gutter: stable` in global.css means
+		// hiding the scrollbar no longer reflows the layout by its width.
+		document.documentElement.style.overflow = open ? 'hidden' : '';
 	}
 
 	document.addEventListener('click', (event) => {
-		const toggle = (event.target as Element | null)?.closest('#menu-toggle');
-		if (toggle) setOpen(toggle.getAttribute('aria-expanded') !== 'true');
+		const target = event.target as Element | null;
+		if (target?.closest('#menu-toggle')) {
+			setOpen(!menuOpen());
+			return;
+		}
+		// A tap anywhere outside the open panel closes it. Links inside it close it too — the view
+		// transition that follows would otherwise leave the menu hanging open over the new page.
+		if (menuOpen() && (!target?.closest('#mobile-menu') || target.closest('#mobile-menu a'))) {
+			setOpen(false);
+		}
 	});
 
+	document.addEventListener('keydown', (event) => {
+		if (event.key === 'Escape' && menuOpen()) {
+			setOpen(false);
+			el('menu-toggle')?.focus();
+		}
+	});
+
+	document.addEventListener('pointerover', (event) => {
+		const link = (event.target as Element | null)?.closest<HTMLElement>('#primary-nav [data-nav-link]');
+		if (link) moveNavPill(link);
+	});
+	document.addEventListener('pointerleave', (event) => {
+		if ((event.target as Element | null)?.id === 'primary-nav') moveNavPill();
+	}, true);
+
 	document.addEventListener('astro:after-swap', () => setOpen(false));
+	document.addEventListener('astro:page-load', syncActive);
+	// The pill is positioned from layout measurements, so it has to be re-placed when the layout
+	// changes — a font swap or a resize moves the links out from under it otherwise.
+	addEventListener('resize', () => moveNavPill());
+	document.fonts?.ready.then(() => moveNavPill());
+	syncActive();
 </script>

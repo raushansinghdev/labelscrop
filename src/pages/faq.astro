@@ -143,9 +143,9 @@ const schema = {
 							<details
 								data-reveal
 								open={groupIndex === 0 && i === 0}
-								class="faq-item group rounded-2xl border border-border bg-card transition-[border-color,box-shadow] duration-200 open:border-primary/30 open:shadow-sm"
+								class="faq-item group rounded-2xl border border-border bg-card transition-[border-color,box-shadow] duration-200 hover:border-primary/30 open:border-primary/30 open:shadow-sm"
 							>
-								<summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-semibold marker:content-none [&::-webkit-details-marker]:hidden">
+								<summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 rounded-2xl px-5 py-4 font-semibold transition-colors duration-150 marker:content-none active:bg-muted/60 [&::-webkit-details-marker]:hidden">
 									{faq.q}
 									<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground transition-[transform,background-color,color] duration-300 group-open:rotate-45 group-open:bg-primary group-open:text-primary-foreground">
 										<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="h-4 w-4" aria-hidden="true">

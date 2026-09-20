@@ -1,94 +1,26 @@
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
+import { useState } from 'react';
+import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
 import { cn } from 'cn';
 import { formatCurrency, formatNumber } from '../format';
+import { buildStatusSlices } from '../status';
 import type { StatusRow } from '../types';
-import { ChartCard, ChartTooltip } from './ChartCard';
-
-/**
- * Colour and wording per normalised status. The calculator emits Meesho's own vocabulary; "RTO"
- * means nothing to a new seller, so each one is relabelled in plain terms.
- *
- * Colours are Tailwind utility pairs rather than colour strings: the slice needs a `fill-*`
- * (SVG presentation attributes don't resolve `var()` reliably), and the legend dot beside it is
- * an HTML element, so it needs the matching `bg-*`.
- */
-const STATUS_META: Record<string, Meta> = {
-	delivered: { label: 'Delivered', fill: 'fill-chart-2', dot: 'bg-chart-2' },
-	exchange: { label: 'Exchanged', fill: 'fill-chart-5', dot: 'bg-chart-5' },
-	rto: { label: 'Returned to you', fill: 'fill-chart-3', dot: 'bg-chart-3' },
-	return: { label: 'Customer returned', fill: 'fill-chart-4', dot: 'bg-chart-4' },
-	cancelled: { label: 'Cancelled', fill: 'fill-muted-foreground', dot: 'bg-muted-foreground' },
-	lost: { label: 'Lost in transit', fill: 'fill-chart-1', dot: 'bg-chart-1' },
-	shipped: { label: 'Still shipping', fill: 'fill-chart-1', dot: 'bg-chart-1' },
-};
-
-interface Meta {
-	label: string;
-	fill: string;
-	dot: string;
-}
-
-const UNKNOWN: Meta = { label: 'Status missing', fill: 'fill-border', dot: 'bg-border' };
+import { ChartCard } from './ChartCard';
+import { useChartMotion } from './theme';
 
 interface StatusDonutProps {
 	breakdown: StatusRow[];
 }
 
-interface Slice {
-	name: string;
-	value: number;
-	percentage: number;
-	settlement: number;
-	fill: string;
-	dot: string;
-	/** Set only on the rolled-up slice, so its tooltip can say what it swallowed. */
-	parts?: string[];
-}
-
-/**
- * Below this, a slice is a hairline on a 144px donut and a legend row nobody reads. A real file
- * carries four or five of them — one cancelled order, one still shipping, one blank status — and
- * they turned a seven-row legend into mostly noise around the three lines that matter.
- */
-const MIN_SLICE_PCT = 2;
-
 export function StatusDonut({ breakdown }: StatusDonutProps) {
+	const motion = useChartMotion();
+	const [active, setActive] = useState<number | null>(null);
 	if (breakdown.length === 0) return null;
 
-	const all: Slice[] = breakdown
-		.map((item) => {
-			const meta = STATUS_META[item.status] ?? UNKNOWN;
-			return {
-				name: meta.label,
-				value: item.order_count,
-				percentage: item.percentage,
-				settlement: item.total_settlement,
-				fill: meta.fill,
-				dot: meta.dot,
-			};
-		})
-		// Largest first. The calculator emits its own order, which put 80% delivered third in the
-		// legend, under two statuses worth 12% between them.
-		.sort((a, b) => b.value - a.value);
+	// Which statuses earn a slice, what they are called and what colour they are: shared with the
+	// donut in the downloaded report, so the two can't disagree about what got folded into "Other".
+	const { slices: data, total } = buildStatusSlices(breakdown);
 
-	const total = all.reduce((sum, d) => sum + d.value, 0);
-
-	const tiny = all.filter((d) => d.percentage < MIN_SLICE_PCT);
-	const data: Slice[] = all.filter((d) => d.percentage >= MIN_SLICE_PCT);
-	// One stray status is clearer named than hidden behind "Other"; two or more are noise.
-	if (tiny.length > 1) {
-		data.push({
-			name: 'Other',
-			value: tiny.reduce((sum, d) => sum + d.value, 0),
-			percentage: tiny.reduce((sum, d) => sum + d.percentage, 0),
-			settlement: tiny.reduce((sum, d) => sum + d.settlement, 0),
-			fill: 'fill-muted-foreground/40',
-			dot: 'bg-muted-foreground/40',
-			parts: tiny.map((d) => `${d.name} ${formatNumber(d.value)}`),
-		});
-	} else {
-		data.push(...tiny);
-	}
+	const hovered = active === null ? null : (data[active] ?? null);
 
 	return (
 		<ChartCard
@@ -97,41 +29,105 @@ export function StatusDonut({ breakdown }: StatusDonutProps) {
 			badge={`${formatNumber(total)} orders`}
 		>
 			{/* Stacked, not side by side: this card now lives in a 20rem column, which is not wide
-			  * enough to put a 144px donut and seven legend rows next to each other. */}
-			<div className="flex flex-col items-center gap-3">
-				<div className="relative h-36 w-36 shrink-0">
+			  * enough to put a donut and seven legend rows next to each other. */}
+			<div className="flex h-full flex-col items-center justify-center gap-5">
+				<div className="relative h-44 w-44 shrink-0">
 					<ResponsiveContainer>
 						<PieChart>
 							<Pie
 								data={data}
 								cx="50%"
 								cy="50%"
-								innerRadius={43}
-								outerRadius={66}
-								paddingAngle={2}
+								innerRadius={54}
+								outerRadius={82}
+								paddingAngle={1.5}
 								dataKey="value"
-								stroke="none"
+								/* A 2px ring in the card colour, which is what separates touching
+								 * slices. A stroke in a *contrasting* colour would be drawing a border
+								 * around each mark — ink that isn't data. */
+								stroke="var(--card)"
+								strokeWidth={2}
+								onMouseEnter={(_, index) => setActive(index)}
+								onMouseLeave={() => setActive(null)}
+								{...motion}
 							>
-								{data.map((entry) => (
-									<Cell key={entry.name} className={entry.fill} />
+								{data.map((entry, index) => (
+									<Cell
+										key={entry.name}
+										className={cn(
+											entry.fill,
+											'transition-opacity duration-150',
+											// The hovered slice stays lit and the rest step back, which is
+											// what tells you which one the readout belongs to.
+											active !== null && active !== index && 'opacity-30',
+										)}
+									/>
 								))}
 							</Pie>
-							<Tooltip content={<StatusTooltip />} />
 						</PieChart>
 					</ResponsiveContainer>
-					{/* Centred as HTML rather than an SVG <text>, so it inherits the page font and
-					  * theme colours instead of needing them restated in SVG attributes. */}
-					<div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-						<span className="text-xl font-semibold tabular-nums tracking-tight">{formatNumber(total)}</span>
-						<span className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">Orders</span>
+					{/* The hole *is* the tooltip.
+					  *
+					  * Recharts' floating tooltip follows the cursor, and on a 176px donut the cursor is
+					  * never more than ~90px from the centre — so the panel landed squarely on top of the
+					  * total and the two sets of type overprinted each other. Reading the hovered slice
+					  * out of the centre instead means nothing can ever collide: the total is what the
+					  * donut says at rest, the slice is what it says under the pointer.
+					  *
+					  * Centred as HTML rather than an SVG <text>, so it inherits the page font and theme
+					  * colours instead of needing them restated in SVG attributes. Sized to the hole
+					  * (innerRadius 54 → 108px) so long status names wrap inside it rather than over the
+					  * ring, and pointer-transparent so it never steals hover from the slice beneath. */}
+					<div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-1 text-center">
+						{hovered ? (
+							<div className="w-[6.75rem] leading-tight">
+								<p className="truncate text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+									{hovered.name}
+								</p>
+								<p className="text-2xl font-semibold tabular-nums tracking-tight">
+									{formatNumber(hovered.value)}
+								</p>
+								<p className="text-[11px] tabular-nums text-muted-foreground">
+									{hovered.percentage.toFixed(1)}% · {formatCurrency(hovered.settlement)}
+								</p>
+								{hovered.parts && (
+									<p className="mt-0.5 line-clamp-2 text-[10px] text-muted-foreground/80">
+										{hovered.parts.join(' · ')}
+									</p>
+								)}
+							</div>
+						) : (
+							<>
+								<span className="text-3xl font-semibold tracking-tight">{formatNumber(total)}</span>
+								<span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+									Orders
+								</span>
+							</>
+						)}
 					</div>
 				</div>
 
-				<ul className="w-full space-y-1">
-					{data.map((d) => (
-						<li key={d.name} className="flex items-center justify-between gap-3 text-xs">
-							<span className="flex min-w-0 items-center gap-2">
-								<span className={cn('h-2 w-2 shrink-0 rounded-full', d.dot)} aria-hidden="true" />
+				{/* The legend is the accessible channel — every slice is named and counted here, so
+				  * the donut never has to be read by colour alone. 14px, because it is the part
+				  * people actually read; it was set at 12 and the counts beside it at 12 too.
+				  *
+				  * Hovering a row drives the same readout as hovering its slice: the rows are wider
+				  * targets than a 28px ring, and on a narrow card they are what the thumb reaches. */}
+				<ul className="w-full space-y-2">
+					{data.map((d, index) => (
+						<li
+							key={d.name}
+							className={cn(
+								// The negative margin lets the hover band breathe past the text without
+								// nudging the rows in or out as it appears.
+								'-mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-0.5 text-sm transition-colors',
+								active === index && 'bg-muted/60',
+							)}
+							onMouseEnter={() => setActive(index)}
+							onMouseLeave={() => setActive(null)}
+						>
+							<span className="flex min-w-0 items-center gap-2.5">
+								<span className={cn('size-2.5 shrink-0 rounded-full', d.dot)} aria-hidden="true" />
 								<span className="truncate">{d.name}</span>
 							</span>
 							<span className="shrink-0 tabular-nums text-muted-foreground">
@@ -142,19 +138,5 @@ export function StatusDonut({ breakdown }: StatusDonutProps) {
 				</ul>
 			</div>
 		</ChartCard>
-	);
-}
-
-function StatusTooltip({ active, payload }: { active?: boolean; payload?: { payload: Slice }[] }) {
-	if (!active || !payload?.length) return null;
-	const d = payload[0].payload;
-	return (
-		<ChartTooltip label={d.name}>
-			<p>
-				{formatNumber(d.value)} orders ({d.percentage.toFixed(1)}%)
-			</p>
-			<p>{formatCurrency(d.settlement)} settled</p>
-			{d.parts && <p className="text-[11px]">{d.parts.join(' · ')}</p>}
-		</ChartTooltip>
 	);
 }
