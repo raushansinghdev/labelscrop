@@ -38,7 +38,7 @@ export function TabBar<T extends string>({ tabs, active }: TabBarProps<T>) {
 			// `h-auto!` is deliberate: the list's own variant sets `h-8` through a data-attribute
 			// selector, which outranks a plain utility, so the container stayed 32px tall while the
 			// 40px triggers inside it spilled out of their own background.
-			className="h-auto! w-full gap-0.5 rounded-xl border border-border bg-muted/50 p-1"
+			className="h-auto! w-full gap-0 rounded-2xl bg-muted p-1"
 		>
 			{tabs.map((tab) => {
 				const selected = tab.value === active;
@@ -48,7 +48,7 @@ export function TabBar<T extends string>({ tabs, active }: TabBarProps<T>) {
 						key={tab.value}
 						value={tab.value}
 						className={cn(
-							'relative h-11 min-w-0 flex-1 rounded-lg px-2 text-sm font-medium transition-colors duration-200 sm:h-10 sm:px-3',
+							'relative h-11 min-w-0 flex-1 rounded-xl px-2 text-sm font-semibold transition-colors duration-200 sm:px-3',
 							// The "line" variant already keeps the trigger's own background transparent,
 							// which the moving pill needs — but it also draws an underline on the active
 							// tab. Two selection indicators for one selection, so the underline goes.
@@ -60,7 +60,7 @@ export function TabBar<T extends string>({ tabs, active }: TabBarProps<T>) {
 							<motion.span
 								layoutId="pnl-tab-pill"
 								transition={SPRING}
-								className="absolute inset-0 rounded-lg bg-background shadow-sm ring-1 ring-border/60"
+								className="absolute inset-0 rounded-xl bg-background shadow-sm ring-1 ring-border/60"
 								aria-hidden="true"
 							/>
 						)}

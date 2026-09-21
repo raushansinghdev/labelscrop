@@ -40,6 +40,47 @@ export const STAGE_TRANSITION = {
 	exit: { opacity: 0, y: -8, transition: { duration: 0.18, ease: EASE_IN } },
 };
 
+/** Press feedback, the same two strengths the label cropper uses: a wide button, a square one. */
+export const TAP = { scale: 0.97 };
+export const TAP_ICON = { scale: 0.94 };
+export const TAP_CARD = { scale: 0.96 };
+
+/** A file or row entering a short list and sliding out left when removed — the cropper's file rows. */
+export function listRow(index = 0) {
+	return {
+		initial: { opacity: 0, y: 12, scale: 0.97 },
+		animate: {
+			opacity: 1,
+			y: 0,
+			scale: 1,
+			transition: { duration: 0.35, ease: EASE_OUT, delay: Math.min(index, 6) * 0.04 },
+		},
+		exit: { opacity: 0, x: -24, transition: { duration: 0.2 } },
+	};
+}
+
+/**
+ * The slower cascade of a results screen. Matches the cropper's "Your labels are ready" panel, so
+ * arriving at your profit feels like the same moment as arriving at your labels.
+ */
+export const RESULT_STAGGER: Variants = {
+	hidden: {},
+	show: { transition: { staggerChildren: 0.07, delayChildren: 0.12 } },
+};
+
+export const RESULT_ITEM: Variants = {
+	hidden: { opacity: 0, y: 16 },
+	show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: EASE_OUT } },
+};
+
+/** Height-and-fade for anything that opens in place, so the page reflows instead of jumping. */
+export const COLLAPSE = {
+	initial: { opacity: 0, height: 0 },
+	animate: { opacity: 1, height: 'auto' },
+	exit: { opacity: 0, height: 0 },
+	transition: { duration: 0.28, ease: EASE_OUT },
+};
+
 interface AnimatedNumberProps {
 	value: number;
 	/** Formats the in-between values too, so the digits stay currency-shaped while counting. */

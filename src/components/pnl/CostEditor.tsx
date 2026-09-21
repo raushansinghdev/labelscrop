@@ -19,6 +19,10 @@ import {
 	DialogTitle,
 } from '@/components/ui/dialog';
 import { formatCurrency, formatNumber } from './format';
+import { SuccessMark } from '@/components/tool/ResultsPanel';
+import { SegmentedPill } from '@/components/tool/OptionsForm';
+import { ghostAction, outlineAction, primaryCta } from '@/components/tool/buttons';
+import { CountChip } from './ListCard';
 import { EASE_OUT, ProgressMeter, SPRING } from './motion';
 import { requestPersistentStorage } from './preferences';
 import { StickyActions } from './StickyActions';
@@ -264,16 +268,16 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 
 	return (
 		<div className="space-y-4">
-			<section className="overflow-hidden rounded-2xl border border-border bg-card">
-				<header className="flex flex-col gap-3 border-b border-border p-3.5 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+			<section className="overflow-hidden rounded-3xl border border-border bg-card">
+				<header className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
 					<div className="min-w-0">
-						<h2 className="text-lg font-semibold tracking-tight">Product costs</h2>
-						<p className="mt-1 text-sm text-muted-foreground">
-							What one unit costs you to make and to pack ·{' '}
-							<span className={cn('font-semibold', allDone ? 'text-success' : 'text-foreground')}>
-								{doneCount}/{rows.length} entered
-							</span>
-						</p>
+						<h2 className="flex items-center gap-2 text-base font-semibold tracking-tight">
+							Product costs
+							<CountChip className={allDone ? 'bg-success/15 text-success' : undefined}>
+								{doneCount}/{rows.length}
+							</CountChip>
+						</h2>
+						<p className="mt-0.5 text-sm text-muted-foreground">What one unit costs you to make and to pack</p>
 					</div>
 
 					<div className="flex shrink-0 flex-wrap gap-2">
@@ -298,7 +302,7 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 					</div>
 				</header>
 
-				<div className="px-4 pt-3">
+				<div className="px-4">
 					<ProgressMeter
 						value={rows.length > 0 ? doneCount / rows.length : 0}
 						className={cn('h-full rounded-full', allDone ? 'bg-success' : 'bg-primary')}
@@ -337,47 +341,45 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 					)}
 				</AnimatePresence>
 
-				<div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
-					<div className="relative flex-1">
-						<SearchIcon
-							className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+				<div className="flex flex-col gap-2.5 p-4 sm:flex-row sm:items-center">
+					<div className="relative min-w-0 flex-1">
+						{/* Centred in the same 40px the input's left padding reserves, so the icon and the
+						  * text can't drift apart whatever the offset utilities resolve to. */}
+						<span
+							className="pointer-events-none absolute inset-y-0 left-0 flex w-10 items-center justify-center text-muted-foreground"
 							aria-hidden="true"
-						/>
+						>
+							<SearchIcon className="size-4" />
+						</span>
 						<input
 							type="search"
 							value={query}
 							onChange={(e) => setQuery(e.target.value)}
-							placeholder="Search product or SKU"
+							placeholder="Search SKU"
 							aria-label="Search products"
-							className="h-11 w-full rounded-lg border border-border bg-background pl-10 pr-3 text-base outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring sm:h-10"
+							// 16px on phones stops iOS Safari zooming the page when the field is focused.
+							// 52px: the height of the segmented pill beside it (44px buttons + 4px padding each side).
+							className="h-13 w-full rounded-2xl border border-border bg-background pl-10 pr-3 text-base outline-none transition-[border-color,box-shadow] focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/15 sm:text-sm"
 						/>
 					</div>
-					<label
-						className={cn(
-							'flex h-11 shrink-0 cursor-pointer items-center gap-2 rounded-lg border px-3.5 text-sm font-medium transition-colors sm:h-10',
-							onlyMissing
-								? 'border-primary/40 bg-primary/10 text-foreground'
-								: 'border-border hover:bg-muted',
-						)}
-					>
-						<input
-							type="checkbox"
-							checked={onlyMissing}
-							onChange={(e) => {
-								setOnlyMissing(e.target.checked);
-								setMissingSnapshot(
-									e.target.checked
-										? new Set(ordered.filter((r) => !hasCost(r.sku)).map((r) => r.sku))
-										: null,
-								);
+					{/* The cropper's segmented pill rather than a checkbox. Both halves say how many
+					  * rows they hold, so the filter explains itself before anyone taps it. */}
+					<div className="sm:w-72 sm:shrink-0">
+						<SegmentedPill
+							fieldId="cost-filter"
+							label="Which products to show"
+							choices={[
+								{ value: 'missing', label: `Missing (${missingCount})` },
+								{ value: 'all', label: `All (${ordered.length})` },
+							]}
+							value={onlyMissing ? 'missing' : 'all'}
+							onChange={(next) => {
+								const on = next === 'missing';
+								setOnlyMissing(on);
+								setMissingSnapshot(on ? new Set(ordered.filter((r) => !hasCost(r.sku)).map((r) => r.sku)) : null);
 							}}
-							className="size-4 accent-[var(--primary)]"
 						/>
-						Only missing
-						{missingCount > 0 && (
-							<span className="tabular-nums text-muted-foreground">({missingCount})</span>
-						)}
-					</label>
+					</div>
 				</div>
 
 				{visible.length === 0 ? (
@@ -429,7 +431,7 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 												// The left-hand column needs a rule down its right edge; only the
 												// odd-numbered rows land there once the list flows across.
 												'lg:odd:border-r lg:odd:border-border',
-												filled ? 'bg-success/[0.04]' : 'hover:bg-muted/40',
+												'hover:bg-muted/40',
 											)}
 										>
 											{/* SKU and listing price share a line on a phone and become two
@@ -437,10 +439,26 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 											  * which no longer has a column of its own. */}
 											<div className="flex items-baseline justify-between gap-2 md:contents">
 												<p
-													className="min-w-0 truncate font-mono text-sm font-semibold"
+													className="flex min-w-0 items-center gap-2 font-mono text-sm font-semibold"
 													title={row.product_name ? `${row.sku} — ${row.product_name}` : row.sku}
 												>
-													{row.sku}
+													<AnimatePresence initial={false}>
+														{filled && (
+															<motion.span
+																initial={{ scale: 0, width: 0 }}
+																animate={{ scale: 1, width: 'auto' }}
+																exit={{ scale: 0, width: 0 }}
+																transition={SPRING}
+																className="flex shrink-0"
+																aria-hidden="true"
+															>
+																<span className="flex size-4 items-center justify-center rounded-full bg-success text-white">
+																	<CheckIcon className="size-2.5" strokeWidth={3.5} />
+																</span>
+															</motion.span>
+														)}
+													</AnimatePresence>
+													<span className="truncate">{row.sku}</span>
 												</p>
 												<span className="shrink-0 text-sm tabular-nums text-muted-foreground md:text-right">
 													{formatCurrency(row.avg_sale_price)}
@@ -467,13 +485,12 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 												  * the P&L, and seeing it land is how a typo in the packing box
 												  * gets caught here rather than three screens later, in a profit
 												  * figure that just looks slightly off. */}
-												<p
-													className={cn(
-														'w-16 shrink-0 text-right text-sm tabular-nums md:w-full',
-														filled ? 'font-semibold' : 'text-muted-foreground',
+												<p className="w-16 shrink-0 text-right text-sm tabular-nums md:w-full">
+													{filled ? (
+														<CountChip>{formatCurrency(unitTotal(draft))}</CountChip>
+													) : (
+														<span className="text-muted-foreground">—</span>
 													)}
-												>
-													{filled ? formatCurrency(unitTotal(draft)) : '—'}
 												</p>
 											</div>
 										</motion.li>
@@ -495,7 +512,7 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 			/>
 
 			<Dialog open={askBackup} onOpenChange={(open) => !open && dismissBackup()}>
-				<DialogContent className="sm:max-w-md">
+				<DialogContent className="rounded-3xl sm:max-w-md">
 					<DialogHeader>
 						{/* The icon carries the tone. Green, not amber: nothing has gone wrong, and a
 						  * warning colour here would read as an error the seller had just caused. */}
@@ -516,7 +533,7 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 					</DialogHeader>
 
 					{/* What the file actually is, so "Download backup" isn't a leap of faith. */}
-					<div className="flex items-center gap-2.5 rounded-xl border border-border bg-muted/40 px-3 py-2.5">
+					<div className="flex items-center gap-3 rounded-2xl bg-muted/60 p-3">
 						<FileSpreadsheetIcon className="size-4 shrink-0 text-success" aria-hidden="true" />
 						<div className="min-w-0 flex-1">
 							<p className="truncate font-mono text-sm font-medium">sku-costs.xlsx</p>
@@ -534,7 +551,7 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 						<button
 							type="button"
 							onClick={dismissBackup}
-							className="inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+							className={cn(ghostAction, 'px-5 text-muted-foreground')}
 						>
 							Skip
 						</button>
@@ -546,7 +563,7 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 								void exportToExcel();
 								dismissBackup();
 							}}
-							className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+							className={cn(primaryCta, 'h-12 flex-none px-5')}
 						>
 							<DownloadIcon className="size-4" aria-hidden="true" />
 							Download backup
@@ -578,7 +595,7 @@ function EmptyTable({
 }) {
 	if (query.trim() || !filtered) {
 		return (
-			<p className="px-4 pb-6 text-center text-base text-muted-foreground">
+			<p className="px-4 pt-2 pb-8 text-center text-sm text-muted-foreground">
 				No product matches “{query}”.
 			</p>
 		);
@@ -589,25 +606,17 @@ function EmptyTable({
 			initial={{ opacity: 0, y: 8 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.3, ease: EASE_OUT }}
-			className="flex flex-col items-center px-4 pb-6 pt-1 text-center"
+			className="flex flex-col items-center px-4 pb-8 pt-4 text-center"
 		>
-			<motion.span
-				initial={{ scale: 0.6, opacity: 0 }}
-				animate={{ scale: 1, opacity: 1 }}
-				transition={SPRING}
-				className="flex size-10 items-center justify-center rounded-full bg-success/12 text-success"
-				aria-hidden="true"
-			>
-				<CheckIcon className="size-5" strokeWidth={2.5} />
-			</motion.span>
-			<p className="mt-3 text-base font-semibold">Every product has a cost</p>
+			<SuccessMark className="size-14" />
+			<p className="mt-4 text-lg font-bold tracking-tight">Every product has a cost</p>
 			<p className="mt-1 text-sm text-muted-foreground">
 				All {formatNumber(total)} of them — your profit is working from real numbers.
 			</p>
 			<button
 				type="button"
 				onClick={onShowAll}
-				className="mt-4 inline-flex h-10 items-center rounded-lg border border-border px-4 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+				className={cn(outlineAction, 'mt-5 h-12 rounded-2xl px-5')}
 			>
 				Show all {formatNumber(total)} products
 			</button>
@@ -620,7 +629,7 @@ function HeadRow({ className }: { className?: string }) {
 		<div
 			className={cn(
 				'grid items-center gap-3 px-4 py-2.5',
-				'text-xs font-medium uppercase tracking-wide text-muted-foreground',
+				'text-xs font-medium text-muted-foreground',
 				COST_COLS,
 				className,
 			)}
@@ -647,7 +656,7 @@ function SecondaryButton({
 		<button
 			type="button"
 			onClick={onClick}
-			className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-background px-3.5 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+			className={outlineAction}
 		>
 			<Icon className="size-4" aria-hidden="true" />
 			{children}
@@ -685,8 +694,7 @@ function CostField({
 				onChange={(e) => onChange(e.target.value)}
 				placeholder={placeholder ?? '—'}
 				aria-label={label}
-				className="h-11 w-full rounded-md border border-border bg-background pl-6 pr-2.5 text-right text-base md:h-10 tabular-nums outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring md:placeholder:text-transparent [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-				style={{ MozAppearance: 'textfield' }}
+				className="h-11 w-full rounded-xl border border-border bg-background pl-6 pr-2.5 text-right text-base md:h-10 md:text-sm tabular-nums outline-none transition-[border-color,box-shadow] focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/15 md:placeholder:text-transparent [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
 			/>
 		</div>
 	);

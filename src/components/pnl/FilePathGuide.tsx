@@ -21,7 +21,7 @@ export function FilePathGuide() {
 			animate={{ opacity: 1, y: 0 }}
 			exit={{ opacity: 0, y: -6 }}
 			transition={{ duration: 0.35, ease: EASE_OUT, delay: 0.1 }}
-			className="rounded-2xl border border-border bg-muted/30 p-3.5"
+			className="rounded-2xl bg-muted/40 p-4"
 		>
 			<div className="flex items-baseline justify-between gap-3">
 				<h2 className="text-sm font-semibold tracking-tight">Where to find this file</h2>
@@ -38,7 +38,7 @@ export function FilePathGuide() {
 
 			{/* A wrapping row rather than a numbered list down the page: it is one path, and five
 			  * stacked lines make five clicks look like five chores. */}
-			<ol className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-2">
+			<ol className="mt-3.5 flex flex-wrap items-center gap-x-1.5 gap-y-2">
 				{PATH.map((step, index) => (
 					<motion.li
 						key={step}
@@ -47,9 +47,9 @@ export function FilePathGuide() {
 						transition={{ duration: 0.3, ease: EASE_OUT, delay: 0.15 + index * 0.06 }}
 						className="flex items-center gap-1"
 					>
-						<span className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm font-medium">
+						<span className="inline-flex items-center gap-2 rounded-full bg-background py-1 pr-3 pl-1 text-sm font-medium shadow-xs ring-1 ring-border">
 							<span
-								className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary"
+								className="flex size-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground"
 								aria-hidden="true"
 							>
 								{index + 1}

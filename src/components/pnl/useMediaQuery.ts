@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
  * Whether a CSS media query currently matches.
  *
  * Layout belongs in CSS, and almost everything here is done with Tailwind's breakpoints. This
- * exists for the one thing a class name cannot change: which *chart* recharts draws. A waterfall
+ * exists for the one thing a class name cannot change: chart geometry. A waterfall
  * with eight bars needs its labels rotated to 40 degrees to fit a phone, which is a chart you
  * tilt your head to read — so on a narrow screen the whole thing is drawn on its side instead,
  * and that is a different component tree, not a different stylesheet.

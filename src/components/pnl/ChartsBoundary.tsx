@@ -18,7 +18,7 @@ interface State {
  * file gone, several minutes of work for a flaky network.
  *
  * Nothing here can recover the chunk, but everything around it survives: the profit figures, the
- * product table and the cost editor are plain React and never needed recharts. The charts are the
+ * product table and the cost editor are plain React and never needed the chart chunk. The charts are the
  * one genuinely optional thing on the page, so they're the one thing allowed to be missing.
  */
 export class ChartsBoundary extends Component<Props, State> {

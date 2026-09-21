@@ -1,4 +1,4 @@
-import { AlertTriangleIcon, ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon, SearchIcon } from 'lucide-react';
+import { AlertTriangleIcon, ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon, ChevronDownIcon, SearchIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useMemo, useState } from 'react';
 import { cn } from 'cn';
@@ -116,24 +116,26 @@ export function ProductsTable({ rows }: ProductsTableProps) {
 			: 'Highest first';
 
 	return (
-		<div className="space-y-4">
-			<div className="flex flex-col gap-3 sm:flex-row">
+		<div className="space-y-3">
+			<div className="flex flex-col gap-2.5 sm:flex-row">
 				<div className="relative flex-1">
-					<SearchIcon
-						className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+					<span
+						className="pointer-events-none absolute inset-y-0 left-0 flex w-10 items-center justify-center text-muted-foreground"
 						aria-hidden="true"
-					/>
+					>
+						<SearchIcon className="size-4" />
+					</span>
 					<input
 						type="search"
 						value={query}
 						onChange={(e) => setQuery(e.target.value)}
 						placeholder="Search product or SKU"
 						aria-label="Search products"
-						className="h-11 w-full rounded-lg border border-border bg-background pl-10 pr-3 text-base outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring sm:h-10"
+						className="h-12 w-full rounded-xl border border-border bg-background pl-10 pr-3 text-base outline-none transition-[border-color,box-shadow] focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/15 sm:text-sm"
 					/>
 				</div>
 
-				<div className="flex gap-2">
+				<div className="flex gap-2.5">
 					<Select
 						value={sortKey}
 						onValueChange={(next) => {
@@ -147,7 +149,7 @@ export function ProductsTable({ rows }: ProductsTableProps) {
 					>
 						<SelectTrigger
 							aria-label="Sort products by"
-							className="h-auto min-h-11 flex-1 gap-2 rounded-lg border-border bg-background px-3 text-sm transition-colors hover:border-foreground/20 data-popup-open:border-foreground/20 sm:min-h-10 sm:w-56 sm:flex-none"
+							className="h-auto min-h-12 flex-1 gap-2 rounded-xl border-border bg-card px-3.5 text-sm transition-[border-color,background-color] hover:border-foreground/20 data-popup-open:border-primary sm:w-60 sm:flex-none"
 						>
 							<ArrowUpDownIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
 							<span className="min-w-0 flex-1 truncate text-left">
@@ -172,7 +174,7 @@ export function ProductsTable({ rows }: ProductsTableProps) {
 							alignItemWithTrigger={false}
 							align="end"
 							sideOffset={6}
-							className="max-h-[min(19rem,var(--available-height))] w-auto min-w-(--anchor-width) rounded-xl p-1.5 shadow-xl"
+							className="max-h-[min(19rem,var(--available-height))] w-auto min-w-(--anchor-width) rounded-2xl p-1.5 shadow-xl"
 						>
 							{SORT_GROUPS.map((group) => (
 								<SelectGroup key={group} className="p-0 pt-2 first:pt-0">
@@ -185,7 +187,7 @@ export function ProductsTable({ rows }: ProductsTableProps) {
 											value={opt.value}
 											// The prefix lives in the trigger; repeating "Sort by" on thirteen
 											// rows under headings that already say "Profit" is just noise.
-											className="cursor-pointer rounded-lg py-1.5 pl-2.5 pr-9 text-sm data-selected:bg-primary/[0.06] data-selected:font-medium"
+											className="min-h-10 cursor-pointer rounded-xl py-1.5 pl-2.5 pr-9 text-sm data-selected:bg-primary/[0.06] data-selected:font-medium"
 										>
 											{opt.label}
 										</SelectItem>
@@ -201,7 +203,7 @@ export function ProductsTable({ rows }: ProductsTableProps) {
 						title={directionLabel}
 						aria-label={`Sort order: ${directionLabel}. Activate to reverse.`}
 						className={cn(
-							'flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground sm:h-10 sm:w-10',
+							'flex h-12 w-14 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground',
 							'transition-colors hover:border-foreground/20 hover:text-foreground',
 							'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
 						)}
@@ -213,13 +215,17 @@ export function ProductsTable({ rows }: ProductsTableProps) {
 								animate={{ opacity: 1, y: 0 }}
 								exit={{ opacity: 0, y: direction === 'desc' ? 6 : -6 }}
 								transition={{ duration: 0.15, ease: EASE_OUT }}
-								className="flex"
+								className="flex flex-col items-center gap-0.5"
 							>
 								{direction === 'desc' ? (
 									<ArrowDownIcon className="size-4" aria-hidden="true" />
 								) : (
 									<ArrowUpIcon className="size-4" aria-hidden="true" />
 								)}
+								{/* A bare arrow doesn't say which way round; the caption does, as in the cropper. */}
+								<span className="text-[11px] leading-none font-semibold" aria-hidden="true">
+									{option.text ? (direction === 'asc' ? 'A–Z' : 'Z–A') : direction === 'asc' ? 'Low' : 'High'}
+								</span>
 							</motion.span>
 						</AnimatePresence>
 					</button>
@@ -229,7 +235,7 @@ export function ProductsTable({ rows }: ProductsTableProps) {
 			{/* Stated once, here, rather than on 39 cards. Rent and salary are deliberately not
 			  * divided between products — nothing about an order causes them, so any split would
 			  * be invented — which makes it important to say what these figures do and don't carry. */}
-			<p className="text-sm leading-relaxed text-muted-foreground">
+			<p className="px-1 text-xs leading-relaxed text-muted-foreground">
 				Profit per product is after its own making, packing and return costs — before business
 				expenses like rent and salary.
 			</p>
@@ -244,7 +250,7 @@ export function ProductsTable({ rows }: ProductsTableProps) {
 					No product matches “{query}”.
 				</motion.p>
 			) : (
-				<ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+				<ul className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
 					<AnimatePresence initial={false}>
 						{shown.map((row, index) => (
 							<ProductCard key={row.sku} row={row} index={index} />
@@ -258,12 +264,14 @@ export function ProductsTable({ rows }: ProductsTableProps) {
 					type="button"
 					onClick={() => setShowAll(true)}
 					className={cn(
-						'h-12 w-full rounded-lg border border-border text-sm font-medium sm:h-11',
-						'transition-colors hover:bg-muted',
+						// The cropper's "Show all N SKUs" footer, standing on its own under the grid.
+						'flex min-h-12 w-full items-center justify-center gap-1.5 rounded-2xl border border-border bg-card text-sm font-semibold text-primary',
+						'transition-colors hover:bg-muted/50 active:bg-muted/60',
 						'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
 					)}
 				>
 					Show {formatNumber(hidden)} more {hidden === 1 ? 'product' : 'products'}
+					<ChevronDownIcon className="size-4" aria-hidden="true" />
 				</button>
 			)}
 		</div>
@@ -306,7 +314,7 @@ function ProductCard({ row, index }: { row: SkuRow; index: number }) {
 			// `min-w-0` is load-bearing: a grid item defaults to `min-width: auto`, so without it the
 			// longest product name sets the column width and the card runs off a phone screen
 			// instead of truncating. It measured 885px wide in a 390px viewport.
-			className="flex min-w-0 flex-col rounded-xl border border-border bg-card p-4 transition-colors hover:border-foreground/20"
+			className="flex min-w-0 flex-col rounded-2xl border border-border bg-card p-4 transition-colors hover:border-foreground/20"
 		>
 			{/* Profit sits in the header rather than at the foot of the card. It used to hang off the
 			  * bottom under its own "Net profit" label, which cost two lines and put the one number
@@ -360,7 +368,7 @@ function ProductCard({ row, index }: { row: SkuRow; index: number }) {
 				)}
 			</div>
 
-			<dl className="mt-3.5 grid grid-cols-4 gap-1 text-center">
+			<dl className="mt-3.5 grid grid-cols-4 gap-1.5 text-center">
 				<Count label="Total" value={row.orders} />
 				<Count label="Delivered" value={row.delivered_orders} className="text-success" />
 				<Count label="Courier" value={row.rto_orders} className="text-destructive" />
@@ -407,7 +415,7 @@ function Chip({
 	children: React.ReactNode;
 }) {
 	return (
-		<span className={cn('rounded px-2 py-0.5 text-xs font-medium tabular-nums', className)} title={title}>
+		<span className={cn('rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums', className)} title={title}>
 			{children}
 		</span>
 	);
@@ -415,9 +423,9 @@ function Chip({
 
 function Count({ label, value, className }: { label: string; value: number; className?: string }) {
 	return (
-		<div>
+		<div className="rounded-xl bg-muted/60 px-1 py-2">
 			<dd className={cn('text-base font-semibold tabular-nums leading-tight', className)}>{formatNumber(value)}</dd>
-			<dt className="mt-0.5 text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
+			<dt className="mt-0.5 text-[11px] text-muted-foreground">{label}</dt>
 		</div>
 	);
 }

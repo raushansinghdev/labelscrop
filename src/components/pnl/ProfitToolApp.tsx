@@ -1,17 +1,17 @@
 import {
 	AlertTriangleIcon,
-	ArrowLeftIcon,
 	ArrowRightIcon,
 	FileSpreadsheetIcon,
 	LayoutDashboardIcon,
-	Loader2Icon,
 	PackageIcon,
+	RotateCcwIcon,
 	SlidersHorizontalIcon,
 	TagsIcon,
 } from 'lucide-react';
 import { AnimatePresence, motion, MotionConfig } from 'motion/react';
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from 'cn';
+import { ghostAction } from '@/components/tool/buttons';
 import { StepIndicator } from '@/components/tool/StepIndicator';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { ChartsBoundary } from './ChartsBoundary';
@@ -22,26 +22,19 @@ import { ExpensesPanel } from './ExpensesPanel';
 import { FilePathGuide } from './FilePathGuide';
 import { formatDateRange, formatNumber } from './format';
 import { KpiCards } from './KpiCards';
-import { EASE_OUT, STAGE_TRANSITION, STAGGER_ITEM, STAGGER_LIST } from './motion';
-import { PaymentFileDropzone, type PaymentFile } from './PaymentFileDropzone';
-import { loadExpenses, loadLossRates, saveExpenses, saveLossRates } from './preferences';
+import { EASE_OUT, RESULT_ITEM, RESULT_STAGGER, STAGE_TRANSITION, TAP } from './motion';
+import { formatSize, PaymentFileDropzone, type PaymentFile } from './PaymentFileDropzone';
+import { DEFAULT_LOSS_RATES, loadExpenses, loadLossRates, saveExpenses, saveLossRates } from './preferences';
 import { ProductsTable } from './ProductsTable';
 import { ProfitInsights } from './ProfitInsights';
+import { StatTile } from './StatTile';
+import { StickyActions, WorkingCard } from './StickyActions';
 import { TabBar, type TabDef } from './TabBar';
 import type { LossRates, PnlResult } from './types';
 
-// recharts is far larger than the rest of this island put together, and nobody sees a chart
-// before they've uploaded a file — so it loads on demand rather than with the page.
+// Nobody sees a chart before they've uploaded a file, so the charts load on demand rather
+// than with the page.
 const ProfitCharts = lazy(() => import('./charts'));
-
-const DEFAULT_LOSS_RATES: LossRates = {
-	rto: 0,
-	return_rate: 1,
-	lost: 1,
-	unresolved: 0,
-	rto_packaging_loss: 1,
-	return_packaging_loss: 1,
-};
 
 /**
  * Three stages, in the order the question is actually answered: what did Meesho pay me, what did
@@ -226,6 +219,10 @@ export function ProfitToolApp() {
 
 	const unmappedCount = result?.unmapped_skus.length ?? 0;
 	const tabs = TABS.map((t) => (t.value === 'costs' ? { ...t, badge: unmappedCount } : t));
+	const period = result
+		? formatDateRange(result.overall.payment_window_start, result.overall.payment_window_end)
+		: '';
+	const totalBytes = files.reduce((sum, f) => sum + f.file.size, 0);
 	const fileLabel = files.length === 1 ? files[0].file.name : `${files.length} payment files`;
 
 	/** Panels enter from whichever side the tab they replaced sits on. */
@@ -278,53 +275,13 @@ export function ProfitToolApp() {
 							<AnimatePresence>{files.length === 0 && <FilePathGuide />}</AnimatePresence>
 
 							<AnimatePresence>
-								{files.length > 0 && (
-									<motion.div
-										layout
-										initial={{ opacity: 0, y: 10 }}
-										animate={{ opacity: 1, y: 0 }}
-										exit={{ opacity: 0, y: -6 }}
-										transition={{ duration: 0.3, ease: EASE_OUT }}
-									>
-										<button
-											type="button"
-											onClick={() => void calculate()}
-											disabled={status === 'working'}
-											className={cn(
-												'group inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-6',
-												'text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25',
-												'transition-[transform,box-shadow] duration-200 hover:scale-[1.01] hover:shadow-xl hover:shadow-primary/30 active:scale-[0.99]',
-												'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-												'disabled:pointer-events-none disabled:opacity-70',
-											)}
-										>
-											{status === 'working' ? (
-												<>
-													<Loader2Icon className="size-4 animate-spin" aria-hidden="true" />
-													Reading your {files.length === 1 ? 'file' : 'files'}…
-												</>
-											) : (
-												<>
-													Continue
-													<ArrowRightIcon
-														className="size-5 transition-transform duration-200 group-hover:translate-x-1"
-														aria-hidden="true"
-													/>
-												</>
-											)}
-										</button>
-									</motion.div>
-								)}
-							</AnimatePresence>
-
-							<AnimatePresence>
 								{status === 'error' && error && (
 									<motion.div
 										role="alert"
 										initial={{ opacity: 0, y: -6 }}
 										animate={{ opacity: 1, y: 0 }}
 										exit={{ opacity: 0 }}
-										className="flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm"
+										className="flex items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm"
 									>
 										<AlertTriangleIcon
 											className="mt-0.5 size-4 shrink-0 text-destructive"
@@ -337,6 +294,21 @@ export function ProfitToolApp() {
 									</motion.div>
 								)}
 							</AnimatePresence>
+
+							<AnimatePresence>
+								{files.length > 0 && (
+									<StickyActions
+										label="Continue"
+										detail={`· ${files.length} ${files.length === 1 ? 'file' : 'files'}, ${formatSize(totalBytes)}`}
+										onClick={() => void calculate()}
+										busy={
+											status === 'working' ? (
+												<WorkingCard label={`Reading your ${files.length === 1 ? 'file' : 'files'}…`} />
+											) : undefined
+										}
+									/>
+								)}
+							</AnimatePresence>
 						</motion.div>
 					)}
 
@@ -344,12 +316,10 @@ export function ProfitToolApp() {
 						<motion.div key="costs" {...STAGE_TRANSITION} className="mt-6 space-y-3 sm:mt-8">
 							<FileSummary
 								fileLabel={fileLabel}
+								period={period}
 								orders={result.overall.total_orders}
 								products={result.sku_rows.length}
-								period={formatDateRange(
-									result.overall.payment_window_start,
-									result.overall.payment_window_end,
-								)}
+								missing={unmappedCount}
 							/>
 
 							<CostEditor
@@ -364,15 +334,7 @@ export function ProfitToolApp() {
 
 					{stage === 'expenses' && result && (
 						<motion.div key="expenses" {...STAGE_TRANSITION} className="mx-auto mt-6 max-w-4xl space-y-3 sm:mt-8">
-							<FileSummary
-								fileLabel={fileLabel}
-								orders={result.overall.total_orders}
-								products={result.sku_rows.length}
-								period={formatDateRange(
-									result.overall.payment_window_start,
-									result.overall.payment_window_end,
-								)}
-							/>
+							<FileCaption fileLabel={fileLabel} period={period} />
 
 							<ExpensesPanel
 								rows={expenses}
@@ -394,38 +356,14 @@ export function ProfitToolApp() {
 
 					{stage === 'dashboard' && result && (
 						<motion.div key="dashboard" {...STAGE_TRANSITION} className="mt-6 space-y-3 sm:mt-8">
-							<div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-2.5">
-								<FileSpreadsheetIcon className="size-4 shrink-0 text-chart-2" aria-hidden="true" />
-								<div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2">
-									<p className="truncate text-sm font-medium">{fileLabel}</p>
-									<p className="truncate text-sm text-muted-foreground">
-										{formatDateRange(
-											result.overall.payment_window_start,
-											result.overall.payment_window_end,
-										)}
-									</p>
-								</div>
-								<button
-									type="button"
-									onClick={reset}
-									className={cn(
-										'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-lg border border-border px-2.5',
-										'text-xs font-medium transition-colors hover:bg-muted',
-										'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-									)}
-								>
-									<ArrowLeftIcon className="size-3.5" aria-hidden="true" />
-									<span className="hidden sm:inline">New file</span>
-									<span className="sr-only sm:hidden">Start over with a new file</span>
-								</button>
-							</div>
+							<FileCaption fileLabel={fileLabel} period={period} onNewFile={reset} />
 
 							<Tabs value={tab} onValueChange={(next) => goToTab(next as Tab)}>
 								{/* Pinned under the site header on a phone. The costs tab is 5,800px tall
 								  * and the products tab nearly as much — without this, switching tabs means
 								  * scrolling back to the top first, which is the kind of thing that makes a
 								  * tool feel like a document. `top-16` clears the 64px header exactly. */}
-								<div className="sticky top-16 z-30 -mx-4 bg-background/90 px-4 py-1.5 backdrop-blur sm:static sm:mx-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+								<div className="sticky top-16 z-30 -mx-4 bg-background/95 px-4 py-2 backdrop-blur-md sm:static sm:mx-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
 									<TabBar tabs={tabs} active={tab} />
 								</div>
 
@@ -442,8 +380,8 @@ export function ProfitToolApp() {
 													animate={{ opacity: 1, height: 'auto' }}
 													exit={{ opacity: 0, height: 0 }}
 													className={cn(
-														'flex w-full items-center gap-3 rounded-xl border border-chart-4/30 bg-chart-4/10 px-4 py-3 text-left',
-														'transition-colors hover:bg-chart-4/15',
+														'flex min-h-12 w-full items-center gap-3 rounded-2xl border border-chart-4/30 bg-chart-4/[0.07] px-4 py-3 text-left',
+														'transition-colors hover:bg-chart-4/12 active:bg-chart-4/15',
 														'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
 													)}
 												>
@@ -495,6 +433,19 @@ export function ProfitToolApp() {
 											expenseDays={expenseDays}
 											fileNames={files.map((f) => f.file.name)}
 										/>
+
+										{/* The cropper's closing pair ("Change options" / "New batch"): the two
+										  * things a seller does next, once they have read the answer. */}
+										<div className="grid grid-cols-2 gap-2.5 pt-1">
+											<button type="button" onClick={() => goToTab('costs')} className={ghostAction}>
+												<TagsIcon className="size-4" aria-hidden="true" />
+												Change costs
+											</button>
+											<button type="button" onClick={reset} className={ghostAction}>
+												<RotateCcwIcon className="size-4" aria-hidden="true" />
+												New file
+											</button>
+										</div>
 									</motion.div>
 								</TabsContent>
 
@@ -537,63 +488,83 @@ export function ProfitToolApp() {
 	);
 }
 
-/** What was read out of the file, before any of it is interpreted — the old app led with this too. */
-function FileSummary({
+/**
+ * Which file this is, as one quiet line — the cropper's "4 x 6" label · Label only" caption. It is
+ * confirmation, not content: read once to check the right file was picked, then ignored, so it
+ * gets no card of its own.
+ */
+function FileCaption({
 	fileLabel,
-	orders,
-	products,
 	period,
+	onNewFile,
 }: {
 	fileLabel: string;
-	orders: number;
-	products: number;
 	period: string;
+	onNewFile?: () => void;
 }) {
-	const cells = [
-		{ value: fileLabel, label: 'File', truncate: true },
-		{ value: formatNumber(orders), label: 'Orders' },
-		{ value: formatNumber(products), label: 'Products' },
-		{ value: period, label: 'Period' },
-	];
-
-	/*
-	 * One thin bar, not four cards.
-	 *
-	 * This is confirmation, not content — the seller reads it once to check they picked the right
-	 * file, and never again. As four bordered cards with 40px icon tiles it took 150px of the
-	 * screen on a phone and pushed the actual work below the fold.
-	 */
 	return (
-		<motion.dl
-			variants={STAGGER_LIST}
-			initial="hidden"
-			animate="show"
-			className="flex flex-wrap items-baseline gap-x-6 gap-y-2 rounded-xl border border-border bg-card px-4 py-3"
-		>
-			<FileSpreadsheetIcon className="size-4 shrink-0 self-center text-chart-2" aria-hidden="true" />
-			{cells.map((cell) => (
-				<motion.div key={cell.label} variants={STAGGER_ITEM} className="flex min-w-0 items-baseline gap-1.5">
-					<dt className="shrink-0 text-xs uppercase tracking-wide text-muted-foreground">{cell.label}</dt>
-					<dd
-						className={cn(
-							'text-sm font-medium tabular-nums',
-							cell.truncate && 'max-w-[14rem] truncate',
-						)}
-						title={cell.truncate ? cell.value : undefined}
-					>
-						{cell.value}
-					</dd>
-				</motion.div>
-			))}
-		</motion.dl>
+		<div className="flex min-h-10 items-center gap-2.5 px-1">
+			<FileSpreadsheetIcon className="size-4 shrink-0 text-chart-2" aria-hidden="true" />
+			<p className="min-w-0 flex-1 truncate text-sm text-muted-foreground" title={fileLabel}>
+				<span className="font-medium text-foreground">{period}</span>
+				<span aria-hidden="true"> · </span>
+				{fileLabel}
+			</p>
+			{onNewFile && (
+				<motion.button
+					type="button"
+					onClick={onNewFile}
+					whileTap={TAP}
+					className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-muted"
+				>
+					<RotateCcwIcon className="size-4" aria-hidden="true" />
+					<span className="hidden sm:inline">New file</span>
+					<span className="sr-only sm:hidden">Start over with a new file</span>
+				</motion.button>
+			)}
+		</div>
 	);
 }
 
-/** Placeholder cards while the recharts chunk downloads, sized so the page doesn't jump when it lands. */
+/**
+ * What was read out of the file, as the cropper's three result tiles. The third tile is the one
+ * that matters on this step: how many products still need a cost.
+ */
+function FileSummary({
+	fileLabel,
+	period,
+	orders,
+	products,
+	missing,
+}: {
+	fileLabel: string;
+	period: string;
+	orders: number;
+	products: number;
+	missing: number;
+}) {
+	return (
+		<motion.div variants={RESULT_STAGGER} initial="hidden" animate="show" className="space-y-2.5">
+			<motion.div variants={RESULT_ITEM}>
+				<FileCaption fileLabel={fileLabel} period={period} />
+			</motion.div>
+			<motion.div variants={RESULT_ITEM} className="grid grid-cols-3 gap-2.5">
+				<StatTile value={formatNumber(orders)} label={orders === 1 ? 'Order' : 'Orders'} />
+				<StatTile value={formatNumber(products)} label={products === 1 ? 'Product' : 'Products'} />
+				<StatTile
+					value={missing > 0 ? formatNumber(missing) : 'All set'}
+					label={missing > 0 ? 'Need a cost' : 'Costs entered'}
+					valueClassName={missing > 0 ? 'text-chart-4' : 'text-success'}
+				/>
+			</motion.div>
+		</motion.div>
+	);
+}
+
 /**
  * Placeholders shaped like the charts that replace them — same grid, same heights — so the swap
  * doesn't shunt the page. Three equal stacked blocks stood in for a two-column row plus a wide
- * one, which meant everything below jumped the moment recharts arrived.
+ * one, which meant everything below jumped the moment the charts arrived.
  */
 function ChartsFallback() {
 	return (

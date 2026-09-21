@@ -1,6 +1,6 @@
-import { PDFDocument, type PDFFont, degrees } from 'pdf-lib';
+import { PDFDocument, degrees } from 'pdf-lib';
 import { computeCellRects, fitContainAutoRotate } from './layout';
-import { drawOverlay, embedOverlayFont } from './overlay';
+import { drawOverlay, embedOverlayFonts, type OverlayFonts } from './overlay';
 import type { LayoutPreset, OverlayOptions, Rect, SourcePage } from './types';
 
 export type Region = 'label' | 'invoice' | 'full';
@@ -46,7 +46,7 @@ export async function composeOutputDocument(
 	if (inputs.length === 0) return outputDoc;
 
 	const cells = computeCellRects(layout);
-	const overlayFont: PDFFont | null = overlay ? await embedOverlayFont(outputDoc) : null;
+	const overlayFonts: OverlayFonts | null = overlay ? await embedOverlayFonts(outputDoc, overlay) : null;
 
 	let currentPage = outputDoc.addPage([layout.pageWidth, layout.pageHeight]);
 	let cellIndex = 0;
@@ -74,8 +74,8 @@ export async function composeOutputDocument(
 			rotate: degrees(placement.rotateDeg),
 		});
 
-		if (overlay && overlayFont) {
-			drawOverlay(page, cell, input.sourcePage.metadata, overlay, overlayFont);
+		if (overlay && overlayFonts) {
+			drawOverlay(page, cell, input.sourcePage.metadata, overlay, overlayFonts);
 		}
 
 		cellIndex++;

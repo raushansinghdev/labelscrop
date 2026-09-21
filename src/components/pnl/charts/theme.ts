@@ -1,48 +1,66 @@
 /**
- * The chart chrome, in one place.
+ * The chart chrome and motion, in one place.
  *
- * Axis type size, grid weight, bar thickness and entrance timing were restated in each of the
- * three charts, and had drifted: 10px ticks here, dashed grids there, bars left uncapped so a
- * seven-step waterfall drew hundred-pixel slabs. A dashboard whose charts disagree about any of
- * that reads as three charts borrowed from three places.
+ * The charts are drawn by hand in HTML and SVG with motion rather than by a chart library. Every
+ * one of them is either a set of horizontal bars or one ring, which is little enough geometry to
+ * own outright, and owning it is what lets them behave like the rest of the tool: they draw when
+ * they scroll into view instead of once, off-screen, on load; bars arrive one after another in
+ * the order they are read; and when a seller changes a cost the bars glide to their new size
+ * instead of snapping or replaying from zero.
  */
 
-import { useReducedMotion } from 'motion/react';
+import { useInView, useReducedMotion } from 'motion/react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
+
+/** Bars sit this tall inside a row; the rest of the row is air. */
+export const BAR_HEIGHT = 24;
 
 /**
- * 12px, not 10.
+ * Draws a chart once it is actually on screen.
  *
- * Axis labels are the smallest text on the page and were set two steps below the body — legible
- * on the laptop they were built on and not on the phone most sellers open this with. 12px is the
- * floor for anything a reader is expected to actually parse.
- */
-export const AXIS_TICK = { className: 'fill-muted-foreground', fontSize: 12 } as const;
-
-/**
- * Bars are capped rather than left to fill their slot.
+ * `settled` flips a beat after the entrance so later changes animate without the entrance's
+ * stagger — a cost edit should move every bar at once, not replay the cascade.
  *
- * Recharts divides the plot width by the category count, so a waterfall of eight steps across a
- * wide card drew bars over 100px thick — a wall of colour where the *length* is the only thing
- * carrying meaning. Capped, the leftover band becomes air and the bridge reads as a chart again.
+ * Reduced motion skips all of it: the chart is simply there, fully drawn.
  */
-export const MAX_BAR = 24;
+export function useChartReveal<T extends Element>(): {
+	ref: RefObject<T | null>;
+	revealed: boolean;
+	settled: boolean;
+	reduced: boolean;
+} {
+	const ref = useRef<T>(null);
+	const reduced = Boolean(useReducedMotion());
+	const inView = useInView(ref, { once: true, amount: 0.3 });
+	const revealed = inView || reduced;
+	const [settled, setSettled] = useState(false);
 
-/** Bars sit at their data end; the baseline end stays square, so bars grow *from* the axis. */
-export const BAR_RADIUS = 4;
+	useEffect(() => {
+		if (!revealed || settled) return;
+		const timer = window.setTimeout(() => setSettled(true), reduced ? 0 : 1600);
+		return () => window.clearTimeout(timer);
+	}, [revealed, settled, reduced]);
 
-/** Solid hairlines. Dashed grids add ink that isn't data and read as content at a glance. */
-export const GRID_CLASS = 'stroke-border';
+	return { ref, revealed, settled, reduced };
+}
 
-/**
- * Recharts' own bar/pie grow animation, switched off for anyone who has asked for less motion.
- *
- * This is the one bit of chart motion that isn't decoration — bars growing from the baseline
- * shows which direction each step travels — but it is still motion, and `prefers-reduced-motion`
- * is a request, not a preference to weigh.
- */
-export function useChartMotion(): { isAnimationActive: boolean; animationDuration: number } {
-	const reduced = useReducedMotion();
-	return { isAnimationActive: !reduced, animationDuration: reduced ? 0 : 650 };
+/** A spring for bar geometry: quick off the axis, a slight settle at the end. */
+export function barTransition(index: number, settled: boolean, reduced: boolean) {
+	if (reduced) return { duration: 0 };
+	return { type: 'spring' as const, stiffness: 140, damping: 22, mass: 0.9, delay: settled ? 0 : 0.15 + index * 0.08 };
+}
+
+/** The pixel width of an element, kept current — label placement needs real space, not percentages. */
+export function useElementWidth(ref: RefObject<Element | null>): number {
+	const [width, setWidth] = useState(0);
+	useEffect(() => {
+		const node = ref.current;
+		if (!node || typeof ResizeObserver === 'undefined') return;
+		const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
+		observer.observe(node);
+		return () => observer.disconnect();
+	}, [ref]);
+	return width;
 }
 
 /** "₹1.2L" / "₹45k" — full rupee counts are too wide for an axis, on any screen. */
@@ -52,4 +70,10 @@ export function compactInr(value: number): string {
 	if (abs >= 100000) return `${sign}₹${(abs / 100000).toFixed(1)}L`;
 	if (abs >= 1000) return `${sign}₹${Math.round(abs / 1000)}k`;
 	return `${sign}₹${Math.round(abs)}`;
+}
+
+/** Signed with a real minus rather than a hyphen — at 12px a hyphen beside ₹ disappears. */
+export function signedInr(value: number): string {
+	const rounded = Math.abs(value) < 0.5 ? 0 : value;
+	return `${rounded < 0 ? '−' : '+'}${compactInr(Math.abs(rounded))}`;
 }

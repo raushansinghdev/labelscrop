@@ -1,6 +1,16 @@
 import { DEFAULT_EXPENSES, type ExpenseRow } from './expenses';
 import type { LossRates } from './types';
 
+/** What the tool assumes until a seller says otherwise: every returned item is written off. */
+export const DEFAULT_LOSS_RATES: LossRates = {
+	rto: 0,
+	return_rate: 1,
+	lost: 1,
+	unresolved: 0,
+	rto_packaging_loss: 1,
+	return_packaging_loss: 1,
+};
+
 const LOSS_RATES_KEY = 'meesho_loss_rates';
 const EXPENSES_KEY = 'meesho_expenses';
 

@@ -13,7 +13,8 @@ import { cn } from 'cn';
 import { deriveOverview } from './derive';
 import { formatCurrency, formatNumber, formatPercent } from './format';
 import { MetricTooltip, MetricTooltipProvider, type MetricRow } from './MetricTooltip';
-import { AnimatedNumber, ProgressMeter, SPRING, STAGGER_ITEM, STAGGER_LIST } from './motion';
+import { AnimatedNumber, ProgressMeter, RESULT_ITEM, RESULT_STAGGER, SPRING } from './motion';
+import { StatTile } from './StatTile';
 import type { PnlOverall } from './types';
 
 interface KpiCardsProps {
@@ -165,13 +166,13 @@ export function KpiCards({ overall, overheads }: KpiCardsProps) {
 
 	return (
 		<MetricTooltipProvider>
-			<motion.div variants={STAGGER_LIST} initial="hidden" animate="show" className="space-y-3">
+			<motion.div variants={RESULT_STAGGER} initial="hidden" animate="show" className="space-y-3">
 				{/* The headline. Everything else on this screen exists to explain this one number, so it
 				  * gets the size and the colour and the rest stay monochrome. */}
 				<motion.section
-					variants={STAGGER_ITEM}
+					variants={RESULT_ITEM}
 					className={cn(
-						'relative overflow-hidden rounded-2xl border p-5 sm:p-6',
+						'relative overflow-hidden rounded-3xl border p-5 sm:p-6',
 						positive
 							? 'border-success/25 bg-success/[0.06]'
 							: 'border-destructive/25 bg-destructive/[0.06]',
@@ -196,10 +197,25 @@ export function KpiCards({ overall, overheads }: KpiCardsProps) {
 									animate={{ opacity: 1, scale: 1 }}
 									transition={{ ...SPRING, delay: 0.15 }}
 									className={cn(
-										'inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold tabular-nums',
+										'relative inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold tabular-nums',
 										positive ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive',
 									)}
 								>
+									{/* The cropper's one-shot "done" pulse, on the figure that is this
+									  * tool's equivalent of "your labels are ready". Once, never looping. */}
+									{[0, 0.15].map((delay) => (
+										<motion.span
+											key={delay}
+											aria-hidden="true"
+											className={cn(
+												'pointer-events-none absolute inset-0 rounded-full',
+												positive ? 'bg-success/25' : 'bg-destructive/25',
+											)}
+											initial={{ scale: 0.8, opacity: 0.8 }}
+											animate={{ scale: 1.9, opacity: 0 }}
+											transition={{ duration: 1.1, delay: 0.35 + delay, ease: 'easeOut' }}
+										/>
+									))}
 									{positive ? (
 										<TrendingUpIcon className="size-3.5" aria-hidden="true" />
 									) : (
@@ -256,7 +272,7 @@ export function KpiCards({ overall, overheads }: KpiCardsProps) {
 						  * the first. The return fee is a number nothing else on this screen shows. */}
 						<div
 							className={cn(
-								'grid shrink-0 grid-cols-2 overflow-hidden rounded-xl border sm:w-48 sm:grid-cols-1',
+								'grid shrink-0 grid-cols-2 overflow-hidden rounded-2xl border sm:w-48 sm:grid-cols-1',
 								positive
 									? 'border-success/20 bg-background/60'
 									: 'border-destructive/20 bg-background/60',
@@ -311,11 +327,11 @@ export function KpiCards({ overall, overheads }: KpiCardsProps) {
 					</div>
 				</motion.section>
 
-				<div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+				<div className="grid grid-cols-2 gap-2.5 lg:grid-cols-5">
 					{tiles.map((tile, index) => (
 						<motion.div
 							key={tile.label}
-							variants={STAGGER_ITEM}
+							variants={RESULT_ITEM}
 							className={cn(
 								'min-w-0',
 								// Five tiles in two columns leaves the last one as a half-width orphan on a
@@ -323,24 +339,20 @@ export function KpiCards({ overall, overheads }: KpiCardsProps) {
 								index === tiles.length - 1 && 'col-span-2 lg:col-span-1',
 							)}
 						>
-							<MetricTooltip
-								title={tile.label}
-								meaning={tile.meaning}
-								rows={tile.rows}
-								footnote={tile.footnote}
-								className="block w-full rounded-xl border border-border bg-card p-4 transition-colors hover:border-foreground/20"
-							>
-								<span className="flex items-center gap-2 text-muted-foreground">
-									<tile.icon className="size-4 shrink-0" aria-hidden="true" />
-									<span className="truncate text-sm font-medium">{tile.label}</span>
-								</span>
-								<span className="mt-1.5 block text-2xl font-semibold tracking-tight">
-									<AnimatedNumber value={tile.value} format={tile.format} />
-								</span>
-								<span className="mt-1 block text-sm leading-snug text-muted-foreground">
-									{tile.hint}
-								</span>
-							</MetricTooltip>
+							{/* The cropper's result tile: soft grey, big figure, small caption. Tapping
+							  * one opens the working behind it, which is why it stays a button. */}
+							<StatTile
+								className="h-full px-3 py-3.5"
+								label={
+									<span className="inline-flex items-center gap-1.5">
+										<tile.icon className="size-3.5 shrink-0" aria-hidden="true" />
+										{tile.label}
+									</span>
+								}
+								value={<AnimatedNumber value={tile.value} format={tile.format} />}
+								hint={tile.hint}
+								explain={{ title: tile.label, meaning: tile.meaning, rows: tile.rows, footnote: tile.footnote }}
+							/>
 						</motion.div>
 					))}
 				</div>

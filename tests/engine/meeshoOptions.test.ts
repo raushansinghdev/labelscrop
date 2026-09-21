@@ -28,6 +28,13 @@ describe('resolveMeeshoProcessOptions — labels per A4 sheet', () => {
 		expect(layout.id).toBe('thermal-4x6');
 	});
 
+	it('maps the packing toggles, with duplicate skipping off by default', () => {
+		expect(resolveMeeshoProcessOptions(defaults)).toMatchObject({ multiUnitFirst: false, skipDuplicates: false, splitByCourier: false });
+		const on = resolveMeeshoProcessOptions({ ...defaults, multiUnitFirst: true, skipDuplicates: true, splitByCourier: true });
+		expect(on).toMatchObject({ multiUnitFirst: true, skipDuplicates: true, splitByCourier: true });
+		expect(on.overlay?.showQtyBadge).toBe(true);
+	});
+
 	it('only saves invoices separately when the toggle is on and the invoice is being cropped away', () => {
 		expect(resolveMeeshoProcessOptions({ ...defaults, keepInvoice: true }).keepInvoice).toBe(true);
 		expect(resolveMeeshoProcessOptions({ ...defaults, keepInvoice: true, cropMode: 'full' }).keepInvoice).toBe(false);
@@ -59,7 +66,10 @@ describe('describeMeeshoConfig', () => {
 			'4 x 6" label',
 			'Label + invoice',
 			'Sorted by courier',
-		]);
+		]);		expect(describeMeeshoConfig({ ...defaults, sortKey: 'sku', sortDirection: 'desc' })).toContain('Sorted by SKU, Z–A');
+		expect(describeMeeshoConfig({ ...defaults, multiUnitFirst: true, splitByCourier: true })).toEqual(
+			expect.arrayContaining(['Multi-unit first', 'Split by courier']),
+		);
 	});
 });
 

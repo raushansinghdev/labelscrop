@@ -17,30 +17,22 @@ export function ChartCard({ title, caption, badge, action, children }: ChartCard
 	return (
 		<motion.section
 			variants={STAGGER_ITEM}
-			className="flex flex-col rounded-2xl border border-border bg-card p-4 transition-colors hover:border-foreground/15 sm:p-5"
+			// The cropper's list-card frame: a header row that names the thing and says how big it
+			// is, then the content. Same frame as the cost table, so every panel reads alike.
+			className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card"
 		>
-			<div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-				<h3 className="text-base font-semibold tracking-tight">{title}</h3>
-				<div className="flex shrink-0 items-baseline gap-3">
-					{badge && <span className="text-sm tabular-nums text-muted-foreground">{badge}</span>}
+			<div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-border px-4 py-3">
+				<h3 className="text-sm font-semibold">{title}</h3>
+				<div className="flex shrink-0 items-center gap-3">
+					{badge && <span className="text-xs tabular-nums text-muted-foreground">{badge}</span>}
 					{action}
 				</div>
 			</div>
-			<p className="mt-1 text-sm leading-relaxed text-muted-foreground">{caption}</p>
-			<div className="mt-4 flex-1">{children}</div>
+			<div className="flex flex-1 flex-col p-4">
+				<p className="text-xs leading-relaxed text-muted-foreground">{caption}</p>
+				<div className="mt-3 flex-1">{children}</div>
+			</div>
 		</motion.section>
 	);
 }
 
-/**
- * Shared tooltip shell. Recharts renders tooltips into the chart's own DOM, so these inherit the
- * page theme — unlike the original app, which hardcoded a dark panel that was invisible in light mode.
- */
-export function ChartTooltip({ label, children }: { label: string; children: ReactNode }) {
-	return (
-		<div className="pointer-events-none max-w-64 rounded-xl border border-border bg-popover px-3.5 py-2.5 text-sm shadow-lg">
-			<p className="font-semibold text-popover-foreground">{label}</p>
-			<div className="mt-1 space-y-0.5 leading-relaxed text-muted-foreground">{children}</div>
-		</div>
-	);
-}

@@ -1,4 +1,6 @@
 import {
+	ArrowDownIcon,
+	ArrowUpIcon,
 	BarcodeIcon,
 	CheckIcon,
 	ChevronDownIcon,
@@ -49,6 +51,19 @@ export function OptionsForm({ fields, config, advancedOpen, onAdvancedOpenChange
 	const activeAdvanced = advanced.filter((field) => config[field.id] !== field.default).length;
 	const panelId = useId();
 
+	// A field's paired up/down toggle (see `directionField`), only while that toggle's own `visibleIf` holds —
+	// so "Original order" gets no direction button, since reversing it isn't what anyone means by sorting.
+	const directionFor = (field: OptionField): DirectionToggleProps | undefined => {
+		const paired = field.directionField ? fields.find((f) => f.id === field.directionField) : undefined;
+		if (!paired || (paired.visibleIf && !paired.visibleIf(config))) return undefined;
+		return {
+			label: paired.label,
+			choices: paired.choices ?? [],
+			value: config[paired.id] === 'desc' ? 'desc' : 'asc',
+			onChange: (value) => onChange(paired.id, value),
+		};
+	};
+
 	return (
 		<fieldset disabled={disabled} className={cn('min-w-0 transition-opacity', disabled && 'opacity-60')}>
 			<div className="flex flex-col">
@@ -56,7 +71,12 @@ export function OptionsForm({ fields, config, advancedOpen, onAdvancedOpenChange
 					{primary.map((field) => (
 						<motion.div key={field.id} {...FIELD_PRESENCE} className="overflow-hidden">
 							<div className="pb-6">
-								<OptionFieldControl field={field} value={config[field.id]} onChange={(value) => onChange(field.id, value)} />
+								<OptionFieldControl
+									field={field}
+									value={config[field.id]}
+									onChange={(value) => onChange(field.id, value)}
+									direction={directionFor(field)}
+								/>
 							</div>
 						</motion.div>
 					))}
@@ -95,12 +115,19 @@ export function OptionsForm({ fields, config, advancedOpen, onAdvancedOpenChange
 							<motion.div id={panelId} {...FIELD_PRESENCE} className="overflow-hidden">
 								<div className="space-y-1 px-2 pb-3">
 									<AnimatePresence initial={false}>
-										{advanced.map((field) => (
+										{advanced.map((field, index) => (
 											<motion.div key={field.id} {...FIELD_PRESENCE} className="overflow-hidden">
+												{/* A quiet heading wherever the group changes, so a long list still reads as a few short sets. */}
+												{field.group && field.group !== advanced[index - 1]?.group && (
+													<p className="px-2 pt-3 pb-0.5 text-[11px] font-medium tracking-wider text-muted-foreground/70 uppercase">
+														{field.group}
+													</p>
+												)}
 												<OptionFieldControl
 													field={field}
 													value={config[field.id]}
 													onChange={(value) => onChange(field.id, value)}
+													direction={directionFor(field)}
 												/>
 											</motion.div>
 										))}
@@ -179,10 +206,12 @@ function OptionFieldControl({
 	field,
 	value,
 	onChange,
+	direction,
 }: {
 	field: OptionField;
 	value: string | boolean;
 	onChange: (value: string | boolean) => void;
+	direction?: DirectionToggleProps;
 }) {
 	if (field.controlType === 'segmented' || field.controlType === 'radio') {
 		const choices = field.choices ?? [];
@@ -203,7 +232,23 @@ function OptionFieldControl({
 		return (
 			<div>
 				<FieldHeader field={field} />
-				<SelectRow label={field.label} choices={field.choices ?? []} value={value as string} onChange={onChange} />
+				<div className="flex gap-2">
+					<SelectRow label={field.label} choices={field.choices ?? []} value={value as string} onChange={onChange} />
+					<AnimatePresence initial={false}>
+						{direction && (
+							<motion.div
+								key="direction"
+								initial={{ opacity: 0, width: 0, marginLeft: -8 }}
+								animate={{ opacity: 1, width: 'auto', marginLeft: 0 }}
+								exit={{ opacity: 0, width: 0, marginLeft: -8 }}
+								transition={{ duration: 0.25, ease: EASE_OUT }}
+								className="flex shrink-0 overflow-hidden"
+							>
+								<DirectionToggle {...direction} />
+							</motion.div>
+						)}
+					</AnimatePresence>
+				</div>
 			</div>
 		);
 	}
@@ -302,19 +347,23 @@ function ChoiceCards({
 	);
 }
 
-function SegmentedPill({
+/** Exported for the profit calculator, which uses the same pill for its own two-way choices. */
+export function SegmentedPill({
 	fieldId,
 	choices,
 	value,
 	onChange,
+	label,
 }: {
 	fieldId: string;
-	choices: OptionChoice[];
+	choices: Pick<OptionChoice, 'value' | 'label'>[];
 	value: string;
 	onChange: (value: string) => void;
+	/** Standalone uses need their own group label; inside the form the field header supplies it. */
+	label?: string;
 }) {
 	return (
-		<div className="flex rounded-2xl bg-muted p-1">
+		<div className="flex rounded-2xl bg-muted p-1" {...(label ? { role: 'radiogroup', 'aria-label': label } : {})}>
 			{choices.map((choice) => {
 				const selected = choice.value === value;
 				return (
@@ -325,7 +374,7 @@ function SegmentedPill({
 						aria-checked={selected}
 						onClick={() => onChange(choice.value)}
 						className={cn(
-							'relative h-11 flex-1 rounded-xl text-sm font-semibold transition-colors duration-200',
+							'relative h-11 flex-1 whitespace-nowrap rounded-xl px-3 text-sm font-semibold transition-colors duration-200',
 							selected ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
 						)}
 					>
@@ -363,7 +412,7 @@ function SelectRow({
 		<Select value={value} onValueChange={(next) => next != null && onChange(String(next))}>
 			<SelectTrigger
 				aria-label={label}
-				className="h-auto min-h-16 w-full gap-3 rounded-2xl border-border bg-card py-2.5 pr-3 pl-2.5 text-left whitespace-normal transition-[border-color,background-color] hover:border-foreground/20 data-popup-open:border-primary [&>svg:last-child]:hidden"
+				className="h-auto min-h-16 w-full min-w-0 flex-1 gap-3 rounded-2xl border-border bg-card py-2.5 pr-3 pl-2.5 text-left whitespace-normal transition-[border-color,background-color] hover:border-foreground/20 data-popup-open:border-primary [&>svg:last-child]:hidden"
 			>
 				<ChoiceIcon icon={current?.icon} selected />
 				<span className="min-w-0 flex-1">
@@ -394,6 +443,52 @@ function SelectRow({
 				))}
 			</SelectContent>
 		</Select>
+	);
+}
+
+interface DirectionToggleProps {
+	label: string;
+	choices: OptionChoice[];
+	value: 'asc' | 'desc';
+	onChange: (value: 'asc' | 'desc') => void;
+}
+
+/** Square up/down button beside a sort select — same pattern as the P&L products sort. */
+function DirectionToggle({ label, choices, value, onChange }: DirectionToggleProps) {
+	const current = choices.find((choice) => choice.value === value)?.label ?? value;
+	return (
+		<button
+			type="button"
+			onClick={() => onChange(value === 'asc' ? 'desc' : 'asc')}
+			title={current}
+			aria-label={`${label}: ${current}. Activate to reverse.`}
+			className={cn(
+				'flex w-16 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-muted-foreground',
+				'transition-colors hover:border-foreground/20 hover:text-foreground',
+				'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+			)}
+		>
+			<AnimatePresence mode="wait" initial={false}>
+				<motion.span
+					key={value}
+					initial={{ opacity: 0, y: value === 'desc' ? -6 : 6 }}
+					animate={{ opacity: 1, y: 0 }}
+					exit={{ opacity: 0, y: value === 'desc' ? 6 : -6 }}
+					transition={{ duration: 0.15, ease: EASE_OUT }}
+					className="flex flex-col items-center gap-0.5"
+				>
+					{value === 'desc' ? (
+						<ArrowDownIcon className="size-5" aria-hidden="true" />
+					) : (
+						<ArrowUpIcon className="size-5" aria-hidden="true" />
+					)}
+					{/* A bare arrow doesn't say what it orders by; the caption does. */}
+					<span className="text-[11px] leading-none font-semibold" aria-hidden="true">
+						{value === 'desc' ? 'Z–A' : 'A–Z'}
+					</span>
+				</motion.span>
+			</AnimatePresence>
+		</button>
 	);
 }
 

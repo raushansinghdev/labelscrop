@@ -1,9 +1,9 @@
 import { PDFDocument } from 'pdf-lib';
 import { type ComposeInput, composeOutputDocument, labelRegionFor } from './compose';
 import { extractPageLines, PasswordProtectedPdfError, UnreadablePdfError } from './pdfText';
-import { sortPages } from './sort';
+import { dedupePages, prioritizeMultiUnit, sortPages } from './sort';
 import { buildSkuSummary, buildSkuSummaryPdf } from './summary';
-import type { LayoutPreset, OverlayOptions, PlatformAdapter, SkuSummaryRow, SortKey, SourcePage } from './types';
+import type { LayoutPreset, OverlayOptions, PlatformAdapter, SkuSummaryRow, SortDirection, SortKey, SourcePage } from './types';
 
 export interface ProcessFileInput {
 	name: string;
@@ -13,6 +13,8 @@ export interface ProcessFileInput {
 export interface ProcessOptions {
 	layout: LayoutPreset;
 	sortKey: SortKey;
+	/** Defaults to `'asc'` (A–Z). Ignored for `sortKey: 'original'`. */
+	sortDirection?: SortDirection;
 	/** `'label'` (default) crops the invoice away; `'full'` keeps the entire original page untouched — for
 	 * sort-only workflows, or A4 sheets that keep the invoice attached to each cell. Optional so existing
 	 * callers/fixtures that don't set it keep behaving exactly as before. */
@@ -20,6 +22,12 @@ export interface ProcessOptions {
 	keepInvoice: boolean;
 	invoiceLayout?: LayoutPreset;
 	overlay?: OverlayOptions;
+	/** Orders with more than one unit go first, ahead of the chosen sort. */
+	multiUnitFirst?: boolean;
+	/** Drop repeat labels for the same AWB / order, e.g. from overlapping downloads. Off unless asked for. */
+	skipDuplicates?: boolean;
+	/** Also compose one label PDF per courier (see `ProcessResult.courierPdfs`). */
+	splitByCourier?: boolean;
 	onProgress?: (event: { stage: 'reading' | 'composing' | 'summarizing'; current: number; total: number }) => void;
 }
 
@@ -28,11 +36,26 @@ export interface ProcessResult {
 	invoicePdfBytes: Uint8Array | null;
 	summaryPdfBytes: Uint8Array;
 	summary: SkuSummaryRow[];
+	/** One label PDF per courier, in the order couriers first appear in the sorted output. Empty unless
+	 * `splitByCourier` was set and the batch has at least two couriers — one courier would only duplicate
+	 * the main labels PDF. */
+	courierPdfs: CourierPdf[];
+	/** Labels dropped by `skipDuplicates`. */
+	duplicatesRemoved: number;
 	pageCount: number;
 	/** Non-fatal issues surfaced to the user (e.g. a page whose boundary/metadata couldn't be detected) —
 	 * per the plan's error-handling taxonomy, these never abort the run. */
 	warnings: string[];
 }
+
+export interface CourierPdf {
+	courier: string;
+	labelCount: number;
+	bytes: Uint8Array;
+}
+
+/** Couriers whose name couldn't be read are grouped under this, so no label is left out of the split. */
+export const UNKNOWN_COURIER = 'Other';
 
 export interface FileFailure {
 	fileName: string;
@@ -87,7 +110,11 @@ export async function processFiles(
 		}
 	}
 
-	const sorted = sortPages(sourcePages, options.sortKey);
+	const { pages: uniquePages, removed: duplicatesRemoved } = options.skipDuplicates
+		? dedupePages(sourcePages)
+		: { pages: sourcePages, removed: 0 };
+	const keyed = sortPages(uniquePages, options.sortKey, options.sortDirection);
+	const sorted = options.multiUnitFirst ? prioritizeMultiUnit(keyed) : keyed;
 
 	options.onProgress?.({ stage: 'composing', current: 0, total: sorted.length });
 
@@ -99,6 +126,23 @@ export async function processFiles(
 	}));
 	const labelDoc = await composeOutputDocument(labelInputs, options.layout, options.overlay);
 	const labelPdfBytes = await labelDoc.save();
+
+	const courierPdfs: CourierPdf[] = [];
+	if (options.splitByCourier) {
+		const groups = new Map<string, ComposeInput[]>();
+		for (const input of labelInputs) {
+			const courier = input.sourcePage.metadata.courier ?? UNKNOWN_COURIER;
+			const group = groups.get(courier);
+			if (group) group.push(input);
+			else groups.set(courier, [input]);
+		}
+		if (groups.size > 1) {
+			for (const [courier, inputs] of groups) {
+				const doc = await composeOutputDocument(inputs, options.layout, options.overlay);
+				courierPdfs.push({ courier, labelCount: inputs.length, bytes: await doc.save() });
+			}
+		}
+	}
 
 	let invoicePdfBytes: Uint8Array | null = null;
 	if (options.keepInvoice && options.invoiceLayout) {
@@ -121,6 +165,8 @@ export async function processFiles(
 			invoicePdfBytes,
 			summaryPdfBytes,
 			summary,
+			courierPdfs,
+			duplicatesRemoved,
 			pageCount: sorted.length,
 			warnings,
 		},

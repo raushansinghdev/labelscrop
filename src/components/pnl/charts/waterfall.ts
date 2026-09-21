@@ -7,10 +7,10 @@ export interface WaterfallBar {
 	delta: number;
 	detail?: string;
 	/**
-	 * `[from, to]` on the value axis — recharts draws a floating bar between them.
+	 * `[from, to]` on the value axis — the bar is drawn between them.
 	 *
 	 * The earlier version stacked a transparent spacer bar under a visible one to fake this.
-	 * That broke: recharts painted the spacer with the visible bar's colour, so every step ran
+	 * That broke: the library painted the spacer with the visible bar's colour, so every step ran
 	 * down to zero and the chart read as though each cost were the size of the whole payout.
 	 */
 	range: [number, number];
@@ -19,6 +19,8 @@ export interface WaterfallBar {
 	 * resolve `var()` reliably across browsers, so the colour has to arrive as a real CSS rule.
 	 */
 	className: string;
+	/** The same colour as a background utility, for the on-screen chart's HTML bars. */
+	barClass: string;
 }
 
 /**
@@ -81,6 +83,7 @@ export function buildWaterfall(overall: PnlOverall, overheads = 0): WaterfallBar
 				delta: step.delta,
 				range: [0, step.delta],
 				className: step.delta >= 0 ? 'fill-chart-2' : 'fill-chart-3',
+				barClass: step.delta >= 0 ? 'bg-chart-2' : 'bg-chart-3',
 			};
 		}
 
@@ -92,6 +95,7 @@ export function buildWaterfall(overall: PnlOverall, overheads = 0): WaterfallBar
 			// The opening settlement bar is neither a gain nor a loss — it's the pot everything
 			// else comes out of, so it gets the neutral brand colour.
 			className: index === 0 ? 'fill-chart-1' : step.delta >= 0 ? 'fill-chart-2' : 'fill-chart-3',
+			barClass: index === 0 ? 'bg-chart-1' : step.delta >= 0 ? 'bg-chart-2' : 'bg-chart-3',
 		};
 		running += step.delta;
 		return bar;

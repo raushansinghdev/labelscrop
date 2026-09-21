@@ -2,7 +2,6 @@ import { AlertTriangleIcon, ArrowLeftIcon, ArrowRightIcon, RotateCwIcon, Sparkle
 import { AnimatePresence, motion, MotionConfig } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from 'cn';
-import { buttonVariants } from '@/components/ui/button';
 import type { FileFailure, ProcessResult } from '@/lib/engine/pipeline';
 import { resolveDefaultConfig, sanitizeConfig, type OptionConfig } from '@/lib/options/schema';
 import { describeMeeshoConfig } from '@/lib/platforms/meesho/describe';
@@ -16,6 +15,7 @@ import {
 	savePlatformSettings,
 } from '@/lib/storage/settings';
 import { ActionBar } from './ActionBar';
+import { backButton, primaryCta } from './buttons';
 import { OptionsForm } from './OptionsForm';
 import { PreviewCard, type PreviewStatus } from './PreviewCard';
 import { PreviewSheet, PreviewThumb } from './PreviewSheet';
@@ -40,11 +40,6 @@ const STAGE_TRANSITION = {
 	animate: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE_OUT } },
 	exit: { opacity: 0, y: -8, transition: { duration: 0.18, ease: 'easeIn' as const } },
 };
-
-const primaryCta = cn(
-	buttonVariants({ size: 'lg' }),
-	'h-14 flex-1 gap-2 rounded-2xl text-base font-semibold shadow-lg shadow-primary/25 transition-[transform,background-color,box-shadow]',
-);
 
 // Chrome: "Failed to fetch dynamically imported module", Firefox: "error loading dynamically imported module",
 // Safari: "Importing a module script failed". All mean a lazily loaded chunk is gone — in production, a new
@@ -385,7 +380,7 @@ export function MeeshoToolApp() {
 														onClick={handleBackToUpload}
 														whileTap={{ scale: 0.94 }}
 														aria-label="Back to files"
-														className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'size-14 shrink-0 rounded-2xl bg-background')}
+														className={backButton}
 													>
 														<ArrowLeftIcon className="size-5" />
 													</motion.button>

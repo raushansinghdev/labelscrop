@@ -1,5 +1,5 @@
 import type { ProcessOptions } from '@/lib/engine/pipeline';
-import type { OverlayOptions, SortKey } from '@/lib/engine/types';
+import type { OverlayOptions, SortDirection, SortKey } from '@/lib/engine/types';
 import type { OptionConfig } from '@/lib/options/schema';
 import { MEESHO_INVOICE_LAYOUT, MEESHO_LAYOUTS } from './layouts';
 
@@ -25,19 +25,26 @@ export function resolveMeeshoProcessOptions(config: OptionConfig): Omit<ProcessO
 	const sortKeyValue = typeof config.sortKey === 'string' ? config.sortKey : 'original';
 	const sortKey: SortKey = (KNOWN_SORT_KEYS as string[]).includes(sortKeyValue) ? (sortKeyValue as SortKey) : 'original';
 
+	const sortDirection: SortDirection = config.sortDirection === 'desc' ? 'desc' : 'asc';
+
 	const customText = typeof config.customText === 'string' ? config.customText.trim() : '';
 	const overlay: OverlayOptions = {
 		customText: customText.length > 0 ? customText : undefined,
 		showOrderNumber: config.showOrderNumber === true,
 		showDateTime: config.showDateTime === true,
+		showQtyBadge: config.multiUnitFirst === true,
 	};
 
 	return {
 		layout,
 		sortKey,
+		sortDirection,
 		cropMode,
 		keepInvoice,
 		invoiceLayout: keepInvoice ? MEESHO_INVOICE_LAYOUT : undefined,
 		overlay,
+		multiUnitFirst: config.multiUnitFirst === true,
+		skipDuplicates: config.skipDuplicates === true,
+		splitByCourier: config.splitByCourier === true,
 	};
 }

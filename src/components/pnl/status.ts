@@ -14,6 +14,8 @@ export interface StatusMeta {
 	fill: string;
 	/** The matching background utility, for the legend dot — which is an HTML element. */
 	dot: string;
+	/** The matching stroke utility, for the on-screen donut, which draws each slice as a ring arc. */
+	stroke: string;
 }
 
 /**
@@ -25,16 +27,16 @@ export interface StatusMeta {
  * back, which is the whole reason they cost different amounts.
  */
 export const STATUS_META: Record<string, StatusMeta> = {
-	delivered: { label: 'Delivered', fill: 'fill-chart-2', dot: 'bg-chart-2' },
-	exchange: { label: 'Exchanged', fill: 'fill-chart-5', dot: 'bg-chart-5' },
-	rto: { label: 'Courier return', fill: 'fill-chart-3', dot: 'bg-chart-3' },
-	return: { label: 'Customer returned', fill: 'fill-chart-4', dot: 'bg-chart-4' },
-	cancelled: { label: 'Cancelled', fill: 'fill-muted-foreground', dot: 'bg-muted-foreground' },
-	lost: { label: 'Lost in transit', fill: 'fill-chart-1', dot: 'bg-chart-1' },
-	shipped: { label: 'Still shipping', fill: 'fill-chart-1', dot: 'bg-chart-1' },
+	delivered: { label: 'Delivered', fill: 'fill-chart-2', dot: 'bg-chart-2', stroke: 'stroke-chart-2' },
+	exchange: { label: 'Exchanged', fill: 'fill-chart-5', dot: 'bg-chart-5', stroke: 'stroke-chart-5' },
+	rto: { label: 'Courier return', fill: 'fill-chart-3', dot: 'bg-chart-3', stroke: 'stroke-chart-3' },
+	return: { label: 'Customer returned', fill: 'fill-chart-4', dot: 'bg-chart-4', stroke: 'stroke-chart-4' },
+	cancelled: { label: 'Cancelled', fill: 'fill-muted-foreground', dot: 'bg-muted-foreground', stroke: 'stroke-muted-foreground' },
+	lost: { label: 'Lost in transit', fill: 'fill-chart-1', dot: 'bg-chart-1', stroke: 'stroke-chart-1' },
+	shipped: { label: 'Still shipping', fill: 'fill-chart-1', dot: 'bg-chart-1', stroke: 'stroke-chart-1' },
 };
 
-export const UNKNOWN_STATUS: StatusMeta = { label: 'Status missing', fill: 'fill-border', dot: 'bg-border' };
+export const UNKNOWN_STATUS: StatusMeta = { label: 'Status missing', fill: 'fill-border', dot: 'bg-border', stroke: 'stroke-border' };
 
 export interface StatusSlice {
 	name: string;
@@ -43,6 +45,7 @@ export interface StatusSlice {
 	settlement: number;
 	fill: string;
 	dot: string;
+	stroke: string;
 	/** Set only on the rolled-up slice, so its readout can say what it swallowed. */
 	parts?: string[];
 }
@@ -65,6 +68,7 @@ export function buildStatusSlices(breakdown: StatusRow[]): { slices: StatusSlice
 				settlement: item.total_settlement,
 				fill: meta.fill,
 				dot: meta.dot,
+				stroke: meta.stroke,
 			};
 		})
 		// Largest first. The calculator emits its own order, which put 80% delivered third in the
@@ -84,6 +88,7 @@ export function buildStatusSlices(breakdown: StatusRow[]): { slices: StatusSlice
 			settlement: tiny.reduce((sum, d) => sum + d.settlement, 0),
 			fill: 'fill-muted-foreground/40',
 			dot: 'bg-muted-foreground/40',
+			stroke: 'stroke-muted-foreground/40',
 			parts: tiny.map((d) => `${d.name} ${formatNumber(d.value)}`),
 		});
 	} else {

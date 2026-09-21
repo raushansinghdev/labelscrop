@@ -89,7 +89,7 @@ export function LossRatesPanel({ value, onChange }: LossRatesPanelProps) {
 					<div className="flex items-start gap-2 px-1">
 						<group.icon className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
 						<div>
-							<h3 className="text-base font-semibold tracking-tight">{group.title}</h3>
+							<h3 className="text-sm font-semibold tracking-tight">{group.title}</h3>
 							<p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{group.caption}</p>
 						</div>
 					</div>
@@ -100,10 +100,10 @@ export function LossRatesPanel({ value, onChange }: LossRatesPanelProps) {
 							return (
 								<div
 									key={field.key}
-									className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-foreground/20"
+									className="rounded-2xl border border-border bg-card p-4 transition-colors hover:border-foreground/20"
 								>
 									<div className="flex items-center justify-between gap-3">
-										<label htmlFor={`loss-${field.key}`} className="text-base font-medium">
+										<label htmlFor={`loss-${field.key}`} className="text-sm font-semibold">
 											{field.label}
 										</label>
 										{/* Keyed on the value so the chip re-springs on every step —
@@ -148,7 +148,7 @@ export function LossRatesPanel({ value, onChange }: LossRatesPanelProps) {
 			  * text on it, and leaving it open buried the sliders it's meant to qualify. */}
 			<motion.details
 				variants={STAGGER_ITEM}
-				className="group rounded-xl border border-border bg-muted/30 [&_summary::-webkit-details-marker]:hidden"
+				className="group rounded-2xl border border-border bg-card [&_summary::-webkit-details-marker]:hidden"
 			>
 				<summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-base font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
 					How much of this is actually measured?

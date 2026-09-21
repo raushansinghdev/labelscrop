@@ -1,67 +1,109 @@
-import { ArrowRightIcon } from 'lucide-react';
-import { motion } from 'motion/react';
+import { ArrowLeftIcon, ArrowRightIcon } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import type { LucideIcon } from 'lucide-react';
-import { cn } from 'cn';
-import { SPRING } from './motion';
+import type { ReactNode } from 'react';
+import { ActionBar } from '@/components/tool/ActionBar';
+import { backButton, primaryCta } from '@/components/tool/buttons';
+import { TAP, TAP_ICON } from './motion';
 
 interface StickyActionsProps {
-	label: string;
+	label: ReactNode;
 	onClick: () => void;
 	/** Swapped for a tick once the work is saved; defaults to the forward arrow. */
 	icon?: LucideIcon;
+	/** Quieter text after the label, e.g. "· 1 file, 240 KB". */
+	detail?: ReactNode;
+	/** The square way back. Its label is read out, since the button itself shows only an arrow. */
 	secondary?: { label: string; onClick: () => void };
+	/** Replaces the buttons while work is running — the cropper shows its progress in the same place. */
+	busy?: ReactNode;
+	disabled?: boolean;
 }
 
 /**
- * The way onward, pinned to the bottom of the screen on a phone.
+ * The way onward, exactly as the label cropper does it: a square back button and one tall primary
+ * button, pinned to the bottom of the screen over a fade rather than a hard-edged bar.
  *
- * The cost step is 6,500px tall on a 390px screen with 39 SKUs in it. Left in the flow, "Save &
- * continue" sits at the far end of that, so a seller who fills in the five products they care
- * about has to scroll past the thirty-four they don't to get out. Sticky rather than fixed, so it
- * belongs to this panel and stops at its end instead of hovering over the page below it.
- *
- * It stays in the flow from `sm` up, where the whole panel is a screen or two and a floating bar
- * would be covering content for no reason.
+ * Sticky rather than fixed, so it belongs to this panel and settles at its end instead of hovering
+ * over the page below. The cost step is 6,500px tall on a phone with 39 SKUs in it — without this a
+ * seller who fills in the five they care about scrolls past the thirty-four they don't to get out.
  */
-export function StickyActions({ label, onClick, icon: Icon = ArrowRightIcon, secondary }: StickyActionsProps) {
+export function StickyActions({
+	label,
+	onClick,
+	icon: Icon = ArrowRightIcon,
+	detail,
+	secondary,
+	busy,
+	disabled,
+}: StickyActionsProps) {
+	return (
+		<ActionBar>
+			<div className="mx-auto max-w-xl">
+				<AnimatePresence mode="wait" initial={false}>
+					{busy ? (
+						<motion.div
+							key="busy"
+							initial={{ opacity: 0, scale: 0.97 }}
+							animate={{ opacity: 1, scale: 1 }}
+							exit={{ opacity: 0, scale: 0.97 }}
+							transition={{ duration: 0.2 }}
+						>
+							{busy}
+						</motion.div>
+					) : (
+						<motion.div
+							key="actions"
+							initial={{ opacity: 0, scale: 0.97 }}
+							animate={{ opacity: 1, scale: 1 }}
+							exit={{ opacity: 0, scale: 0.97 }}
+							transition={{ duration: 0.2 }}
+							className="flex gap-2.5"
+						>
+							{secondary && (
+								<motion.button
+									type="button"
+									onClick={secondary.onClick}
+									whileTap={TAP_ICON}
+									aria-label={secondary.label}
+									title={secondary.label}
+									className={backButton}
+								>
+									<ArrowLeftIcon className="size-5" aria-hidden="true" />
+								</motion.button>
+							)}
+							<motion.button type="button" onClick={onClick} disabled={disabled} whileTap={TAP} className={primaryCta}>
+								{label}
+								{detail && <span className="font-normal opacity-80">{detail}</span>}
+								<Icon className="size-5" aria-hidden="true" />
+							</motion.button>
+						</motion.div>
+					)}
+				</AnimatePresence>
+			</div>
+		</ActionBar>
+	);
+}
+
+/**
+ * Indeterminate progress card for the action bar while files are read. Same frame as the cropper's
+ * `ProcessProgress`, but there is no honest percentage to show here — SheetJS reports none.
+ */
+export function WorkingCard({ label }: { label: string }) {
 	return (
 		<div
-			className={cn(
-				'sticky bottom-0 z-20 -mx-4 flex items-center gap-2 border-t border-border bg-background/90 px-4 py-2.5 backdrop-blur',
-				// Clears the home indicator on an iPhone, and collapses to nothing everywhere else.
-				'pb-[calc(0.625rem+env(safe-area-inset-bottom))]',
-				'sm:static sm:mx-0 sm:justify-between sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:pb-2 sm:backdrop-blur-none',
-			)}
+			className="flex h-14 flex-col justify-center gap-2 rounded-2xl bg-card px-4 ring-1 ring-border"
+			role="status"
+			aria-live="polite"
 		>
-			{secondary ? (
-				<button
-					type="button"
-					onClick={secondary.onClick}
-					className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:h-10"
-				>
-					{secondary.label}
-				</button>
-			) : (
-				<span className="hidden sm:block" />
-			)}
-
-			<motion.button
-				type="button"
-				onClick={onClick}
-				whileTap={{ scale: 0.98 }}
-				transition={SPRING}
-				className={cn(
-					// Full width of whatever the secondary button leaves on a phone; its natural
-					// width on a laptop, where it sits at the right-hand end of the row.
-					'group inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-5 sm:h-10 sm:flex-none',
-					'text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20',
-					'transition-colors hover:bg-primary/90',
-					'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-				)}
-			>
-				{label}
-				<Icon className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden="true" />
-			</motion.button>
+			<span className="text-sm font-medium">{label}</span>
+			<div className="h-1.5 overflow-hidden rounded-full bg-muted">
+				<motion.div
+					className="h-full w-1/3 rounded-full bg-gradient-to-r from-primary/60 to-primary"
+					animate={{ x: ['-100%', '300%'] }}
+					transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+				/>
+			</div>
 		</div>
 	);
 }

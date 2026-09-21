@@ -1,11 +1,15 @@
-import { ChevronDownIcon, PlusIcon, XIcon } from 'lucide-react';
+import { PlusIcon, Undo2Icon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { cn } from 'cn';
 import { DAYS_IN_MONTH, prorate, totalProrated, type ExpenseRow } from './expenses';
 import { formatCurrency } from './format';
 import { LossRatesPanel } from './LossRatesPanel';
-import { EASE_OUT, STAGGER_ITEM, STAGGER_LIST } from './motion';
+import { outlineAction } from '@/components/tool/buttons';
+import { Disclosure } from './ListCard';
+import { AnimatedNumber, COLLAPSE, EASE_OUT, STAGGER_ITEM, STAGGER_LIST } from './motion';
+import { DEFAULT_LOSS_RATES } from './preferences';
+import { StatTile } from './StatTile';
 import { StickyActions } from './StickyActions';
 import type { LossRates } from './types';
 
@@ -53,6 +57,10 @@ export function ExpensesPanel({
 	const [openRates, setOpenRates] = useState(false);
 	const total = totalProrated(rows, days);
 	const partialMonth = days !== DAYS_IN_MONTH;
+	const monthlyTotal = rows.reduce((sum, row) => sum + row.monthly, 0);
+	const changedRates = (Object.keys(DEFAULT_LOSS_RATES) as (keyof LossRates)[]).filter(
+		(key) => lossRates[key] !== DEFAULT_LOSS_RATES[key],
+	).length;
 
 	function setAmount(id: string, value: string) {
 		const monthly = Number(value);
@@ -80,7 +88,7 @@ export function ExpensesPanel({
 			{/* The instruction, as one sentence a seller can act on. It was a three-line grey block
 			  * set at 12px — the least important thing on the screen, given the most of it. */}
 			<motion.div variants={STAGGER_ITEM} className="px-1">
-				<h2 className="text-lg font-semibold tracking-tight">
+				<h2 className="text-xl font-bold tracking-tight sm:text-2xl">
 					What does it cost you to run the business each month?
 				</h2>
 				<p className="mt-1.5 max-w-prose text-sm leading-relaxed text-muted-foreground">
@@ -90,22 +98,33 @@ export function ExpensesPanel({
 				</p>
 			</motion.div>
 
-			<motion.section variants={STAGGER_ITEM} className="overflow-hidden rounded-xl border border-border bg-card">
+			{/* The answer this screen exists to produce, as the cropper's result tiles — the monthly
+			  * bill, and the share of it this payment file has to carry. */}
+			<motion.div variants={STAGGER_ITEM} className="grid grid-cols-2 gap-2.5">
+				<StatTile value={<AnimatedNumber value={monthlyTotal} format={formatCurrency} />} label="Per month" />
+				<StatTile
+					value={<AnimatedNumber value={total} format={formatCurrency} />}
+					label={partialMonth ? `Charged to this file · ${days} of ${DAYS_IN_MONTH} days` : 'Charged to this file'}
+					valueClassName={total > 0 ? 'text-destructive' : undefined}
+				/>
+			</motion.div>
+
+			<motion.section variants={STAGGER_ITEM} className="overflow-hidden rounded-2xl border border-border bg-card">
 				{/* Column headings, which is what turns four scattered inputs into a table. The two
 				  * money columns are different questions — what you pay a month, and what that comes
 				  * to over this file's window — and until they were named, the second was an
 				  * unexplained number sitting between the input and a delete button. */}
 				<header
 					className={cn(
-						'border-b border-border bg-muted/30 px-4 py-3',
+						'border-b border-border px-4 py-3',
 						COLUMNS,
 					)}
 				>
 					<h3 className="text-sm font-semibold tracking-tight">Expense</h3>
-					<span className="hidden text-right text-sm font-medium text-muted-foreground sm:block">
+					<span className="hidden text-right text-xs font-medium text-muted-foreground sm:block">
 						Per month
 					</span>
-					<span className="hidden text-right text-sm font-medium text-muted-foreground sm:block">
+					<span className="hidden text-right text-xs font-medium text-muted-foreground sm:block">
 						Charged to this file
 					</span>
 					<span className="hidden sm:block" />
@@ -138,7 +157,7 @@ export function ExpensesPanel({
 										placeholder="What is it for?"
 										aria-label="Expense name"
 										className={cn(
-											'w-full rounded-md border border-transparent bg-transparent px-2 py-1.5',
+											'w-full rounded-xl border border-transparent bg-transparent px-2 py-1.5 font-medium',
 											// 16px. Any smaller and iOS Safari zooms the whole page in when
 											// the field takes focus, which on a four-field form means
 											// pinching back out four times.
@@ -147,7 +166,7 @@ export function ExpensesPanel({
 											// point — these four are named already — but it has to admit
 											// that it's editable when you do.
 											'transition-colors hover:border-border hover:bg-background',
-											'focus-visible:border-border focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-ring',
+											'focus-visible:border-primary focus-visible:bg-background focus-visible:ring-3 focus-visible:ring-primary/15',
 										)}
 									/>
 
@@ -156,8 +175,8 @@ export function ExpensesPanel({
 										  * so the ₹ sits inside the field rather than beside it. */}
 										<div
 											className={cn(
-												'flex h-12 flex-1 items-center rounded-md border bg-background px-3 sm:h-10 sm:flex-none',
-												'transition-colors focus-within:border-ring focus-within:ring-2 focus-within:ring-ring',
+												'flex h-12 flex-1 items-center rounded-xl border bg-background px-3 sm:h-10 sm:flex-none',
+												'transition-[border-color,box-shadow] focus-within:border-primary focus-within:ring-3 focus-within:ring-primary/15',
 												isSet ? 'border-border' : 'border-border/70',
 											)}
 										>
@@ -175,9 +194,8 @@ export function ExpensesPanel({
 												aria-label={`${row.label || 'Expense'} per month`}
 												className={cn(
 													'w-full min-w-0 bg-transparent pl-1.5 text-right text-base font-medium tabular-nums outline-none',
-													'[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+													'[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
 												)}
-												style={{ MozAppearance: 'textfield' }}
 											/>
 										</div>
 
@@ -210,7 +228,7 @@ export function ExpensesPanel({
 											onClick={() => removeRow(row.id)}
 											aria-label={`Remove ${row.label || 'this expense'}`}
 											className={cn(
-												'flex size-11 shrink-0 items-center justify-center rounded-md sm:size-8',
+												'flex size-11 shrink-0 items-center justify-center rounded-xl sm:size-9',
 												'text-muted-foreground/60 transition-colors hover:bg-destructive/10 hover:text-destructive',
 												'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
 											)}
@@ -228,27 +246,14 @@ export function ExpensesPanel({
 					<button
 						type="button"
 						onClick={addRow}
-						className={cn(
-							'inline-flex h-10 items-center gap-2 rounded-lg border border-border px-3.5 text-sm font-medium',
-							'transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-						)}
+						className={cn(outlineAction, 'text-primary')}
 					>
 						<PlusIcon className="size-4" aria-hidden="true" />
 						Add expense
 					</button>
 
-					{/* The answer this screen exists to produce, so it is the largest thing in the
-					  * card rather than 12px of grey beside a button. */}
-					<p className="text-right text-sm text-muted-foreground">
-						<span className="text-lg font-semibold tabular-nums text-foreground">
-							{formatCurrency(total)}
-						</span>{' '}
-						charged to this file
-						{partialMonth && (
-							<span className="block tabular-nums">
-								{days} of {DAYS_IN_MONTH} days
-							</span>
-						)}
+					<p className="text-right text-xs text-muted-foreground tabular-nums">
+						{rows.length} {rows.length === 1 ? 'expense' : 'expenses'} · saved on this device
 					</p>
 				</div>
 			</motion.section>
@@ -256,47 +261,27 @@ export function ExpensesPanel({
 			{/* Collapsed by default. These change cost of goods rather than adding to it, and the
 			  * defaults are right for most sellers — but the one who resells every RTO item needs
 			  * them, and their profit is badly wrong until they're set. */}
-			<motion.section variants={STAGGER_ITEM} className="rounded-xl border border-border bg-card">
-				<button
-					type="button"
-					onClick={() => setOpenRates((open) => !open)}
-					aria-expanded={openRates}
-					className="flex w-full items-center justify-between gap-4 p-4 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+			<motion.div variants={STAGGER_ITEM}>
+				<Disclosure
+					id="loss-rates"
+					icon={<Undo2Icon />}
+					title="How much do returns really cost you?"
+					hint="How much of an item is written off when it comes back. Leave it if unsure — the defaults assume the worst."
+					badge={changedRates > 0 ? `${changedRates} changed` : undefined}
+					open={openRates}
+					onOpenChange={setOpenRates}
 				>
-					<span className="min-w-0">
-						<span className="block text-base font-semibold tracking-tight">
-							How much do returns really cost you?
-						</span>
-						<span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
-							Set how much of an item is written off when it comes back. Leave it alone if you're not
-							sure — the defaults assume the worst.
-						</span>
-					</span>
-					<ChevronDownIcon
-						className={cn(
-							'size-5 shrink-0 text-muted-foreground transition-transform duration-200',
-							openRates && 'rotate-180',
+					<AnimatePresence initial={false}>
+						{openRates && (
+							<motion.div id="loss-rates" {...COLLAPSE} className="overflow-hidden">
+								<div className="px-3 pb-3">
+									<LossRatesPanel value={lossRates} onChange={onLossRatesChange} />
+								</div>
+							</motion.div>
 						)}
-						aria-hidden="true"
-					/>
-				</button>
-
-				<AnimatePresence initial={false}>
-					{openRates && (
-						<motion.div
-							initial={{ height: 0, opacity: 0 }}
-							animate={{ height: 'auto', opacity: 1 }}
-							exit={{ height: 0, opacity: 0 }}
-							transition={{ duration: 0.28, ease: EASE_OUT }}
-							className="overflow-hidden"
-						>
-							<div className="border-t border-border p-4">
-								<LossRatesPanel value={lossRates} onChange={onLossRatesChange} />
-							</div>
-						</motion.div>
-					)}
-				</AnimatePresence>
-			</motion.section>
+					</AnimatePresence>
+				</Disclosure>
+			</motion.div>
 
 			<StickyActions label={primaryLabel} onClick={onDone} secondary={secondary} />
 		</motion.div>

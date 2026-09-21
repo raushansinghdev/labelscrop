@@ -58,7 +58,7 @@ export function PaymentFileDropzone({ files, onFilesAdded, onRemove, disabled }:
 	}
 
 	return (
-		<div className="space-y-2">
+		<div className="space-y-3">
 			<motion.button
 				type="button"
 				onClick={() => !disabled && inputRef.current?.click()}
@@ -80,8 +80,8 @@ export function PaymentFileDropzone({ files, onFilesAdded, onRemove, disabled }:
 				animate={{ scale: dragging ? 1.02 : 1 }}
 				transition={{ duration: 0.25, ease: EASE_OUT }}
 				className={cn(
-					'group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed text-center transition-colors duration-200',
-					hasFiles ? 'gap-0 px-4 py-3.5' : 'gap-3 px-5 py-8 sm:py-10',
+					'group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed text-center transition-colors duration-200',
+					hasFiles ? 'gap-0 px-4 py-4' : 'gap-4 px-6 py-12 sm:py-16',
 					dragging
 						? 'border-primary bg-primary/[0.06]'
 						: 'border-border bg-muted/40 hover:border-primary/50 hover:bg-primary/[0.03]',
@@ -99,18 +99,18 @@ export function PaymentFileDropzone({ files, onFilesAdded, onRemove, disabled }:
 							layout="position"
 							animate={dragging ? { y: -6, scale: 1.08 } : { y: [0, -5, 0] }}
 							transition={dragging ? { duration: 0.2 } : { duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
-							className="flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+							className="flex size-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25"
 						>
-							<UploadIcon className="size-5" strokeWidth={2.25} />
+							<UploadIcon className="size-7" strokeWidth={2.25} />
 						</motion.span>
-						<motion.span layout="position" className="space-y-1">
-							<span className="block text-base font-semibold tracking-tight">
+						<motion.span layout="position" className="space-y-1.5">
+							<span className="block text-lg font-semibold tracking-tight">
 								<span className="sm:hidden">Tap to choose your payment files</span>
 								<span className="hidden sm:inline">
 									{dragging ? 'Drop to add' : 'Drop your Meesho payment files here'}
 								</span>
 							</span>
-							<span className="block text-xs text-muted-foreground sm:text-sm">
+							<span className="block text-sm text-muted-foreground">
 								<span className="hidden sm:inline">or click to browse · </span>
 								The <span className="font-medium text-foreground">*_PAYMENT_FILE_*.xlsx</span> from your
 								supplier panel
@@ -169,9 +169,9 @@ export function PaymentFileDropzone({ files, onFilesAdded, onRemove, disabled }:
 								transition: { duration: 0.35, ease: EASE_OUT, delay: Math.min(index, 6) * 0.04 },
 							}}
 							exit={{ opacity: 0, x: -24, transition: { duration: 0.2 } }}
-							className="flex items-center gap-2.5 rounded-xl border border-border bg-card p-2 pl-2.5 shadow-xs"
+							className="flex items-center gap-3 rounded-2xl border border-border bg-card p-2.5 pl-3 shadow-xs"
 						>
-							<span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-chart-2/10 text-chart-2">
+							<span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-chart-2/10 text-chart-2">
 								<FileSpreadsheetIcon className="size-5" />
 							</span>
 							<span className="min-w-0 flex-1">

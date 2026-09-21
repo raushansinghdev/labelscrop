@@ -93,7 +93,7 @@ export function DownloadReport({ result, overheads, expenses, expenseDays, fileN
 			transition={{ duration: 0.4, ease: EASE_OUT }}
 			aria-labelledby="profit-report-heading"
 			className={cn(
-				'overflow-hidden rounded-2xl border border-primary/20 p-5 sm:p-6',
+				'overflow-hidden rounded-3xl border border-primary/20 p-5 sm:p-6',
 				// The one block on this screen that asks for something rather than reporting it, so
 				// it carries the brand wash the site's other calls to action use.
 				'bg-gradient-to-br from-primary/[0.07] via-card to-card',
@@ -101,7 +101,7 @@ export function DownloadReport({ result, overheads, expenses, expenseDays, fileN
 		>
 			<div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
 				<span
-					className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"
+					className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25"
 					aria-hidden="true"
 				>
 					<FileTextIcon className="size-5.5" />
@@ -125,11 +125,11 @@ export function DownloadReport({ result, overheads, expenses, expenseDays, fileN
 					type="button"
 					onClick={() => void download()}
 					disabled={state === 'working'}
-					whileTap={{ scale: 0.98 }}
+					whileTap={{ scale: 0.97 }}
 					transition={SPRING}
 					className={cn(
-						'group inline-flex h-11 min-w-40 shrink-0 items-center justify-center gap-2 rounded-xl px-5',
-						'text-sm font-semibold transition-colors',
+						'group inline-flex h-12 min-w-44 shrink-0 items-center justify-center gap-2 rounded-2xl px-5',
+						'text-base font-semibold transition-colors',
 						'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
 						'disabled:pointer-events-none',
 						state === 'done'

@@ -74,6 +74,8 @@ export interface SourcePage {
 
 export type SortKey = 'original' | 'sku' | 'courier' | 'destinationCode' | 'colorSize' | 'sizeColor';
 
+export type SortDirection = 'asc' | 'desc';
+
 /** An output layout: either one label per page (a thermal printer size) or a grid of labels on a larger sheet. */
 export interface LayoutPreset {
 	id: string;
@@ -91,6 +93,8 @@ export interface OverlayOptions {
 	customText?: string;
 	showOrderNumber?: boolean;
 	showDateTime?: boolean;
+	/** Stamps a bold "×N" badge in the label's top-right corner when the order has more than one unit. */
+	showQtyBadge?: boolean;
 }
 
 export interface SkuSummaryRow {

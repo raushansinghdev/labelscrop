@@ -22,7 +22,12 @@ export function describeMeeshoConfig(config: OptionConfig): string[] {
 	if (config.sortKey && config.sortKey !== 'original') {
 		const sort = choiceLabel('sortKey', config.sortKey);
 		// Lower-case the first letter of ordinary words ("Courier" → "courier") but leave acronyms ("SKU") alone.
-		if (sort) parts.push(`Sorted by ${/^[A-Z][a-z]/.test(sort) ? sort.charAt(0).toLowerCase() + sort.slice(1) : sort}`);
+		if (sort) {
+			const name = /^[A-Z][a-z]/.test(sort) ? sort.charAt(0).toLowerCase() + sort.slice(1) : sort;
+			parts.push(`Sorted by ${name}${config.sortDirection === 'desc' ? ', Z–A' : ''}`);
+		}
 	}
+	if (config.multiUnitFirst === true) parts.push('Multi-unit first');
+	if (config.splitByCourier === true) parts.push('Split by courier');
 	return parts;
 }

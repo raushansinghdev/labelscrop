@@ -5,7 +5,7 @@ import { cn } from 'cn';
 import { deriveInsights } from './derive';
 import { formatCurrency, formatNumber, formatPercent } from './format';
 import { MetricTooltip, MetricTooltipProvider, type MetricRow } from './MetricTooltip';
-import { STAGGER_ITEM, STAGGER_LIST } from './motion';
+import { RESULT_ITEM, RESULT_STAGGER, TAP_CARD } from './motion';
 import type { PnlResult, SkuRow } from './types';
 
 interface ProfitInsightsProps {
@@ -34,10 +34,10 @@ export function ProfitInsights({ result }: ProfitInsightsProps) {
 	return (
 		<MetricTooltipProvider>
 			<motion.div
-				variants={STAGGER_LIST}
+				variants={RESULT_STAGGER}
 				initial="hidden"
 				animate="show"
-				className="grid gap-3 sm:grid-cols-3"
+				className="grid gap-2.5 sm:grid-cols-3"
 			>
 				<InsightCard
 					icon={TrophyIcon}
@@ -204,20 +204,21 @@ function InsightCard({
 	const toneClasses = TONES[tone];
 
 	return (
-		<motion.div variants={STAGGER_ITEM} className="min-w-0">
+		<motion.div variants={RESULT_ITEM} whileTap={TAP_CARD} className="min-w-0">
 			<MetricTooltip
 				title={tooltipTitle}
 				meaning={meaning}
 				rows={rows}
 				footnote={footnote}
 				className={cn(
-					'flex w-full min-w-0 items-start gap-3 rounded-xl border border-border bg-card p-4',
-					'transition-colors hover:border-foreground/20 hover:bg-muted/40',
+					// The cropper's choice card: a bordered card with a tinted icon tile.
+					'flex h-full w-full min-w-0 items-start gap-3 rounded-2xl border border-border bg-card p-3.5',
+					'transition-[border-color,background-color] duration-200 hover:border-foreground/20',
 				)}
 			>
 				<span
 					className={cn(
-						'mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg',
+						'flex size-10 shrink-0 items-center justify-center rounded-xl',
 						toneClasses.icon,
 					)}
 					aria-hidden="true"
@@ -226,7 +227,7 @@ function InsightCard({
 				</span>
 
 				<span className="min-w-0 flex-1">
-					<span className="block text-sm font-medium text-muted-foreground">{label}</span>
+					<span className="block text-xs font-medium text-muted-foreground">{label}</span>
 					<span className="mt-1 flex items-baseline gap-2">
 						<span className={cn('text-xl font-bold tracking-tight', toneClasses.value)}>{value}</span>
 						{/* The SKU code sits beside the figure rather than under it: on a phone these cards
@@ -240,7 +241,7 @@ function InsightCard({
 							{detail}
 						</span>
 					</span>
-					<span className="mt-1 block text-sm leading-snug text-muted-foreground">{hint}</span>
+					<span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{hint}</span>
 				</span>
 			</MetricTooltip>
 		</motion.div>

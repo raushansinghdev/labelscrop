@@ -6,8 +6,8 @@ import { SkuProfitChart } from './SkuProfitChart';
 import { StatusDonut } from './StatusDonut';
 
 /**
- * Every chart behind one default export, so the island can pull the whole set — and recharts
- * with it — in a single `lazy()` chunk that only loads once a file has been parsed.
+ * Every chart behind one default export, so the island can pull the whole set in a single
+ * `lazy()` chunk that only loads once a file has been parsed.
  *
  * The stagger is deliberate here: the charts arrive after the KPI cards have already settled,
  * which is exactly the order they should be read in.

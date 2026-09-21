@@ -31,6 +31,12 @@ export interface OptionField {
 	/** Cross-option dependencies as data rather than scattered component conditionals — e.g. "Label Size"
 	 * is only shown when `config.printerType === 'label'`. */
 	visibleIf?: (config: OptionConfig) => boolean;
+	/** Id of a two-choice `'asc' | 'desc'` field rendered as an up/down toggle beside this select, instead of
+	 * as a control of its own (e.g. sort key + sort order). */
+	directionField?: string;
+	/** Set on a field that another field renders inside its own control (see `directionField`), so the form
+	 * doesn't also render it standalone. */
+	renderedByParent?: boolean;
 	/** Whether this field appears in "Simple" mode, or only in "Advanced" mode. */
 	simpleModeVisible: boolean;
 }
@@ -52,6 +58,7 @@ export function visibleFields(
 	mode: 'simple' | 'advanced',
 ): OptionField[] {
 	return fields.filter((field) => {
+		if (field.renderedByParent) return false;
 		if (mode === 'simple' && !field.simpleModeVisible) return false;
 		if (field.visibleIf && !field.visibleIf(config)) return false;
 		return true;

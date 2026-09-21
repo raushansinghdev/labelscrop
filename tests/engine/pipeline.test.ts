@@ -132,4 +132,67 @@ describe('processFiles (end-to-end, Meesho adapter)', () => {
 
 		expect(stages).toEqual(['reading', 'composing', 'summarizing']);
 	});
+
+	it('puts multi-unit orders first and splits labels into one PDF per courier', async () => {
+		const bytes = await buildMeeshoFixturePdf([
+			{ sku: 'SKU-A', orderNo: '100000000000000001_1', awb: '9000000000000001', courier: 'Delhivery' },
+			{ sku: 'SKU-B', orderNo: '100000000000000002_1', awb: '9000000000000002', courier: 'Ekart', qty: 2 },
+			{ sku: 'SKU-C', orderNo: '100000000000000003_1', awb: '9000000000000003', courier: 'Delhivery' },
+		]);
+
+		const { result } = await processFiles([{ name: 'labels.pdf', bytes }], meeshoAdapter, {
+			layout: MEESHO_LAYOUTS['thermal-4x6'],
+			sortKey: 'sku',
+			keepInvoice: false,
+			multiUnitFirst: true,
+			splitByCourier: true,
+			overlay: { showQtyBadge: true },
+		});
+
+		const [firstPage] = await extractPageLines(result.labelPdfBytes);
+		const firstText = firstPage.lines.map((l) => l.text).join(' | ');
+		expect(firstText).toContain('100000000000000002_1');
+		expect(firstText).toContain('\u00D72');
+
+		expect(result.courierPdfs.map((c) => [c.courier, c.labelCount])).toEqual([
+			['Ekart', 1],
+			['Delhivery', 2],
+		]);
+		const delhivery = await PDFDocument.load(result.courierPdfs[1].bytes);
+		expect(delhivery.getPageCount()).toBe(2);
+	});
+
+	it('skips the courier split when every label has the same courier', async () => {
+		const bytes = await buildMeeshoFixturePdf([
+			{ sku: 'SKU-A', orderNo: '100000000000000001_1', awb: '9000000000000001', courier: 'Delhivery' },
+			{ sku: 'SKU-B', orderNo: '100000000000000002_1', awb: '9000000000000002', courier: 'Delhivery' },
+		]);
+		const { result } = await processFiles([{ name: 'labels.pdf', bytes }], meeshoAdapter, {
+			layout: MEESHO_LAYOUTS['thermal-4x6'],
+			sortKey: 'original',
+			keepInvoice: false,
+			splitByCourier: true,
+		});
+		expect(result.courierPdfs).toEqual([]);
+	});
+
+	it('only drops a file uploaded twice when skipDuplicates is on', async () => {
+		const bytes = await buildMeeshoFixturePdf([
+			{ sku: 'SKU-A', orderNo: '100000000000000001_1', awb: '9000000000000001' },
+			{ sku: 'SKU-B', orderNo: '100000000000000002_1', awb: '9000000000000002' },
+		]);
+		const files = [
+			{ name: 'a.pdf', bytes },
+			{ name: 'b.pdf', bytes },
+		];
+		const base = { layout: MEESHO_LAYOUTS['thermal-4x6'], sortKey: 'original' as const, keepInvoice: false };
+
+		const off = await processFiles(files, meeshoAdapter, base);
+		expect(off.result.pageCount).toBe(4);
+		expect(off.result.duplicatesRemoved).toBe(0);
+
+		const on = await processFiles(files, meeshoAdapter, { ...base, skipDuplicates: true });
+		expect(on.result.pageCount).toBe(2);
+		expect(on.result.duplicatesRemoved).toBe(2);
+	});
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sortPages } from '@/lib/engine/sort';
+import { dedupePages, prioritizeMultiUnit, sortPages } from '@/lib/engine/sort';
 import type { OrderMetadata, SourcePage } from '@/lib/engine/types';
 
 function makePage(
@@ -53,6 +53,22 @@ describe('sortPages', () => {
 		const pages = [makePage(0, 0, { courier: 'Xpressbees' }), makePage(0, 1, { courier: 'Delhivery' })];
 		const sorted = sortPages(pages, 'courier');
 		expect(sorted.map((p) => p.metadata.courier)).toEqual(['Delhivery', 'Xpressbees']);
+	});
+
+	it('sorts Z to A when descending, keeping missing values last and ties in upload order', () => {
+		const pages = [
+			makePage(0, 0, { sku: 'Apple' }),
+			makePage(0, 1, { sku: null }),
+			makePage(0, 2, { sku: 'Zebra' }),
+			makePage(0, 3, { sku: 'Apple' }),
+		];
+		const sorted = sortPages(pages, 'sku', 'desc');
+		expect(sorted.map((p) => [p.metadata.sku, p.pageIndex])).toEqual([
+			['Zebra', 2],
+			['Apple', 0],
+			['Apple', 3],
+			[null, 1],
+		]);
 	});
 
 	it('pushes pages with a missing sort field to the end, without dropping them', () => {
@@ -109,5 +125,38 @@ describe('sortPages', () => {
 		];
 		const sorted = sortPages(pages, 'colorSize');
 		expect(sorted.map((p) => p.metadata.color)).toEqual(['Blue', null]);
+	});
+});
+
+describe('prioritizeMultiUnit', () => {
+	it('moves multi-unit orders first, keeping the existing order on both sides', () => {
+		const pages = [
+			makePage(0, 0, { sku: 'A', qty: 1 }),
+			makePage(0, 1, { sku: 'B', qty: 3 }),
+			makePage(0, 2, { sku: 'C', qty: null }),
+			makePage(0, 3, { sku: 'D', qty: 2 }),
+		];
+		expect(prioritizeMultiUnit(pages).map((p) => p.metadata.sku)).toEqual(['B', 'D', 'A', 'C']);
+	});
+});
+
+describe('dedupePages', () => {
+	it('drops repeats by AWB, falls back to order number, and never drops pages with neither', () => {
+		const pages = [
+			makePage(0, 0, { awb: '111', orderNo: 'o1' }),
+			makePage(1, 0, { awb: '111', orderNo: 'o1' }),
+			makePage(0, 1, { awb: null, orderNo: 'o2' }),
+			makePage(1, 1, { awb: null, orderNo: 'o2' }),
+			makePage(0, 2, { awb: null, orderNo: null }),
+			makePage(1, 2, { awb: null, orderNo: null }),
+		];
+		const { pages: kept, removed } = dedupePages(pages);
+		expect(removed).toBe(2);
+		expect(kept.map((p) => [p.fileIndex, p.pageIndex])).toEqual([
+			[0, 0],
+			[0, 1],
+			[0, 2],
+			[1, 2],
+		]);
 	});
 });
