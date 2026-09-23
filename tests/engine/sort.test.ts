@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dedupePages, prioritizeMultiUnit, sortPages } from '@/lib/engine/sort';
+import { prioritizeMultiUnit, sortPages } from '@/lib/engine/sort';
 import type { OrderMetadata, SourcePage } from '@/lib/engine/types';
 
 function makePage(
@@ -137,26 +137,5 @@ describe('prioritizeMultiUnit', () => {
 			makePage(0, 3, { sku: 'D', qty: 2 }),
 		];
 		expect(prioritizeMultiUnit(pages).map((p) => p.metadata.sku)).toEqual(['B', 'D', 'A', 'C']);
-	});
-});
-
-describe('dedupePages', () => {
-	it('drops repeats by AWB, falls back to order number, and never drops pages with neither', () => {
-		const pages = [
-			makePage(0, 0, { awb: '111', orderNo: 'o1' }),
-			makePage(1, 0, { awb: '111', orderNo: 'o1' }),
-			makePage(0, 1, { awb: null, orderNo: 'o2' }),
-			makePage(1, 1, { awb: null, orderNo: 'o2' }),
-			makePage(0, 2, { awb: null, orderNo: null }),
-			makePage(1, 2, { awb: null, orderNo: null }),
-		];
-		const { pages: kept, removed } = dedupePages(pages);
-		expect(removed).toBe(2);
-		expect(kept.map((p) => [p.fileIndex, p.pageIndex])).toEqual([
-			[0, 0],
-			[0, 1],
-			[0, 2],
-			[1, 2],
-		]);
 	});
 });

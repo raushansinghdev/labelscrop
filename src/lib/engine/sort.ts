@@ -59,21 +59,3 @@ export function prioritizeMultiUnit(pages: SourcePage[]): SourcePage[] {
 	if (multi.length === 0) return pages;
 	return [...multi, ...pages.filter((page) => (page.metadata.qty ?? 1) <= 1)];
 }
-
-/** Drops repeat labels for the same shipment (same AWB, or same Order No. when the AWB couldn't be read),
- * keeping the first one seen — for when overlapping downloads are uploaded together. A page with neither
- * field is always kept: with nothing to match on, it can't be proven a duplicate. */
-export function dedupePages(pages: SourcePage[]): { pages: SourcePage[]; removed: number } {
-	const seen = new Set<string>();
-	const kept: SourcePage[] = [];
-	for (const page of pages) {
-		const { awb, orderNo } = page.metadata;
-		const key = awb ? `awb:${awb}` : orderNo ? `order:${orderNo}` : null;
-		if (key) {
-			if (seen.has(key)) continue;
-			seen.add(key);
-		}
-		kept.push(page);
-	}
-	return { pages: kept, removed: pages.length - kept.length };
-}

@@ -176,7 +176,7 @@ describe('processFiles (end-to-end, Meesho adapter)', () => {
 		expect(result.courierPdfs).toEqual([]);
 	});
 
-	it('only drops a file uploaded twice when skipDuplicates is on', async () => {
+	it('keeps every label when the same file is uploaded twice', async () => {
 		const bytes = await buildMeeshoFixturePdf([
 			{ sku: 'SKU-A', orderNo: '100000000000000001_1', awb: '9000000000000001' },
 			{ sku: 'SKU-B', orderNo: '100000000000000002_1', awb: '9000000000000002' },
@@ -185,14 +185,13 @@ describe('processFiles (end-to-end, Meesho adapter)', () => {
 			{ name: 'a.pdf', bytes },
 			{ name: 'b.pdf', bytes },
 		];
-		const base = { layout: MEESHO_LAYOUTS['thermal-4x6'], sortKey: 'original' as const, keepInvoice: false };
 
-		const off = await processFiles(files, meeshoAdapter, base);
-		expect(off.result.pageCount).toBe(4);
-		expect(off.result.duplicatesRemoved).toBe(0);
-
-		const on = await processFiles(files, meeshoAdapter, { ...base, skipDuplicates: true });
-		expect(on.result.pageCount).toBe(2);
-		expect(on.result.duplicatesRemoved).toBe(2);
+		const { result } = await processFiles(files, meeshoAdapter, {
+			layout: MEESHO_LAYOUTS['thermal-4x6'],
+			sortKey: 'original',
+			keepInvoice: false,
+		});
+		// Nothing is silently dropped: what the seller uploaded is what gets printed.
+		expect(result.pageCount).toBe(4);
 	});
 });

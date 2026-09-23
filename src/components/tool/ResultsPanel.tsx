@@ -261,12 +261,6 @@ export function ResultsPanel({ result, failures, labelsPerPage, summary, onEditO
 				))}
 			</motion.div>
 
-			{result.duplicatesRemoved > 0 && (
-				<motion.p variants={item} className="-mt-2 text-center text-xs text-muted-foreground">
-					{result.duplicatesRemoved} duplicate {result.duplicatesRemoved === 1 ? 'label' : 'labels'} skipped
-				</motion.p>
-			)}
-
 			<motion.div variants={item} className="space-y-2.5">
 				<div className="flex gap-2.5">
 					{labelUrl && (

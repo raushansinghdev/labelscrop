@@ -28,10 +28,10 @@ describe('resolveMeeshoProcessOptions — labels per A4 sheet', () => {
 		expect(layout.id).toBe('thermal-4x6');
 	});
 
-	it('maps the packing toggles, with duplicate skipping off by default', () => {
-		expect(resolveMeeshoProcessOptions(defaults)).toMatchObject({ multiUnitFirst: false, skipDuplicates: false, splitByCourier: false });
-		const on = resolveMeeshoProcessOptions({ ...defaults, multiUnitFirst: true, skipDuplicates: true, splitByCourier: true });
-		expect(on).toMatchObject({ multiUnitFirst: true, skipDuplicates: true, splitByCourier: true });
+	it('maps the packing toggles, off by default', () => {
+		expect(resolveMeeshoProcessOptions(defaults)).toMatchObject({ multiUnitFirst: false, splitByCourier: false });
+		const on = resolveMeeshoProcessOptions({ ...defaults, multiUnitFirst: true, splitByCourier: true });
+		expect(on).toMatchObject({ multiUnitFirst: true, splitByCourier: true });
 		expect(on.overlay?.showQtyBadge).toBe(true);
 	});
 

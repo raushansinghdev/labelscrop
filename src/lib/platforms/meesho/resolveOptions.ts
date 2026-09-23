@@ -44,7 +44,6 @@ export function resolveMeeshoProcessOptions(config: OptionConfig): Omit<ProcessO
 		invoiceLayout: keepInvoice ? MEESHO_INVOICE_LAYOUT : undefined,
 		overlay,
 		multiUnitFirst: config.multiUnitFirst === true,
-		skipDuplicates: config.skipDuplicates === true,
 		splitByCourier: config.splitByCourier === true,
 	};
 }

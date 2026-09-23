@@ -97,15 +97,6 @@ export const MEESHO_OPTIONS: OptionField[] = [
 		simpleModeVisible: false,
 	},
 	{
-		id: 'skipDuplicates',
-		label: 'Skip duplicate labels',
-		group: 'Packing',
-		controlType: 'toggle',
-		default: false,
-		helpText: 'Same order in two files? It’s printed once.',
-		simpleModeVisible: false,
-	},
-	{
 		id: 'splitByCourier',
 		label: 'Separate PDF per courier',
 		group: 'Downloads',

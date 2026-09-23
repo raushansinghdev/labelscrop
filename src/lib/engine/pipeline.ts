@@ -1,7 +1,7 @@
 import { PDFDocument } from 'pdf-lib';
 import { type ComposeInput, composeOutputDocument, labelRegionFor } from './compose';
 import { extractPageLines, PasswordProtectedPdfError, UnreadablePdfError } from './pdfText';
-import { dedupePages, prioritizeMultiUnit, sortPages } from './sort';
+import { prioritizeMultiUnit, sortPages } from './sort';
 import { buildSkuSummary, buildSkuSummaryPdf } from './summary';
 import type { LayoutPreset, OverlayOptions, PlatformAdapter, SkuSummaryRow, SortDirection, SortKey, SourcePage } from './types';
 
@@ -24,8 +24,6 @@ export interface ProcessOptions {
 	overlay?: OverlayOptions;
 	/** Orders with more than one unit go first, ahead of the chosen sort. */
 	multiUnitFirst?: boolean;
-	/** Drop repeat labels for the same AWB / order, e.g. from overlapping downloads. Off unless asked for. */
-	skipDuplicates?: boolean;
 	/** Also compose one label PDF per courier (see `ProcessResult.courierPdfs`). */
 	splitByCourier?: boolean;
 	onProgress?: (event: { stage: 'reading' | 'composing' | 'summarizing'; current: number; total: number }) => void;
@@ -40,8 +38,6 @@ export interface ProcessResult {
 	 * `splitByCourier` was set and the batch has at least two couriers — one courier would only duplicate
 	 * the main labels PDF. */
 	courierPdfs: CourierPdf[];
-	/** Labels dropped by `skipDuplicates`. */
-	duplicatesRemoved: number;
 	pageCount: number;
 	/** Non-fatal issues surfaced to the user (e.g. a page whose boundary/metadata couldn't be detected) —
 	 * per the plan's error-handling taxonomy, these never abort the run. */
@@ -110,10 +106,7 @@ export async function processFiles(
 		}
 	}
 
-	const { pages: uniquePages, removed: duplicatesRemoved } = options.skipDuplicates
-		? dedupePages(sourcePages)
-		: { pages: sourcePages, removed: 0 };
-	const keyed = sortPages(uniquePages, options.sortKey, options.sortDirection);
+	const keyed = sortPages(sourcePages, options.sortKey, options.sortDirection);
 	const sorted = options.multiUnitFirst ? prioritizeMultiUnit(keyed) : keyed;
 
 	options.onProgress?.({ stage: 'composing', current: 0, total: sorted.length });
@@ -166,7 +159,6 @@ export async function processFiles(
 			summaryPdfBytes,
 			summary,
 			courierPdfs,
-			duplicatesRemoved,
 			pageCount: sorted.length,
 			warnings,
 		},
