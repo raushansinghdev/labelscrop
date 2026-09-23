@@ -1,0 +1,95 @@
+---
+title: Meesho label kaise crop kare — invoice hatakar 4x6 print karein
+description: Meesho ka A4 page label aur tax invoice dono deta hai. Invoice ko crop karke 4x6 ya 3x5 thermal label par sahi size mein print karne ka tarika.
+cluster: how-to
+locale: hi-Latn
+published: 2026-09-23
+updated: 2026-09-23
+tool: meesho-label-cropper
+faqs:
+  - q: Meesho label ka size kya hota hai?
+    a: Meesho aapko label-size file nahi deta. Woh ek A4 page deta hai jiske upar shipping label hota hai aur neeche tax invoice. Label khud landscape shape mein hota hai, aur invoice hatane ke baad woh 4x6" ya 3x5" thermal label par pura fit ho jata hai.
+  - q: Kya ismein koi charge lagta hai?
+    a: Nahi. Tool bilkul free hai — na page limit, na watermark, na login. Aur aapki file kabhi upload nahi hoti, sab kuch aapke browser mein hi chalta hai.
+  - q: Mera label chhota kyun print hota hai?
+    a: Zyadatar "Fit to page" ya "Shrink oversized pages" ki wajah se, jab file abhi bhi A4 size ki ho. Pehle label size par crop karein, phir print dialog mein scale <strong>100%</strong> rakhein aur paper size apne label stock par set karein.
+  - q: Thermal printer nahi hai, tab kya karein?
+    a: Normal A4 printer se bhi kaam chal jata hai — ek sheet par 2 ya 4 label print karke kaat lijiye. Har courier printed A4 label accept karta hai.
+  - q: Kya ek saath kai PDF upload kar sakte hain?
+    a: Haan. Ek se zyada label PDF ek saath add kar sakte hain, isliye alag-alag batch ya ek se zyada Meesho account wale sellers sab kuch ek hi baar mein process kar sakte hain.
+---
+
+Meesho se labels download karne par ek dikkat sabko aati hai: file A4 page ki hoti hai jiske upar
+shipping label hai aur neeche tax invoice. Lekin aapka label printer 4x6" ka sticker chahta hai.
+Wahi A4 file seedhe thermal printer par bhej dein, toh sticker ke beech mein ek tiny sa label
+chhap jata hai — ya aadha label aur aadha invoice.
+
+Yeh guide wahi settings batati hai jo sach mein kaam karti hain.
+
+## Pehle crop karein, phir print
+
+Sabse common galti yeh hai ki log size ko print dialog se theek karne ki koshish karte hain.
+"Fit to page" pure A4 sheet ko — label *aur* invoice dono ko — 4x6 sticker par chhota kar dega.
+Isiliye result padha hi nahi jata. **Koi bhi print setting invoice ko hata nahi sakti**, sirf uska
+size chhota kar sakti hai.
+
+Toh order yeh hai: **pehle crop, phir 100% par print.**
+[Meesho label cropper](/hi/tools/meesho-label-cropper) invoice ko kaat kar aisi PDF banata hai jiske
+page pehle se hi 4x6" ya 3x5" ke hain. Jab file sahi size ki ho jaye, toh print dialog ke paas
+guess karne ko kuch bachta hi nahi.
+
+Cut line **TAX INVOICE** likha hua dhoondh kar nikali jaati hai, kisi fixed height par nahi kaati
+jaati. Isiliye jab order mein ek se zyada item ho aur upar ka label thoda lamba ho jaye, tab bhi
+cut sahi jagah par hi lagta hai.
+
+## Steps
+
+1. Meesho supplier panel se apne labels download karein.
+2. [Cropper](/hi/tools/meesho-label-cropper) kholein aur PDF add karein — ek saath kai files bhi add
+   kar sakte hain.
+3. Printer chunein: **Label printer** (3x5" / 4x6") ya **A4** (1, 2 ya 4 label per sheet).
+4. Invoice ka option chunein — hata dein, saath rakhein, ya alag PDF mein save kar lein.
+5. Sorting chunein: SKU, courier, pickup hub, ya color-size. Isse packing tez ho jati hai.
+6. Create dabaayein aur nayi PDF download karein.
+
+Poora kaam aapke browser mein hota hai. Customer ke naam, address aur phone number kisi server par
+nahi jaate — na hamare, na kisi aur ke.
+
+## Print settings
+
+| Setting | Kya rakhein |
+| --- | --- |
+| Paper size | Aapka actual label stock (`4x6`, `100x150mm`, ya custom) |
+| Scale | **100%** — "Fit to page" band |
+| Orientation | Portrait |
+| Headers & footers | Band (browser print mein URL chhap jata hai warna) |
+
+Agar label blank, tedha ya aadha chhap raha hai, toh woh printer ki calibration ki dikkat hai,
+file ki nahi. Jo PDF ek baar sahi chhapi, woh hamesha sahi chhapegi.
+
+TSC, TVS, Rugtek aur Honeywell printers ke liye model-wise settings
+[thermal printer wali guide](/guides/print-meesho-labels-on-thermal-printer) mein hain (English).
+
+## Packing ke hisaab se sort karein
+
+Size theek hone ke baad jo cheez sabse zyada time khati hai woh hai pages ka order. Meesho jis
+sequence mein orders aaye usi mein export karta hai, toh 50 labels ka stack aapko shelf ke aage
+peeche daudata rehta hai.
+
+- **SKU se sort** — ek jaisa product ek saath aa jata hai. Ek baar uthaya, gin liya, pack kar diya.
+- **Courier se sort** — har delivery partner ka apna alag pile, jo tab kaam aata hai jab do
+  courier alag-alag time par pickup karte hain.
+- **Pickup hub se sort** — ek hi van mein jaane wale parcels ek saath.
+
+SKU pick list bhi milti hai, jo batati hai ki kis item ke kitne piece neeche laane hain.
+
+## Yaad rakhne wali baatein
+
+- Invoice print dialog se nahi hatega — pehle crop karein.
+- **100% scale** par print karein, paper size apne label stock ka rakhein.
+- Blank ya tedha label = printer calibration, file nahi.
+- Thermal printer na ho toh A4 par 2 ya 4 label bilkul chalta hai.
+- Print se pehle SKU se sort kar lein, packing kaafi tez ho jayegi.
+
+Batch pack ho jaye toh [profit calculator](/hi/tools/meesho-profit-calculator) se dekh sakte hain ki
+us batch se asli kamai kitni hui.

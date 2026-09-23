@@ -98,7 +98,7 @@ class Report {
 
 		s.rect({ x: M, top, width: 22, height: 22, radius: 7, fill: COLORS.primary });
 		s.icon(ICONS.logo, { x: M + 5, top: top + 5, size: 12, color: COLORS.card, strokeWidth: 2 });
-		s.text('LabelsCrop', { x: M + 30, top: top + 6, size: 12, bold: true });
+		s.text('SellerWala', { x: M + 30, top: top + 6, size: 12, bold: true });
 
 		s.text(`Generated ${longDate(this.generatedAt)}`, {
 			x: PAGE.width - M,
@@ -145,7 +145,7 @@ class Report {
 		const s = this.sheet;
 		s.rect({ x: M, top, width: 14, height: 14, radius: 4.5, fill: COLORS.primary });
 		s.icon(ICONS.logo, { x: M + 3, top: top + 3, size: 8, color: COLORS.card, strokeWidth: 2.4 });
-		s.text('LabelsCrop', { x: M + 20, top: top + 3.5, size: 8.5, bold: true });
+		s.text('SellerWala', { x: M + 20, top: top + 3.5, size: 8.5, bold: true });
 		s.text(label, {
 			x: PAGE.width - M,
 			top: top + 3.5,
@@ -163,7 +163,7 @@ class Report {
 		const total = this.sheets.length;
 		this.sheets.forEach((s, index) => {
 			s.line({ x1: M, y1: FOOTER_TOP, x2: PAGE.width - M, y2: FOOTER_TOP, color: COLORS.border });
-			s.text('Built from your Meesho payment file with your own costs. All amounts in INR. labelscrop.com', {
+			s.text('Built from your Meesho payment file with your own costs. All amounts in INR. sellerwala.com', {
 				x: M,
 				top: FOOTER_TOP + 10,
 				size: 7.5,

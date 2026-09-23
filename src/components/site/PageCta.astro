@@ -1,16 +1,42 @@
 ---
 import { feedbackMailto } from '@/lib/feedback';
 import { url } from '@/lib/url';
+import { DEFAULT_LOCALE, localePath, type Locale } from '@/lib/i18n';
 
 interface Props {
 	title?: string;
 	text?: string;
+	/** Keeps the two buttons in the reader's language, and pointing at that language's tools. */
+	locale?: Locale;
 }
 
-const {
-	title = 'Two tools, one workflow',
-	text = 'Free, no login, and your files never leave your device. Missing something? Tell us and we’ll look into it.',
-} = Astro.props;
+const { title, text, locale = DEFAULT_LOCALE } = Astro.props;
+
+/*
+ * Button labels live here rather than in `UI` because they are this component's own copy, not
+ * page chrome a route would want to override — and because both are verbs, which is the whole
+ * reason they read as buttons.
+ */
+const COPY = {
+	en: {
+		title: 'Two tools, one workflow',
+		text: 'Free, no login, and your files never leave your device. Missing something? Tell us and we’ll look into it.',
+		crop: 'Crop my labels',
+		profit: 'Check my profit',
+		missing: 'Missing something?',
+		request: 'Request a feature',
+	},
+	'hi-Latn': {
+		title: 'Do tools, ek hi kaam ka silsila',
+		text: 'Free, bina login, aur aapki file device se bahar jaati hi nahi. Kuch chhoot raha hai? Bataiye, hum dekhte hain.',
+		crop: 'Label crop karein',
+		profit: 'Profit dekhein',
+		missing: 'Kuch chhoot raha hai?',
+		request: 'Feature ki request bhejein',
+	},
+} as const satisfies Record<Locale, Record<string, string>>;
+
+const t = COPY[locale];
 
 const feedbackHref = feedbackMailto(new URL(Astro.url.pathname, Astro.site).href);
 
@@ -28,30 +54,30 @@ const arrow =
 	data-reveal
 	class="relative mt-16 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/[0.07] via-background to-background p-6 text-center sm:p-10"
 >
-	<h2 class="text-2xl font-bold tracking-tight text-balance">{title}</h2>
-	<p class="mx-auto mt-2 max-w-md text-sm text-pretty text-muted-foreground sm:text-base">{text}</p>
+	<h2 class="text-2xl font-bold tracking-tight text-balance">{title ?? t.title}</h2>
+	<p class="mx-auto mt-2 max-w-md text-sm text-pretty text-muted-foreground sm:text-base">{text ?? t.text}</p>
 	<div class="mt-6 flex flex-col items-stretch justify-center gap-2.5 sm:flex-row sm:items-center">
 		<a
-			href={url('/tools/meesho-label-cropper')}
+			href={url(localePath('/tools/meesho-label-cropper', locale))}
 			class="press nudge inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-base font-semibold text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30"
 		>
-			Crop my labels
+			{t.crop}
 			<Fragment set:html={arrow} />
 		</a>
 		<a
-			href={url('/tools/meesho-profit-calculator')}
+			href={url(localePath('/tools/meesho-profit-calculator', locale))}
 			class="press nudge inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-background px-6 text-base font-semibold hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
 		>
-			Check my profit
+			{t.profit}
 			<Fragment set:html={arrow} />
 		</a>
 	</div>
 	<p class="mt-4 text-sm text-muted-foreground">
-		Missing something?{' '}
+		{t.missing}{' '}
 		<a
 			href={feedbackHref}
 			data-feedback-link
-			class="font-medium text-primary underline-offset-4 hover:underline">Request a feature</a
+			class="font-medium text-primary underline-offset-4 hover:underline">{t.request}</a
 		>
 	</p>
 </div>

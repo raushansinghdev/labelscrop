@@ -1,0 +1,96 @@
+---
+title: Meesho courier partners, and how to pack for each one
+description: Valmo, Delhivery, Shadowfax, Xpressbees, Ekart and Ecom Express — how the courier is decided, where it appears on the label, and how to sort your labels by pickup.
+cluster: courier
+published: 2026-09-23
+updated: 2026-09-23
+tool: meesho-label-cropper
+faqs:
+  - q: Can I choose which courier delivers my Meesho order?
+    a: No. Meesho assigns the courier per order based on the delivery pincode, the parcel, and which partners serve that route. It is decided before the label is generated, which is why the courier name is already printed on it.
+  - q: Where is the courier name on a Meesho label?
+    a: Top-left, directly above the "Pickup" badge. That position is fixed regardless of which partner it is, which is how the <a href="/tools/meesho-label-cropper">label cropper</a> reads it — by position rather than by matching a list of names.
+  - q: What is Valmo?
+    a: Valmo is Meesho's own logistics network, launched to carry a growing share of its own orders instead of routing everything through third-party couriers. On a label it appears exactly like any other partner, in the same place.
+  - q: My labels have three different couriers. Do I need three pickups?
+    a: Usually yes — different partners collect at different times, sometimes on different days. Sorting your labels by courier before you print gives you one stack per pickup, so nothing gets handed to the wrong rider.
+---
+
+Meesho does not run one delivery network. It assigns each order to a courier based on the delivery
+pincode, the parcel, and which partners serve that route — and it does this before your label is
+generated, which is why the courier's name is already printed on it. You do not choose, and you
+cannot change it.
+
+What you *can* control is how you pack and hand over, and that is worth getting right when three
+couriers turn up at different times of day.
+
+## The partners you will see
+
+**Valmo** is Meesho's own logistics network, built to carry a growing share of its orders in-house
+rather than routing everything through third parties. Sellers have seen it appear on more and more
+labels over time.
+
+**Delhivery** is one of India's largest logistics companies and one of the longest-standing Meesho
+partners. Broad pincode coverage, including a lot of tier-3 and rural destinations.
+
+**Shadowfax** handles a large volume of Meesho's same-city and regional deliveries and tends to
+show up on shorter routes.
+
+**Xpressbees** is a national parcel network, common on inter-state orders.
+
+**Ekart** is Flipkart's logistics arm, which also carries for other marketplaces.
+
+**Ecom Express** specialises in e-commerce parcels with strong coverage outside the metros.
+
+Which of these you see depends entirely on where you ship to. A seller in Surat sending mostly
+within Gujarat will see a different mix from one shipping nationwide.
+
+## Where the courier appears on the label
+
+Top-left of the shipping label, directly above the **Pickup** badge. That position holds no matter
+which partner it is and no matter the font size — which is a more useful fact than it sounds.
+
+It means software can read the courier off a label by *position* rather than by checking the text
+against a list of known names. The [label cropper](/tools/meesho-label-cropper) does exactly that:
+it finds the "Pickup" badge and takes the text sitting directly above it. A courier that did not
+exist when the tool was written still works, because nothing about it is hard-coded.
+
+The same is true of the cut between label and invoice, which is found by reading the page for the
+**TAX INVOICE** heading rather than slicing at a fixed height. Between them, those two choices are
+why label changes and new partners do not break anything.
+
+## Sorting by courier before you pack
+
+If your batch has more than one courier in it — and at any volume it will — the download order is
+the worst possible order to pack in. Meesho exports in the sequence orders arrived, so a stack of
+fifty labels sends you back and forth between three piles.
+
+Sorting by **courier** gives you one continuous run per partner. Print, split the stack at the
+obvious boundaries, and each rider takes a complete pile. You can also generate a separate PDF per
+courier, which is the cleaner option if different people handle different pickups.
+
+Sorting by **pickup hub** does the same job one level finer, grouping by the destination hub code
+printed on the label. That is worth using when a single courier collects for more than one hub.
+
+If your priority is picking stock rather than handing over, sort by **SKU** instead: identical
+products end up together, and the pick list tells you how many of each to bring down before you
+start. There is no single right answer — it depends on whether your bottleneck is the shelves or
+the doorway.
+
+## Practical notes on handover
+
+- **Count before the rider arrives.** A pile sorted by courier is countable at a glance; a mixed
+  stack is not.
+- **Keep the AWB readable.** That barcode is what gets scanned at every hop. If your printer is
+  running light, raise the darkness setting rather than reprinting at a bigger size.
+- **RTO still costs you.** A parcel that comes back was still shipped, and the packaging is gone
+  either way. If returns are eating your margin, that shows up in the
+  [profit calculator](/tools/meesho-profit-calculator) rather than anywhere in the supplier panel.
+
+## The short version
+
+- Meesho assigns the courier per order; you cannot pick it.
+- The name is always top-left, above the "Pickup" badge — the same place for every partner.
+- Sort by courier or pickup hub when you have multiple pickups; sort by SKU when picking is the
+  slow part.
+- Whatever the partner, a return costs you shipping and packaging — count it.

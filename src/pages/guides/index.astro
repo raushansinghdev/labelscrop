@@ -1,0 +1,20 @@
+---
+import GuideHub from '@/components/guides/GuideHub.astro';
+import { UI, alternates } from '@/lib/i18n';
+
+/* Both hubs exist, so each annotates the other and an x-default points at English. */
+const hreflang = alternates({ en: '/guides', 'hi-Latn': '/guides' });
+---
+
+<GuideHub
+	locale="en"
+	title="Guides for Meesho Sellers — Printing, Couriers and Profit"
+	description="Plain-English guides to printing Meesho labels, choosing a printer size, dealing with couriers and returns, and working out what an order actually earned."
+	eyebrow={UI.en.guides}
+	heading="How to actually get it done"
+	intro="Printing, couriers, returns and payments — written for sellers who pack their own parcels, with no jargon and nothing to sign up for."
+	updatedLabel={UI.en.updated}
+	ctaTitle="Ready to try it?"
+	ctaText="Both tools are free, need no login, and never upload your files."
+	alternates={hreflang}
+/>

@@ -1,0 +1,177 @@
+---
+/**
+ * One guide, rendered. Shared by the English route and the Hinglish one under `/hi/`.
+ *
+ * Extracted from `pages/guides/[...slug].astro` when the second locale landed: two near-identical
+ * route files is exactly how a translated site ends up with a fix applied to one language and not
+ * the other. The routes now only decide *which* guides to build; everything a reader or a crawler
+ * sees is here.
+ *
+ * All chrome (headings, the date label, the CTA) comes from `UI[locale]`. Only the article body,
+ * the title and the FAQs come from the entry — those are written per language and never assembled
+ * from fragments.
+ */
+import { render } from 'astro:content';
+import Layout from '@/layouts/Layout.astro';
+import FaqBlock from '@/components/site/FaqBlock.astro';
+import MdxLink from '@/components/site/MdxLink.astro';
+import Breadcrumb from '@/components/site/Breadcrumb.astro';
+import { url } from '@/lib/url';
+import { article, breadcrumbs, faqPage } from '@/lib/schema';
+import { UI, localePath } from '@/lib/i18n';
+import {
+	TOOLS,
+	cluster as clusterInfo,
+	bcp47,
+	formatDate,
+	guideAlternates,
+	guidePath,
+	relatedGuides,
+	type Guide,
+} from '@/lib/guides';
+
+interface Props {
+	guide: Guide;
+	/** Guides in this guide's own locale, for the "read next" block. */
+	siblings: Guide[];
+	/** Every guide in every locale, for the hreflang pair. */
+	everyGuide: Guide[];
+}
+
+const { guide, siblings, everyGuide } = Astro.props;
+const { title, description, cluster, published, updated, locale, tool, faqs } = guide.data;
+
+const { Content, headings } = await render(guide);
+const t = UI[locale];
+const lang = bcp47(locale);
+const path = guidePath(guide);
+const clusterMeta = clusterInfo(cluster, locale);
+/* The tool CTA stays in the guide's own language. Both tool pages now exist under `/hi/`, so a
+   Hinglish guide no longer has to hand its reader to the English one at the last step. */
+const toolMeta = tool
+	? { ...TOOLS[tool], path: localePath(TOOLS[tool].path, locale) }
+	: undefined;
+const related = relatedGuides(guide, siblings);
+
+/*
+ * `h2` only. A contents list that mirrors every sub-heading is longer than the article on a
+ * phone, which is where this is read — and a two-level list of anchors is a well-known way to
+ * make a page look padded.
+ */
+const toc = headings.filter((h) => h.depth === 2);
+
+const schema = [
+	article(Astro.site, { title, description, path, published, updated, locale: lang }),
+	breadcrumbs(
+		Astro.site,
+		[
+			{ name: t.guides, path: localePath('/guides', locale) },
+			{ name: title, path },
+		],
+		locale,
+	),
+	// Emitted only when the guide actually carries questions; an empty FAQPage is a schema error.
+	...(faqs.length ? [faqPage(faqs)] : []),
+];
+---
+
+<Layout
+	title={`${title} — SellerWala`}
+	description={description}
+	schema={schema}
+	locale={lang}
+	alternates={guideAlternates(guide, everyGuide)}
+>
+	<article class="mx-auto max-w-3xl px-4 pt-10 pb-16 sm:px-6 sm:pt-14 sm:pb-24">
+		<Breadcrumb
+			locale={locale}
+			homeLabel={t.home}
+			trail={[{ name: t.guides, path: '/guides' }, { name: title, path: `/guides/${guide.id}` }]}
+		/>
+
+		<header class="mt-6">
+			<p data-reveal class="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+				{clusterMeta.label}
+			</p>
+			<h1 data-reveal class="mt-4 text-3xl font-bold tracking-tight text-balance sm:text-4xl">{title}</h1>
+			<p data-reveal class="mt-4 text-base text-pretty text-muted-foreground sm:text-lg">{description}</p>
+			{/* A visible, machine-readable revision date. Sellers checking whether advice about a
+			    marketplace is still current is the single most reasonable thing they can do. */}
+			<p data-reveal class="mt-4 text-sm text-muted-foreground">
+				{t.updated} <time datetime={updated.toISOString()}>{formatDate(updated)}</time>
+			</p>
+		</header>
+
+		{
+			toc.length > 2 && (
+				<nav data-reveal aria-label={t.onThisPage} class="mt-10 rounded-2xl border border-border bg-muted/40 p-5">
+					<h2 class="text-sm font-semibold">{t.onThisPage}</h2>
+					<ol class="mt-3 space-y-2">
+						{toc.map((heading) => (
+							<li>
+								<a
+									href={`#${heading.slug}`}
+									class="text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-primary hover:underline"
+								>
+									{heading.text}
+								</a>
+							</li>
+						))}
+					</ol>
+				</nav>
+			)
+		}
+
+		{/* Links go through MdxLink so a plain Markdown `[text](/path)` picks up Astro's `base`. */}
+		<div class="prose mt-10">
+			<Content components={{ a: MdxLink }} />
+		</div>
+
+		{
+			faqs.length > 0 && (
+				<div class="mt-14">
+					<FaqBlock faqs={faqs} heading={t.commonQuestions} level="h2" />
+				</div>
+			)
+		}
+
+		{
+			toolMeta && (
+				<aside data-reveal class="mt-14 rounded-2xl border border-primary/25 bg-primary/5 p-6 text-center">
+					<h2 class="text-lg font-semibold">{t.tryTitle}</h2>
+					<p class="mx-auto mt-2 max-w-md text-sm text-pretty text-muted-foreground">{t.tryText}</p>
+					<a
+						href={url(toolMeta.path)}
+						class="press mt-5 inline-flex h-12 items-center justify-center rounded-xl bg-primary px-6 font-medium text-primary-foreground transition-[background-color,transform] duration-200 hover:bg-primary/90"
+					>
+						{t.openTool(toolMeta.name)}
+					</a>
+				</aside>
+			)
+		}
+
+		{
+			related.length > 0 && (
+				<section class="mt-14">
+					<h2 data-reveal class="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+						{t.readNext}
+					</h2>
+					<ul class="mt-4 space-y-3">
+						{related.map((item) => (
+							<li data-reveal>
+								<a
+									href={url(guidePath(item))}
+									class="block rounded-2xl border border-border bg-card p-5 transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-primary/30"
+								>
+									<span class="text-xs font-semibold text-primary">{clusterInfo(item.data.cluster, item.data.locale).label}</span>
+									<span class="mt-1 block font-semibold">{item.data.title}</span>
+									<span class="mt-1 block text-sm text-muted-foreground">{item.data.description}</span>
+								</a>
+							</li>
+						))}
+					</ul>
+				</section>
+			)
+		}
+	</article>
+</Layout>

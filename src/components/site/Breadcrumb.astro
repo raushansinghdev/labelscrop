@@ -1,0 +1,49 @@
+---
+/**
+ * The visible breadcrumb trail.
+ *
+ * Tool pages emitted `BreadcrumbList` JSON-LD but rendered no trail, which is the wrong half to
+ * skip: Google will show the crumb path in place of the raw URL in mobile results either way, but
+ * a visitor arriving from search on a deep page had nothing telling them where they were or how
+ * to get up a level.
+ *
+ * Takes the same `trail` array as `breadcrumbs()` in `lib/schema.ts`, so the visible path and the
+ * structured data are built from one source and cannot disagree. The last item is the current
+ * page and is rendered as text rather than a link — a crumb linking to the page you are on is a
+ * dead control.
+ */
+import { url } from '@/lib/url';
+import { localePath, type Locale } from '@/lib/i18n';
+
+interface Props {
+	/** Excludes Home, which is prepended here — exactly as `breadcrumbs()` does. */
+	trail: { name: string; path: string }[];
+	locale?: Locale;
+	homeLabel?: string;
+	class?: string;
+}
+
+const { trail, locale = 'en', homeLabel = 'Home', class: className } = Astro.props;
+const items = [{ name: homeLabel, path: localePath('/', locale) }, ...trail];
+---
+
+<nav aria-label="Breadcrumb" class:list={['text-sm text-muted-foreground', className]}>
+	<ol class="flex flex-wrap items-center gap-x-2">
+		{
+			items.map((item, index) => (
+				<>
+					{index > 0 && <li aria-hidden="true">/</li>}
+					<li>
+						{index === items.length - 1 ? (
+							<span aria-current="page">{item.name}</span>
+						) : (
+							<a href={url(item.path)} class="transition-colors hover:text-foreground">
+								{item.name}
+							</a>
+						)}
+					</li>
+				</>
+			))
+		}
+	</ol>
+</nav>

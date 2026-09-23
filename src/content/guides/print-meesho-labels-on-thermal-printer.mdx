@@ -1,0 +1,115 @@
+---
+title: How to print Meesho labels on a thermal printer
+description: 4x6 and 3x5 settings for TSC, TVS, Rugtek and Honeywell printers — crop the invoice first, print at 100%, and stop wasting label rolls.
+cluster: printer
+published: 2026-09-23
+updated: 2026-09-23
+tool: meesho-label-cropper
+faqs:
+  - q: What size are Meesho shipping labels?
+    a: Meesho does not give you a label-sized file. It gives you an A4 page with the shipping label on the top half and the tax invoice underneath. The label itself is roughly landscape, and once the invoice is cropped away it scales to fill either a 4x6" or a 3x5" thermal label.
+  - q: Why does my label print tiny in the middle of the sticker?
+    a: Almost always "Fit to page" or "Shrink oversized pages" in the print dialog, combined with a PDF that is still A4. Crop to the label size first, then print at 100% scale with the paper size set to your label stock. Those two settings together fix nearly every complaint about small or off-centre prints.
+  - q: Do I need a thermal printer, or will a normal printer do?
+    a: A normal inkjet or laser printer on A4 works fine — print 2 or 4 labels per sheet and cut them apart. A thermal printer is faster and needs no ink, which pays for itself somewhere around a few hundred orders a month, but nothing about Meesho requires one.
+  - q: My printer prints a blank or half-black label. What now?
+    a: That is a hardware calibration problem, not a file problem. Run the printer's media calibration (usually a button hold on power-up), check the roll is loaded with the gap sensor aligned, and confirm the darkness setting. A file that prints correctly on one label will print correctly on all of them.
+---
+
+If you sell on Meesho and print your own labels, you have met this problem: the download is an A4
+PDF with a shipping label on top and a tax invoice below it, and your label printer wants a 4x6"
+sticker. Sending that A4 file straight to a thermal printer gives you a postage-stamp label
+floating in the middle of the sticker, or half a label and half an invoice.
+
+This guide covers the settings that actually work, for the printers Indian sellers actually use.
+
+## Crop before you print, not after
+
+The single most common mistake is trying to fix the size in the print dialog. "Fit to page" will
+happily shrink an entire A4 sheet — label *and* invoice — onto a 4x6 sticker, which is why the
+result is unreadably small. No print setting can remove the invoice; it can only scale it.
+
+So the order matters: **crop first, then print at 100%.** Use the
+[Meesho label cropper](/tools/meesho-label-cropper) to cut the invoice away and output a PDF whose
+pages are already 4x6" or 3x5". Once the file is the right size, the print dialog has nothing left
+to guess at.
+
+The cut is found by reading the page for the **TAX INVOICE** heading rather than slicing at a fixed
+height, so it lands in the right place even when the label above it is taller or shorter than usual
+— which happens whenever an order has more than one item in it.
+
+## Settings for a 4x6" thermal printer
+
+4x6" (also written 100mm x 150mm) is the standard shipping-label size and what most sellers buy.
+
+1. Open the cropped PDF in any reader — Adobe Reader, Chrome, or your phone's PDF viewer.
+2. In the print dialog, set **Paper size** to your label stock. On most drivers this appears as
+   `4x6`, `100x150mm`, or a custom size you defined when installing the printer.
+3. Set **Scale** to **100%** — not "Fit", not "Shrink oversized pages", not "Actual size" if that
+   option is doing its own scaling.
+4. Set **Orientation** to Portrait. The label rotates itself to fill the sticker; forcing
+   landscape here usually rotates it twice.
+5. Turn **off** any "print headers and footers" or "print backgrounds" option in browser print
+   dialogs. Chrome adds a URL and a page number otherwise, and on a 4x6 sticker that eats a
+   usable centimetre.
+
+### TSC, TVS, Rugtek and Honeywell
+
+These four cover most of what gets sold to Indian sellers, and they behave the same way:
+
+- **TSC** (TE244, TE210, TDP-244) — install the Seagull or TSC driver rather than using a generic
+  one, then set the stock size in the driver's own preferences, not just in the print dialog. The
+  driver setting is what the printer obeys.
+- **TVS** (LP 46 Neo, RP 45) — check the darkness setting if text looks grey; TVS units ship on a
+  low default that looks fine on paper and scans badly.
+- **Rugtek** (RP76, LP 46) — run media calibration after any change of roll size, or it keeps
+  feeding to the previous gap length and wastes a label between each print.
+- **Honeywell** (PC42t) — the same, plus confirm whether your roll is direct thermal or
+  thermal-transfer. A direct-thermal roll in transfer mode prints nothing at all.
+
+If a label prints blank, skewed, or with a gap, that is calibration rather than the file. A PDF
+that prints correctly once will print correctly every time.
+
+## Settings for a 3x5" printer
+
+3x5" is the smaller sticker some sellers already have from another marketplace. Everything above
+applies, with one change: pick **3 x 5"** as the label size in the cropper so the label is scaled
+to that shape before it reaches the printer. Scaling a 4x6 file down to a 3x5 sticker in the print
+dialog is exactly the mistake described at the top of this page.
+
+Barcodes survive the smaller size, but they have less margin for error. If your courier's scanner
+starts struggling, raise the printer's darkness setting one step before assuming the size is at
+fault.
+
+## No thermal printer? A4 works
+
+You do not need a label printer to sell on Meesho. Print on ordinary A4 paper and cut:
+
+| Labels per sheet | Best for |
+| --- | --- |
+| 1 per sheet | Largest, easiest to read; uses the most paper |
+| 2 per sheet | A good middle ground for 10–30 orders a day |
+| 4 per sheet | Cheapest per label; the usual choice at volume |
+
+The cropper keeps a quarter-inch margin around the sheet so home and office printers have
+something to grip, and a small gap between labels to cut along. Stick them on with tape or a glue
+stick — a printed A4 label is as valid as a thermal one, and every courier accepts it.
+
+## Print in packing order, not download order
+
+Once the size is right, the next thing that costs time is the order of the pages. Meesho exports
+in whatever sequence the orders came in, so a stack of labels sends you back and forth across your
+shelves.
+
+Sorting by **SKU** groups identical products together, so you pick one product, count them, and
+pack. Sorting by **courier** or **pickup hub** gives you one pile per pickup, which matters when
+two couriers collect at different times. Both are a dropdown in the cropper, and the SKU pick list
+it produces tells you how many of each item to bring down before you start.
+
+## The short version
+
+- Crop the invoice away *before* the print dialog, not with it.
+- Print at **100% scale**, with the paper size set to your actual label stock.
+- Blank, skewed or half-printed labels are printer calibration, not the PDF.
+- No thermal printer is fine — A4 at 2 or 4 up costs paper and a pair of scissors.
+- Sort by SKU before printing and packing gets noticeably faster.

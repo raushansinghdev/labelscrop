@@ -1,0 +1,105 @@
+---
+title: Why your Meesho payment is less than the order value
+description: Commission, shipping, GST and TCS/TDS, return charges and ads all come out before the money reaches your bank. Here is what each one is, and what Meesho never tells you.
+cluster: profit
+published: 2026-09-23
+updated: 2026-09-23
+tool: meesho-profit-calculator
+faqs:
+  - q: Is the Final Settlement Amount my profit?
+    a: 'No. It is your revenue after Meesho''s deductions — what reaches your bank. Your profit is that figure minus everything Meesho cannot see: what the product cost you, packaging, labels and ink, rent, electricity and salaries. That gap is usually the difference between a month that looked good and a month that was good.'
+  - q: Why do some orders appear twice in the payment file?
+    a: Meesho sometimes settles an order across two rows — the original and a later adjustment, often with a blank status. Both are real money. Any calculation that drops the second row will overstate or understate your payout, which is why the <a href="/tools/meesho-profit-calculator">profit calculator</a> includes them rather than filtering on status.
+  - q: Are the dates in the payment file order dates?
+    a: No, they are payment dates. A file named for one week usually settles orders placed several weeks earlier, because the payment cycle runs after delivery and the return window. That is why comparing a payment file against the same week's orders never reconciles.
+  - q: Does Meesho deduct ads from each order?
+    a: No. Campaign spend is deducted at the account level, not per order, which is what makes a catalogue of individually profitable products still add up to a loss. It has to be subtracted from the total rather than from any single SKU.
+---
+
+You sold ₹1,000 worth of goods and ₹640 arrived. This is the most common question Meesho sellers
+ask, and the answer is not one deduction — it is a stack of them, some of which are reasonable,
+and one of which is entirely invisible to the supplier panel.
+
+## What Meesho takes before it pays you
+
+By the time money reaches your bank, Meesho has already subtracted:
+
+**Commission.** Meesho's cut, which varies by category and by price slab. Two products at the same
+selling price can be charged differently if they sit in different categories, so a catalogue-wide
+assumption of "about 10%" will be wrong for half your SKUs.
+
+**Shipping charge.** Based on the parcel's weight and how far it travels. This is the one that
+surprises people most: a light item sent across the country can cost more to ship than a heavier
+local order, so two identical sales can settle at different amounts.
+
+**GST and TCS/TDS.** Tax collected against your GSTIN and PAN and deposited on your behalf. It is
+real money out of the settlement, and you claim it back through your returns rather than from
+Meesho.
+
+**Return and RTO charges.** When a parcel comes back — whether the customer returned it or it was
+never delivered — a shipping charge is still levied. You get the stock back, though not always in
+a state you can sell again.
+
+**Ads spend.** If you run campaigns, this is deducted at the account level rather than per order.
+This is the deduction that most often turns a profitable-looking product list into a loss, because
+nothing on any individual order shows it.
+
+**Compensation and claims**, in the other direction — amounts Meesho adds back for parcels lost or
+damaged in transit. These arrive as their own rows.
+
+What is left is the **Final Settlement Amount**, and that is the number worth starting from. Every
+deduction above is already inside it, so anything that subtracts them again is double-counting.
+
+## What Meesho does not know about
+
+Here is the part the supplier panel cannot help with. Meesho can report what it paid you. It
+cannot report profit, because none of this is visible to it:
+
+- what each item cost you to make or buy
+- packaging material, tape and filler
+- labels, ink, and printer paper
+- rent, electricity and internet
+- salaries — including your own
+- stock written off when a return comes back unsellable
+
+The panel's dashboard is a revenue report wearing a profit report's clothes. The distance between
+the Final Settlement Amount and what you actually keep is the whole question, and it is the
+distance the [profit calculator](/tools/meesho-profit-calculator) exists to measure.
+
+## Why the numbers never reconcile with your own spreadsheet
+
+Three things trip people up when they try to check Meesho's arithmetic by hand:
+
+1. **The dates are payment dates, not order dates.** A payment file covering one week settles
+   orders placed weeks earlier, after delivery and after the return window closed. Comparing a
+   payment file to the same period's orders will never balance.
+2. **Some orders settle across two rows.** The original row, then a later adjustment — often with
+   a blank status. Both are real. Filtering the file by status quietly drops the second one.
+3. **RTO is not a cancelled order.** It is a completed shipping job that happens to have ended at
+   your address. The shipping cost is spent either way, and the packaging is gone.
+
+## Working out your real margin
+
+Start from the **Payments to Date** download in the supplier panel — Payments → Download →
+Payments to Date. That one file carries the per-order settlement rows. The other four downloads
+behind that button (GST Report, Tax Invoice, Supplier Tax Invoice, Outstanding Payments) do not,
+which is why they cannot be used for this.
+
+Then add the three things only you know:
+
+- **Cost per SKU** — what the item cost to buy or make, plus what it costs to pack.
+- **Loss on returns** — how much of an item you really write off on an RTO, a customer return, or
+  a parcel lost in transit. Rarely 0%, rarely 100%.
+- **Monthly overheads** — rent, electricity, salaries. Charged across the period the file covers,
+  not to any single order, because no one order causes your rent.
+
+What comes out is usually lower than you expected and much closer to what your bank balance does
+over the month. That is the point of doing it.
+
+## The short version
+
+- The settlement is already net of commission, shipping, GST, TCS/TDS, returns and ads.
+- It is still not profit, because your own costs have not been subtracted.
+- Payment dates are not order dates, so files will never tie out against a week's orders.
+- Ads are charged to the account, not the order — check them against the whole month.
+- A product that looks profitable per order can still lose money once returns and ads are in.

@@ -1,0 +1,80 @@
+---
+/*
+ * The 404.
+ *
+ * `noindex` because a soft-404 that Google indexes is worse than no page at all — it competes
+ * with real URLs and dilutes the site's perceived quality. It still carries full navigation and
+ * links to both tools, so a visitor who mistypes a URL (or follows a stale link from a WhatsApp
+ * group months from now) lands somewhere useful rather than at a dead end.
+ *
+ * Astro emits this as `dist/404.html`, which Cloudflare Pages serves automatically for unmatched
+ * routes with a real 404 status.
+ */
+import { url } from '@/lib/url';
+import Layout from '@/layouts/Layout.astro';
+import { primaryCta } from '@/components/tool/buttons';
+
+const title = 'Page not found';
+const description = 'That page does not exist. Both free Meesho seller tools are one click away.';
+
+const destinations = [
+	{
+		href: url('/tools/meesho-label-cropper'),
+		name: 'Meesho Label Cropper',
+		detail: 'Crop the invoice off your labels and sort them for packing.',
+	},
+	{
+		href: url('/tools/meesho-profit-calculator'),
+		name: 'Meesho Profit Calculator',
+		detail: 'Find out what your payment file actually earned you.',
+	},
+	{
+		href: url('/how-it-works'),
+		name: 'How it works',
+		detail: 'A walkthrough of both tools, step by step.',
+	},
+	{
+		href: url('/faq'),
+		name: 'FAQ',
+		detail: 'Privacy, printer sizes, which file to upload.',
+	},
+];
+---
+
+<Layout title={title} description={description} noindex>
+	<section class="mx-auto max-w-2xl px-4 py-20 text-center sm:px-6 sm:py-28">
+		<p class="text-sm font-semibold tracking-wide text-primary uppercase">404</p>
+		<h1 class="mt-3 text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+			That page doesn't exist
+		</h1>
+		<p class="mx-auto mt-3 max-w-md text-base text-pretty text-muted-foreground">
+			The link may be out of date, or there could be a typo in the address. Here's everything
+			this site does.
+		</p>
+
+		<div class="mx-auto mt-8 flex max-w-xs flex-col items-center gap-4">
+			<a href={url('/tools/meesho-label-cropper')} class={`${primaryCta} w-full justify-center`}>
+				Crop my labels
+			</a>
+			<a href={url('/')} class="press text-sm font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground">
+				Go to the home page
+			</a>
+		</div>
+
+		<ul class="mt-12 grid gap-3 text-left sm:grid-cols-2">
+			{
+				destinations.map((item) => (
+					<li>
+						<a
+							href={item.href}
+							class="card-interactive block h-full rounded-2xl border border-border bg-card p-4"
+						>
+							<span class="block font-semibold">{item.name}</span>
+							<span class="mt-1 block text-sm text-muted-foreground">{item.detail}</span>
+						</a>
+					</li>
+				))
+			}
+		</ul>
+	</section>
+</Layout>

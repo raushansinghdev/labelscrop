@@ -1,0 +1,40 @@
+---
+/**
+ * The `<a>` used inside guide prose, passed to `<Content components={{ a: MdxLink }} />`.
+ *
+ * Guides are written as plain Markdown, so an author types
+ * `[the cropper](/tools/meesho-label-cropper)` mid-sentence. A bare root-absolute path is correct
+ * in production but breaks on the GitHub Pages staging mirror, which is served from
+ * `/labelscrop/` — the same trap that had to be fixed by hand in the FAQ answers. Routing every
+ * link through `url()` here means it is fixed once, for every guide written from now on, without
+ * asking authors to remember anything.
+ *
+ * The first approach tried was a rehype plugin. Astro 7 ships a new Markdown processor and
+ * accepting `rehypePlugins` would have meant installing `@astrojs/markdown-remark` to switch the
+ * whole pipeline back to unified — a large change to the site's build for one small rewrite.
+ * MDX's own component mapping does the same job and touches nothing outside guides.
+ *
+ * External links get `rel="noopener"` and open in a new tab, so a reader following a citation
+ * does not lose the guide.
+ */
+import { url } from '@/lib/url';
+
+interface Props {
+	href?: string;
+}
+
+const { href = '', ...rest } = Astro.props;
+
+/* Anchors, mailto:, tel: and absolute URLs are left exactly as written. Only `/path` is ours. */
+const isInternal = href.startsWith('/') && !href.startsWith('//');
+const isExternal = /^https?:\/\//i.test(href);
+const resolved = isInternal ? url(href) : href;
+---
+
+<a
+	href={resolved}
+	{...rest}
+	{...isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {}}
+>
+	<slot />
+</a>

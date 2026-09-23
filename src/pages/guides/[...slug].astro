@@ -1,0 +1,22 @@
+---
+/**
+ * English guides. The Hinglish route at `src/pages/hi/guides/` is the same file with a different
+ * locale — both render `GuideArticle`, so a change to a guide's layout cannot land in one
+ * language and miss the other.
+ */
+import GuideArticle from '@/components/guides/GuideArticle.astro';
+import { allGuides, publishedGuides } from '@/lib/guides';
+
+export async function getStaticPaths() {
+	const siblings = await publishedGuides('en');
+	const everyGuide = await allGuides();
+	return siblings.map((guide) => ({
+		params: { slug: guide.id },
+		props: { guide, siblings, everyGuide },
+	}));
+}
+
+const { guide, siblings, everyGuide } = Astro.props;
+---
+
+<GuideArticle guide={guide} siblings={siblings} everyGuide={everyGuide} />

@@ -1,4 +1,42 @@
+# SellerWala — free browser tools for Indian e-commerce sellers.
+# Everything here is public, static, and free to read. There is nothing to gate.
+
 User-agent: *
 Allow: /
 
-Sitemap: https://labelscrop.com/sitemap-index.xml
+# AI assistants and answer engines are allowed on purpose.
+#
+# For a free tool the calculus is the opposite of a publisher's: there is no article to
+# cannibalise, and "which tool crops Meesho labels" is exactly the question we want answered
+# with this site's name in it. Blocking these costs referrals and gains nothing.
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+Sitemap: https://sellerwala.com/sitemap-index.xml

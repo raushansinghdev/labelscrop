@@ -1,0 +1,24 @@
+---
+/**
+ * Hinglish guides, served from `/hi/guides/`.
+ *
+ * Romanized Hindi, not Devanagari — see `src/lib/i18n.ts` for the evidence behind that, which is
+ * the single most counter-intuitive decision in this site's SEO. Every one of these is written by
+ * hand; none is a translation pass over the English file.
+ */
+import GuideArticle from '@/components/guides/GuideArticle.astro';
+import { allGuides, publishedGuides } from '@/lib/guides';
+
+export async function getStaticPaths() {
+	const siblings = await publishedGuides('hi-Latn');
+	const everyGuide = await allGuides();
+	return siblings.map((guide) => ({
+		params: { slug: guide.id },
+		props: { guide, siblings, everyGuide },
+	}));
+}
+
+const { guide, siblings, everyGuide } = Astro.props;
+---
+
+<GuideArticle guide={guide} siblings={siblings} everyGuide={everyGuide} />

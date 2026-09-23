@@ -394,3 +394,122 @@ html[data-navigating] #page-progress {
     scroll-behavior: auto !important;
   }
 }
+
+/*
+ * Article typography.
+ *
+ * Three pages (`about`, `privacy-policy`, `terms`) shipped with `prose prose-neutral
+ * dark:prose-invert` on their body copy, and `@tailwindcss/typography` was never installed — so
+ * those classes matched nothing and the pages rendered as a wall of text: no bullets, no space
+ * between paragraphs, and in-prose links indistinguishable from the text around them. The guides
+ * then grew their own scoped copy of these rules, which is how the same CSS ends up written
+ * twice and fixed once.
+ *
+ * Defining `.prose` here rather than adding the plugin is deliberate: the plugin brings a whole
+ * type system with its own scale and colours, which would then disagree with the scale the rest
+ * of the site uses. This is a dozen elements, in the site's own tokens.
+ *
+ * `:where()` keeps specificity at zero, so a utility class on any individual element still wins.
+ */
+.prose {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--muted-foreground);
+}
+
+.prose :where(h2) {
+  margin-top: 2.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+  /* The header is sticky; without this an in-page anchor lands underneath it. */
+  scroll-margin-top: 5rem;
+}
+
+.prose :where(h3) {
+  margin-top: 2rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--foreground);
+  scroll-margin-top: 5rem;
+}
+
+.prose :where(p, ul, ol) {
+  margin-top: 1.1rem;
+}
+
+.prose :where(ul, ol) {
+  padding-left: 1.3rem;
+}
+
+.prose :where(ul) {
+  list-style: disc;
+}
+
+.prose :where(ol) {
+  list-style: decimal;
+}
+
+.prose :where(li) {
+  margin-top: 0.4rem;
+  padding-left: 0.2rem;
+}
+
+.prose :where(li)::marker {
+  color: var(--primary);
+}
+
+.prose :where(strong) {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.prose :where(a) {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.prose :where(code) {
+  border-radius: 0.3rem;
+  background: var(--muted);
+  padding: 0.15em 0.4em;
+  font-size: 0.875em;
+  color: var(--foreground);
+}
+
+.prose :where(blockquote) {
+  margin-top: 1.5rem;
+  border-left: 3px solid var(--primary);
+  padding-left: 1rem;
+  font-style: italic;
+}
+
+/* Guide tables carry the fee and size comparisons. `width: 100%` with auto layout lets cells wrap
+   rather than push the page sideways on a 390px screen, which is where these are read — so keep
+   guide tables to two or three columns and the phone layout holds. */
+.prose :where(table) {
+  margin-top: 1.5rem;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.prose :where(th, td) {
+  border-bottom: 1px solid var(--border);
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.prose :where(th) {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.prose :where(hr) {
+  margin: 2.5rem 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}

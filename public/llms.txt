@@ -1,0 +1,42 @@
+# SellerWala
+
+> Free, browser-based tools for Indian e-commerce sellers. Nothing is uploaded to a server,
+> no account is required, and there are no watermarks, page limits, or paid tiers.
+
+SellerWala is an independent project. It is not affiliated with, endorsed by, or sponsored by
+Meesho, Flipkart, Amazon, or any marketplace. All processing happens locally in the visitor's
+browser using JavaScript and WebAssembly; uploaded files never leave the device.
+
+## Tools
+
+- [Meesho Label Cropper](https://sellerwala.com/tools/meesho-label-cropper): Takes the shipping
+  label PDF downloaded from the Meesho Supplier Panel and produces a print-ready file. Crops the
+  attached tax invoice away (or saves it separately), resizes for 3x5" and 4x6" thermal label
+  printers or packs 1, 2, or 4 labels onto an A4 sheet, sorts by SKU, courier, pickup hub, or
+  colour and size, optionally stamps custom text or the order number, and generates a SKU pick
+  list showing how many of each item to pack. Handles labels from any Meesho courier, including
+  Valmo, Delhivery, Shadowfax, Xpressbees, and Ecom Express.
+
+- [Meesho Profit Calculator](https://sellerwala.com/tools/meesho-profit-calculator): Reads the
+  payment file from Supplier Panel → Payments → Download → Payments to Date and works out actual
+  profit. Uses the Final Settlement Amount, so marketplace commission, shipping, and GST
+  deductions are already accounted for. The seller adds per-SKU listing, making, and packing
+  costs, plus business overheads (rent, salary, bills), which are prorated across the payment
+  window. Reports per-SKU margin, RTO and return write-offs, and a profit waterfall. Meesho's
+  own panel does not provide a true profit figure, which is why this exists.
+
+## Key facts
+
+- Price: free. No login, no email, no subscription.
+- Privacy: files are processed client-side and never transmitted. No server receives them.
+- Platforms: Meesho is fully supported. Amazon and Flipkart croppers are on the roadmap.
+- Audience: Indian marketplace sellers, primarily small and mid-sized Meesho suppliers.
+
+## Pages
+
+- [How it works](https://sellerwala.com/how-it-works): step-by-step walkthrough of both tools.
+- [FAQ](https://sellerwala.com/faq): privacy, printer sizes, which file to upload, how per-SKU
+  margin is calculated, why the figure differs from the Meesho panel.
+- [About](https://sellerwala.com/about): what the project is and why it was built.
+- [Privacy policy](https://sellerwala.com/privacy-policy)
+- [Terms of use](https://sellerwala.com/terms)

@@ -1,0 +1,52 @@
+---
+/**
+ * An explanatory diagram with its caption.
+ *
+ * Two decisions worth knowing about:
+ *
+ * 1. **The frame is always white**, in dark mode too. Every diagram here depicts printed paper —
+ *    an A4 sheet, a thermal label, a settlement bar — and paper is white. Inverting it for dark
+ *    mode would make the picture lie about the thing it is illustrating, so it is framed as a
+ *    sheet sitting on the page instead. The border and the page background do the theming.
+ * 2. **The caption is a real `<figcaption>`**, not a muted `<p>` under the image. It is the text
+ *    a search engine ties to the image, and the text a screen reader reads after the alt text —
+ *    so the two say different things on purpose: `alt` describes what is *in* the picture,
+ *    `caption` says what it *means*.
+ *
+ * `widths` deliberately tops out near the diagrams' own rendered width. Asking Astro for a
+ * variant larger than the source only re-encodes the same pixels at a bigger file size.
+ */
+import { Image } from 'astro:assets';
+
+interface Props {
+	src: ImageMetadata;
+	/** What is in the picture. Written for someone who cannot see it. */
+	alt: string;
+	/** What the picture means, shown under it. */
+	caption?: string;
+	/** `eager` only for a diagram above the fold; everything else stays lazy. */
+	loading?: 'lazy' | 'eager';
+	class?: string;
+}
+
+const { src, alt, caption, loading = 'lazy', class: className } = Astro.props;
+---
+
+<figure data-reveal class:list={['mx-auto', className]}>
+	<div class="overflow-hidden rounded-2xl border border-border bg-white p-3 sm:p-5">
+		<Image
+			src={src}
+			alt={alt}
+			widths={[480, 768, 1100]}
+			sizes="(min-width: 768px) 768px, 100vw"
+			loading={loading}
+			decoding="async"
+			class="h-auto w-full"
+		/>
+	</div>
+	{
+		caption && (
+			<figcaption class="mt-3 text-center text-sm text-pretty text-muted-foreground">{caption}</figcaption>
+		)
+	}
+</figure>

@@ -1,6 +1,23 @@
 ---
 import Layout from '@/layouts/Layout.astro';
 import PageCta from '@/components/site/PageCta.astro';
+import FaqBlock from '@/components/site/FaqBlock.astro';
+import { url } from '@/lib/url';
+import { breadcrumbs, faqPage } from '@/lib/schema';
+import { alternates } from '@/lib/i18n';
+
+/**
+ * Answers may now carry inline markup, so this is the shorthand for linking out of one.
+ *
+ * Until this existed, answers were plain strings rendered into a `<p>`, which meant the site's
+ * single most on-topic page — over a thousand words of exactly the language sellers search with —
+ * contained not one internal link. Answers that mention the other tool, the printer sizes, or the
+ * payment file now point at the page that covers them.
+ */
+const a = (path: string, text: string) => `<a href="${url(path)}">${text}</a>`;
+
+const CROPPER = '/tools/meesho-label-cropper';
+const PROFIT = '/tools/meesho-profit-calculator';
 
 const title = 'FAQ — Meesho Label Cropper & Profit Calculator';
 const description =
@@ -17,7 +34,7 @@ const groups = [
 		faqs: [
 			{
 				q: 'Is this really free?',
-				a: 'Yes. Both tools are free forever, with no page limits, no watermark, and no account required. The site is supported by ads placed away from the upload, preview, and download flow so they never get in your way.',
+				a: `Yes. Both the ${a(CROPPER, 'label cropper')} and the ${a(PROFIT, 'profit calculator')} are free forever, with no page limits, no watermark, and no account required. The site is supported by ads placed away from the upload, preview, and download flow so they never get in your way.`,
 			},
 			{
 				q: 'Do I need to create an account or sign in?',
@@ -25,15 +42,15 @@ const groups = [
 			},
 			{
 				q: 'Is my order and customer data safe?',
-				a: "Your files are never uploaded anywhere. Label cropping, payment-file parsing, and every calculation happen locally in your browser using your device's own processing power — there is no server that ever sees a customer address or a settlement figure.",
+				a: `Your files are never uploaded anywhere. Label cropping, payment-file parsing, and every calculation happen locally in your browser using your device's own processing power — there is no server that ever sees a customer address or a settlement figure. The ${a('/privacy-policy', 'privacy policy')} covers what our ad and analytics providers do and do not see.`,
 			},
 			{
 				q: 'Does it work on my phone?',
-				a: 'Yes. Both tools are built mobile-first and work in any modern mobile browser (Chrome, Safari, etc.), as well as on desktop and tablet.',
+				a: `Yes. Both tools are built mobile-first and work in any modern mobile browser (Chrome, Safari, etc.), as well as on desktop and tablet. Most sellers use the ${a(CROPPER, 'cropper')} on a phone between packing runs.`,
 			},
 			{
 				q: 'Will Amazon or Flipkart support be added?',
-				a: "It's on the roadmap. The site is built to support multiple marketplaces — Meesho is first, with Amazon and Flipkart label cropping planned as a later addition.",
+				a: `It's on the roadmap. The site is built to support multiple marketplaces — Meesho is first, with ${a('/tools/amazon-label-cropper', 'Amazon')} and ${a('/tools/flipkart-label-cropper', 'Flipkart')} label cropping planned as a later addition.`,
 			},
 			{
 				q: 'I found a bug or want a new feature — how do I tell you?',
@@ -46,11 +63,11 @@ const groups = [
 		faqs: [
 			{
 				q: 'Can I remove the tax invoice from my Meesho labels?',
-				a: 'Yes. Meesho prints the shipping label and tax invoice on the same page — the cropper finds the split automatically and crops the invoice away. You can also keep the invoice attached, or save all the invoices as a separate PDF.',
+				a: `Yes. Meesho prints the shipping label and tax invoice on the same page — the ${a(CROPPER, 'label cropper')} finds the split automatically and crops the invoice away. You can also keep the invoice attached, or save all the invoices as a separate PDF.`,
 			},
 			{
 				q: 'What printer sizes are supported?',
-				a: 'You can print on 3x5" and 4x6" thermal label printers, or on regular A4 paper with 1, 2, or 4 labels per sheet — with or without the invoice attached to each label.',
+				a: `You can print on 3x5" and 4x6" thermal label printers, or on regular A4 paper with 1, 2, or 4 labels per sheet — with or without the invoice attached to each label. The ${a(CROPPER, 'cropper page')} explains which size to pick for your printer.`,
 			},
 			{
 				q: 'Can I sort my labels by SKU or courier?',
@@ -71,7 +88,7 @@ const groups = [
 		faqs: [
 			{
 				q: 'Which file do I upload to the profit calculator?',
-				a: 'In your Meesho supplier panel: Payments → Download → Payments to Date → pick your dates. It downloads as a *_PAYMENT_FILE_*.xlsx spreadsheet, and that one file is everything the calculator needs. The other downloads behind that button (GST Report, Tax Invoice, Supplier Tax Invoice, Outstanding Payments) do not carry the per-order settlement rows, so they cannot be read.',
+				a: `In your Meesho supplier panel: Payments → Download → Payments to Date → pick your dates. It downloads as a *_PAYMENT_FILE_*.xlsx spreadsheet, and that one file is everything the ${a(PROFIT, 'profit calculator')} needs. The other downloads behind that button (GST Report, Tax Invoice, Supplier Tax Invoice, Outstanding Payments) do not carry the per-order settlement rows, so they cannot be read. The ${a('/how-it-works', 'walkthrough')} shows the path with each step.`,
 			},
 			{
 				q: 'Does it already include commission, shipping and GST?',
@@ -107,21 +124,19 @@ const groups = [
 
 const faqs = groups.flatMap((group) => group.faqs);
 
-const schema = {
-	'@context': 'https://schema.org',
-	'@type': 'FAQPage',
-	mainEntity: faqs.map((faq) => ({
-		'@type': 'Question',
-		name: faq.q,
-		acceptedAnswer: {
-			'@type': 'Answer',
-			text: faq.a,
-		},
-	})),
-};
+/*
+ * `faqPage` strips the inline markup the answers now carry — schema expects plain text, while the
+ * rendered DOM keeps the links. Both are built from the same `faqs` array, so they cannot drift.
+ */
+const schema = [faqPage(faqs), breadcrumbs(Astro.site, [{ name: 'FAQ', path: '/faq' }])];
 ---
 
-<Layout title={title} description={description} schema={schema}>
+<Layout
+	title={title}
+	description={description}
+	schema={schema}
+	alternates={alternates({ en: '/faq', 'hi-Latn': '/faq' })}
+>
 	<section class="mx-auto max-w-3xl px-4 pt-10 pb-16 sm:px-6 sm:pt-16 sm:pb-24">
 		<div class="text-center">
 			<p data-reveal class="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">FAQ</p>
@@ -132,30 +147,17 @@ const schema = {
 			</p>
 		</div>
 
+		{/* The accordion itself lives in FaqBlock so the tool pages render their own questions
+		    identically. The group heading stays here, because grouping is this page's idea — a
+		    tool page has only one group and does not need one. */}
 		{
 			groups.map((group, groupIndex) => (
 				<div class="mt-10 sm:mt-12">
 					<h2 data-reveal class="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
 						{group.heading}
 					</h2>
-					<div class="mt-4 space-y-3">
-						{group.faqs.map((faq, i) => (
-							<details
-								data-reveal
-								open={groupIndex === 0 && i === 0}
-								class="faq-item group rounded-2xl border border-border bg-card transition-[border-color,box-shadow] duration-200 hover:border-primary/30 open:border-primary/30 open:shadow-sm"
-							>
-								<summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 rounded-2xl px-5 py-4 font-semibold transition-colors duration-150 marker:content-none active:bg-muted/60 [&::-webkit-details-marker]:hidden">
-									{faq.q}
-									<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground transition-[transform,background-color,color] duration-300 group-open:rotate-45 group-open:bg-primary group-open:text-primary-foreground">
-										<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="h-4 w-4" aria-hidden="true">
-											<path d="M12 5v14M5 12h14" />
-										</svg>
-									</span>
-								</summary>
-								<p class="px-5 pb-5 text-sm leading-relaxed text-muted-foreground sm:text-[0.95rem]">{faq.a}</p>
-							</details>
-						))}
+					<div class="mt-4">
+						<FaqBlock faqs={group.faqs} level="h3" openFirst={groupIndex === 0} />
 					</div>
 				</div>
 			))

@@ -1,0 +1,99 @@
+---
+title: Meesho seller terms, explained in plain words
+description: AWB, SKU, RTO, settlement, pick list, TCS, ADS — the abbreviations printed on your labels and in your payment file, what each one actually means, and which ones cost you money.
+cluster: glossary
+published: 2026-09-23
+updated: 2026-09-23
+tool: meesho-label-cropper
+faqs:
+  - q: What does AWB stand for?
+    a: Air Waybill. On a Meesho label it is the 12–20 digit number printed above the barcode, and it is the number the courier scans and your customer tracks. One AWB is one parcel.
+  - q: What is the difference between RTO and a return?
+    a: An RTO (Return to Origin) is a parcel that never reached the customer — refused at the door, address not found, or undeliverable — and comes straight back. A return is a parcel the customer received and sent back. Both cost you shipping both ways; the difference is that RTO stock usually comes back sellable and a return often does not.
+  - q: What is TCS on my Meesho payment file?
+    a: Tax Collected at Source. Meesho collects 0.5% of the taxable value under GST law and deposits it against your GSTIN, where it shows up as a credit you claim when filing. It is not a fee Meesho keeps — but it is money that leaves the settlement before it reaches your bank.
+  - q: Is SKU the same as the product name?
+    a: No. The SKU is your own code for one exact variant — one product in one colour in one size. Two sizes of the same kurti are two SKUs, which is why per-SKU margin can look very different from per-product margin.
+---
+
+Meesho's supplier panel, your shipping labels and your payment file are all written in
+abbreviations, and nobody hands you a key. Most guides either skip them or explain them in more
+abbreviations. Here is the actual list, in the order you meet them.
+
+## On the shipping label
+
+**AWB** — Air Waybill. The 12–20 digit tracking number printed above the barcode. It identifies
+the parcel to the courier, and it is what your customer types into a tracking page. One AWB is one
+parcel: if an order ships in two boxes, there are two AWBs.
+
+**SKU** — Stock Keeping Unit. Your own code for one exact variant. A red kurti in size M and the
+same kurti in size L are two SKUs, not one product. This distinction is the whole reason per-SKU
+margin is worth looking at — a product can look profitable in total while one of its sizes quietly
+loses money on every order.
+
+**Pickup hub** — the courier branch that will collect your parcel, printed under the courier name.
+Two orders going to the same city can have different hubs if they are on different partners, which
+is why [sorting by hub](/guides/meesho-courier-partners-explained) before printing saves you
+re-sorting a stack by hand when three riders arrive at three different times.
+
+**Tax invoice** — the GST invoice Meesho prints below the shipping label on the same A4 page. It
+is a document for your records and the customer's, not part of the shipping label, and it is what
+the [label cropper](/tools/meesho-label-cropper) removes. Keep a copy: your CA will want them.
+
+**Pick list** — not printed by Meesho at all. It is the list you make for yourself of how many of
+each SKU the batch contains, so you can pull stock off the shelf once instead of walking back for
+every parcel. The cropper generates one from the labels you loaded.
+
+## In the payment file
+
+**Final Settlement Amount** — the figure actually paid into your bank for an order, after Meesho
+has taken everything it takes. This is the honest starting point for any profit calculation, and
+it is where the [profit calculator](/tools/meesho-profit-calculator) begins, precisely because
+every deduction below is already inside it.
+
+**Commission** — Meesho's cut. It varies by category and by price slab, so two items at the same
+price in different categories are charged differently.
+
+**Shipping charge** — levied on the parcel's weight and the distance travelled. A light item going
+across the country can cost more to ship than a heavier one going across town.
+
+**RTO** — Return to Origin. A parcel that never reached the customer: refused at the door, address
+not found, or undeliverable. It comes back to you, and you pay shipping in both directions.
+
+**Return** — a parcel the customer received and sent back. Also shipping both ways. The practical
+difference from an RTO is what arrives back: RTO stock is usually still sellable, a customer
+return often is not, and how much of it you really write off is a number only you know.
+
+**TCS** — Tax Collected at Source, 0.5% of taxable value, collected by Meesho under GST law and
+deposited against your GSTIN. You claim it back when filing. It is not a fee Meesho keeps, but it
+does leave the settlement before the money reaches you.
+
+**TDS** — Tax Deducted at Source, deducted under income tax law and deposited against your PAN.
+Same shape: recoverable at filing time, gone from this month's cash.
+
+**Compensation / claim** — money Meesho adds back when a parcel is lost or damaged in transit.
+These arrive as their own rows rather than as adjustments to the original order, which is why a
+tool that only reads delivered orders will miss them.
+
+**ADS** — campaign spend, deducted at account level rather than per order. This is the one that
+most often turns a month that looked fine per-product into a month that was not.
+
+## The two that get confused most
+
+**Settlement is not revenue.** Revenue is what the customer paid. Settlement is what reached your
+bank. The gap is commission, shipping, taxes and returns, and it can be large.
+
+**Settlement is not profit either.** Settlement is what Meesho paid you. Profit is what is left
+after the things Meesho has never heard of: what your stock cost, what your packaging cost, your
+rent, your electricity, your salaries — and your own time, which almost nobody prices.
+
+Meesho can report the first two accurately. It cannot report the third, because it does not have
+the inputs. That is not Meesho being cagey; it genuinely does not know what your kurtis cost you.
+
+## Dates, which are not what they look like
+
+The dates in a payment file's name are **payment dates, not order dates**. A file covering the
+first half of a month routinely contains orders placed weeks earlier — which is why comparing a
+payment file against that month's sales report will never reconcile, and why it is not supposed
+to. If you want a longer view, load several payment files at once rather than trying to line one
+up with a calendar month.

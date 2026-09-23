@@ -1,0 +1,191 @@
+---
+/**
+ * The `/tools` index, shared by both locales.
+ *
+ * It exists for two reasons beyond being a page someone might read.
+ *
+ * 1. **The tool pages' breadcrumbs were stuck at two levels** — `Home / Meesho Label Cropper` —
+ *    because a middle crumb needs somewhere to point, and a crumb to a URL that does not exist is
+ *    a validation error rather than a shortcut. With this page they become three, which is what
+ *    Google renders in place of the raw URL on mobile.
+ * 2. **The two roadmap stubs had no home.** They are `noindex` and out of the sitemap, so the only
+ *    thing linking to them was the footer, on every page. Here they sit where a reader looking for
+ *    Amazon or Flipkart would actually go, labelled as not ready.
+ *
+ * The roadmap tools are deliberately **not** in the `ItemList` schema. Structured data is a set of
+ * claims, and "here is a SoftwareApplication" pointing at a page with no application on it is the
+ * same class of mistake as the `SearchAction` that was deleted from the home page in E1.
+ */
+import Layout from '@/layouts/Layout.astro';
+import Breadcrumb from '@/components/site/Breadcrumb.astro';
+import PageCta from '@/components/site/PageCta.astro';
+import { url } from '@/lib/url';
+import { abs, breadcrumbs, ids } from '@/lib/schema';
+import { localePath, type Alternate, type Locale } from '@/lib/i18n';
+
+export interface HubTool {
+	path: string;
+	name: string;
+	/** When the tool runs, what it is for. Shown under the name. */
+	pitch: string;
+	points: string[];
+	cta: string;
+	icon: string;
+	/** Roadmap tools render as a muted card and stay out of the structured data. */
+	soon?: boolean;
+}
+
+interface Props {
+	locale: Locale;
+	title: string;
+	description: string;
+	eyebrow: string;
+	heading: string;
+	intro: string;
+	tools: HubTool[];
+	liveHeading: string;
+	soonHeading: string;
+	soonIntro: string;
+	soonLabel: string;
+	ctaTitle: string;
+	ctaText: string;
+	alternates: Alternate[];
+}
+
+const props = Astro.props;
+const { locale } = props;
+
+const path = localePath('/tools', locale);
+const live = props.tools.filter((tool) => !tool.soon);
+const soon = props.tools.filter((tool) => tool.soon);
+
+const schema = [
+	breadcrumbs(Astro.site, [{ name: props.eyebrow, path }], locale),
+	{
+		'@context': 'https://schema.org',
+		'@type': 'ItemList',
+		name: props.title,
+		description: props.description,
+		url: abs(path, Astro.site),
+		publisher: { '@id': ids.organization(Astro.site) },
+		itemListElement: live.map((tool, index) => ({
+			'@type': 'ListItem',
+			position: index + 1,
+			item: {
+				'@type': 'SoftwareApplication',
+				name: tool.name,
+				url: abs(localePath(tool.path, locale), Astro.site),
+				description: tool.pitch,
+				applicationCategory: 'BusinessApplication',
+				operatingSystem: 'Any (runs in browser)',
+				offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR' },
+				publisher: { '@id': ids.organization(Astro.site) },
+			},
+		})),
+	},
+];
+---
+
+<Layout
+	title={props.title}
+	description={props.description}
+	schema={schema}
+	locale={locale}
+	alternates={props.alternates}
+>
+	<section class="mx-auto max-w-5xl px-4 pt-10 pb-20 sm:px-6 sm:pt-14">
+		<Breadcrumb locale={locale} trail={[{ name: props.eyebrow, path: '/tools' }]} />
+
+		<div class="mx-auto mt-8 max-w-2xl text-center">
+			<p data-reveal class="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+				{props.eyebrow}
+			</p>
+			<h1 data-reveal class="mt-4 text-3xl font-bold tracking-tight text-balance sm:text-5xl">
+				{props.heading}
+			</h1>
+			<p data-reveal class="mx-auto mt-4 max-w-xl text-base text-pretty text-muted-foreground sm:text-lg">
+				{props.intro}
+			</p>
+		</div>
+
+		<h2 data-reveal class="mt-14 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+			{props.liveHeading}
+		</h2>
+		<div class="mt-5 grid gap-5 md:grid-cols-2">
+			{
+				live.map((tool) => (
+					<div data-reveal class="flex flex-col rounded-2xl border border-border bg-card p-6">
+						<span class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+							<Fragment set:html={tool.icon} />
+						</span>
+						<h3 class="mt-4 text-xl font-semibold tracking-tight">{tool.name}</h3>
+						<p class="mt-2 text-sm leading-relaxed text-muted-foreground">{tool.pitch}</p>
+						<ul class="mt-4 space-y-2">
+							{tool.points.map((point) => (
+								<li class="flex items-start gap-2 text-sm text-muted-foreground">
+									<svg
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2.5"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										class="mt-0.5 h-4 w-4 shrink-0 text-primary"
+										aria-hidden="true"
+									>
+										<path d="M20 6 9 17l-5-5" />
+									</svg>
+									{point}
+								</li>
+							))}
+						</ul>
+						<a
+							href={url(localePath(tool.path, locale))}
+							class="press mt-6 inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-6 font-semibold text-primary-foreground transition-[background-color,transform] duration-200 hover:bg-primary/90"
+						>
+							{tool.cta}
+						</a>
+					</div>
+				))
+			}
+		</div>
+
+		{
+			soon.length > 0 && (
+				<>
+					<h2 data-reveal class="mt-16 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+						{props.soonHeading}
+					</h2>
+					<p data-reveal class="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+						{props.soonIntro}
+					</p>
+					<div class="mt-5 grid gap-4 sm:grid-cols-2">
+						{soon.map((tool) => (
+							<a
+								data-reveal
+								href={url(tool.path)}
+								class="group flex items-start gap-4 rounded-2xl border border-dashed border-border bg-muted/30 p-5 transition-[border-color,background-color] duration-200 hover:border-primary/30 hover:bg-muted/50"
+							>
+								<span
+									class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background text-muted-foreground"
+									set:html={tool.icon}
+								/>
+								<span class="min-w-0 flex-1">
+									<span class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+										<span class="font-semibold">{tool.name}</span>
+										<span class="rounded-full bg-background px-2 py-0.5 text-xs font-medium text-muted-foreground">
+											{props.soonLabel}
+										</span>
+									</span>
+									<span class="mt-1 block text-sm leading-relaxed text-muted-foreground">{tool.pitch}</span>
+								</span>
+							</a>
+						))}
+					</div>
+				</>
+			)
+		}
+
+		<PageCta locale={locale} title={props.ctaTitle} text={props.ctaText} />
+	</section>
+</Layout>

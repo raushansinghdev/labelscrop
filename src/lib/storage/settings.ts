@@ -10,6 +10,10 @@ const UI_SCHEMA_VERSION = 1;
 
 const configSchema = z.record(z.string(), z.union([z.string(), z.boolean()]));
 
+// The `labelscrop:` prefix predates the rename to SellerWala and is deliberately left alone.
+// These keys are internal — never shown to a user, never crawled — so renaming them buys
+// nothing, and every rename silently discards whatever a returning visitor had saved under
+// the old key. The prefix is a namespace, not a brand.
 function settingsKey(platformId: string): string {
 	return `labelscrop:settings:${platformId}:v${SETTINGS_SCHEMA_VERSION}`;
 }

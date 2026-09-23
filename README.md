@@ -1,4 +1,4 @@
-# LabelsCrop
+# SellerWala
 
 Free, browser-only shipping label cropping and sorting tools for Indian e-commerce sellers. Meesho support first; Amazon and Flipkart are on the roadmap. No login, no server, no file ever leaves the browser.
 

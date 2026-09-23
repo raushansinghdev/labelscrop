@@ -1,0 +1,69 @@
+---
+/**
+ * Language switcher.
+ *
+ * Without a link from the English site, `/hi/` is an orphan: no internal link, no crawl path
+ * except the sitemap, and no way for a reader who would rather read Hinglish to discover that it
+ * exists. `hreflang` tells a search engine that two pages are versions of each other — it does
+ * not get anybody there.
+ *
+ * It is built from the same `alternates` array the `hreflang` tags come from, so the links a
+ * reader can click and the ones a crawler is told about cannot disagree. `x-default` is dropped:
+ * it is a duplicate of a real locale and would render the same language twice.
+ *
+ * Deliberately not auto-redirecting on `Accept-Language`. A seller who reads English fine and
+ * searched in English should not be thrown onto a Hinglish page, and a redirect on a static host
+ * would hide one of the two URLs from crawlers.
+ *
+ * **Rendered outside `<Footer>` on purpose** — the footer carries `transition:persist`, so its
+ * DOM node survives a View Transitions navigation. A per-page element inside it would keep the
+ * previous page's links after the first navigation.
+ */
+import { url } from '@/lib/url';
+import { LOCALES, type Alternate } from '@/lib/i18n';
+
+interface Props {
+	alternates: Alternate[];
+	/** BCP-47 tag of the page being viewed, to mark the current option. */
+	current: string;
+}
+
+const { alternates, current } = Astro.props;
+
+const options = alternates
+	.filter((alt) => alt.hreflang !== 'x-default')
+	.map((alt) => ({
+		...alt,
+		name: Object.values(LOCALES).find((locale) => locale.tag === alt.hreflang)?.name ?? alt.hreflang,
+	}));
+---
+
+{
+	options.length > 1 && (
+		<nav aria-label="Language" class="border-t border-border/80 bg-muted/30">
+			<div class="mx-auto flex max-w-6xl items-center justify-center gap-2 px-4 py-4 text-sm sm:px-6">
+				<span class="text-muted-foreground">Language:</span>
+				<ul class="flex items-center gap-1">
+					{options.map((option) => (
+						<li>
+							{option.hreflang === current ? (
+								<span aria-current="true" class="rounded-md bg-muted px-2.5 py-1 font-medium text-foreground">
+									{option.name}
+								</span>
+							) : (
+								<a
+									href={url(option.path)}
+									hreflang={option.hreflang}
+									lang={option.hreflang}
+									class="rounded-md px-2.5 py-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+								>
+									{option.name}
+								</a>
+							)}
+						</li>
+					))}
+				</ul>
+			</div>
+		</nav>
+	)
+}

@@ -1,0 +1,19 @@
+---
+import GuideHub from '@/components/guides/GuideHub.astro';
+import { UI, alternates } from '@/lib/i18n';
+
+const hreflang = alternates({ en: '/guides', 'hi-Latn': '/guides' });
+---
+
+<GuideHub
+	locale="hi-Latn"
+	title="Meesho Seller Guides — Label Printing, Courier aur Profit"
+	description="Meesho label print karne, printer size chunne, courier aur return samajhne, aur asli profit nikalne ki aasan guides — Hinglish mein."
+	eyebrow={UI['hi-Latn'].guides}
+	heading="Kaam kaise hota hai, seedhe shabdon mein"
+	intro="Printing, courier, return aur payment — un sellers ke liye jo apne parcel khud pack karte hain. Na jargon, na koi signup."
+	updatedLabel={UI['hi-Latn'].updated}
+	ctaTitle="Try karna hai?"
+	ctaText="Dono tools free hain, login ki zaroorat nahi, aur aapki file kabhi upload nahi hoti."
+	alternates={hreflang}
+/>

@@ -1,6 +1,8 @@
 ---
 import { url } from '@/lib/url';
 import { SITE } from '@/lib/site';
+import { ids } from '@/lib/schema';
+import { alternates } from '@/lib/i18n';
 import Layout from '@/layouts/Layout.astro';
 
 const title = 'Free Meesho Seller Tools — Label Cropper & Profit Calculator';
@@ -82,21 +84,15 @@ const reasons = [
 	},
 ];
 
-const homeUrl = new URL(url('/'), Astro.site).toString();
-
+/*
+ * `WebSite` and `Organization` are no longer declared here — the layout emits them on every page
+ * via `lib/schema.ts`, so this page contributes only what is unique to it: the list of tools.
+ *
+ * The old `WebSite` here also carried a `SearchAction` pointing at `/faq?q=`, which was never
+ * real: the FAQ page has no search box and ignores the parameter. It is gone rather than
+ * reproduced.
+ */
 const schema = [
-	{
-		'@context': 'https://schema.org',
-		'@type': 'WebSite',
-		name: SITE.name,
-		url: homeUrl,
-		description,
-		potentialAction: {
-			'@type': 'SearchAction',
-			target: `${new URL(url('/faq'), Astro.site)}?q={search_term_string}`,
-			'query-input': 'required name=search_term_string',
-		},
-	},
 	{
 		'@context': 'https://schema.org',
 		'@type': 'ItemList',
@@ -112,13 +108,19 @@ const schema = [
 				operatingSystem: 'Any (runs in browser)',
 				description: tool.pitch,
 				offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR' },
+				publisher: { '@id': ids.organization(Astro.site) },
 			},
 		})),
 	},
 ];
 ---
 
-<Layout title={title} description={description} schema={schema}>
+<Layout
+	title={title}
+	description={description}
+	schema={schema}
+	alternates={alternates({ en: '/', 'hi-Latn': '/' })}
+>
 	<!-- Hero -->
 	<section class="relative overflow-hidden">
 		<div

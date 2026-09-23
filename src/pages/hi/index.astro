@@ -1,0 +1,211 @@
+---
+/**
+ * The Hinglish landing page.
+ *
+ * Built because `/hi/` was 404ing: the Hinglish guides' breadcrumbs pointed at a locale home that
+ * did not exist, and a locale prefix that returns 404 is both a broken link for a reader who types
+ * it and an error Search Console will report.
+ *
+ * Not a clone of the English home page. The tools' own interfaces are in English — which is normal
+ * for Indian sellers and not worth half-translating — so this page's job is to explain in Hinglish
+ * what each tool does and hand the reader to the right one, plus to be the entry point for the
+ * Hinglish guides.
+ */
+import Layout from '@/layouts/Layout.astro';
+import { url } from '@/lib/url';
+import { abs, ids } from '@/lib/schema';
+import { UI, alternates, localePath } from '@/lib/i18n';
+import { cluster, formatDate, guidePath, publishedGuides } from '@/lib/guides';
+
+const locale = 'hi-Latn';
+const t = UI[locale];
+
+const title = 'Meesho Seller Tools — Label Cropper aur Profit Calculator (Free)';
+const description =
+	'Meesho sellers ke liye do free browser tools: shipping label crop aur sort karein, aur payment file se apna asli profit nikalein. Na login, na upload, na watermark.';
+
+const iconAttrs =
+	'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"';
+
+const tools = [
+	{
+		path: '/tools/meesho-label-cropper',
+		eyebrow: 'Bhejne se pehle',
+		name: 'Meesho Label Cropper',
+		pitch:
+			'Supplier panel wali label PDF ko saaf, print-ready file mein badlein — usi order mein jis tarah aap pack karte hain.',
+		points: [
+			'Har label se tax invoice apne aap kat jata hai',
+			'3x5" aur 4x6" thermal printer, ya A4 par 1 / 2 / 4 label',
+			'SKU, courier, pickup hub ya colour-size se sorting',
+			'SKU pick list — kis item ke kitne piece pack karne hain',
+		],
+		cta: 'Label crop karein',
+		icon: `<svg ${iconAttrs}><path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/></svg>`,
+	},
+	{
+		path: '/tools/meesho-profit-calculator',
+		eyebrow: 'Settle hone ke baad',
+		name: 'Meesho Profit Calculator',
+		pitch:
+			'Apni payment file padhkar jaaniye ki mahine mein asli kamai kitni hui — yeh Meesho kabhi nahi batata.',
+		points: [
+			'Final Settlement Amount se asli payout, fees pehle se kati hui',
+			'Making aur packing cost daalte hi per-SKU margin',
+			'Ads spend, RTO aur return imaandari se ghataye jaate hain',
+			'Rent, salary aur bills bhi, period ke hisaab se bante hue',
+		],
+		cta: 'Profit dekhein',
+		icon: `<svg ${iconAttrs}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+	},
+];
+
+const trustPoints = [
+	'Aapki file kabhi upload nahi hoti — sab kuch aapke browser mein chalta hai.',
+	'Na account, na login, na email.',
+	'Hamesha free. Na watermark, na page limit jo aapko paid plan ki taraf dhakele.',
+	'Tools ka interface English mein hai; sellers ke liye yeh sabse jaana-pehchana hai.',
+];
+
+const guides = await publishedGuides(locale);
+
+/*
+ * No BreadcrumbList. This is the root of the Hinglish tree, so its trail would be a single crumb
+ * pointing at itself — and now that `breadcrumbs()` prepends the *locale* home rather than the
+ * English one, that crumb would be this very page. The English home carries none either.
+ */
+const schema = [
+	{
+		'@context': 'https://schema.org',
+		'@type': 'ItemList',
+		name: title,
+		description,
+		url: abs(localePath('/', locale), Astro.site),
+		publisher: { '@id': ids.organization(Astro.site) },
+		itemListElement: tools.map((tool, index) => ({
+			'@type': 'ListItem',
+			position: index + 1,
+			name: tool.name,
+			url: abs(localePath(tool.path, locale), Astro.site),
+		})),
+	},
+];
+---
+
+<Layout
+	title={title}
+	description={description}
+	schema={schema}
+	locale={locale}
+	alternates={alternates({ en: '/', 'hi-Latn': '/' })}
+>
+	<section class="mx-auto max-w-5xl px-4 pt-10 pb-8 sm:px-6 sm:pt-16">
+		<div class="mx-auto max-w-2xl text-center">
+			<h1 data-reveal class="text-3xl font-bold tracking-tight text-balance sm:text-5xl">
+				Meesho sellers ke liye free tools
+			</h1>
+			<p data-reveal class="mx-auto mt-4 max-w-xl text-base text-pretty text-muted-foreground sm:text-lg">
+				Label print karne se lekar mahine ka hisaab lagane tak — dono kaam browser mein, bilkul
+				free, bina kisi login ke.
+			</p>
+			<ul
+				class="mt-5 flex flex-wrap justify-center gap-2 text-xs font-medium text-muted-foreground"
+				aria-label="Highlights"
+			>
+				<li class="rounded-full bg-muted px-3 py-1">100% free</li>
+				<li class="rounded-full bg-muted px-3 py-1">Login nahi</li>
+				<li class="rounded-full bg-muted px-3 py-1">File upload nahi hoti</li>
+			</ul>
+		</div>
+
+		<div class="mt-12 grid gap-5 md:grid-cols-2">
+			{
+				tools.map((tool) => (
+					<div data-reveal class="flex flex-col rounded-2xl border border-border bg-card p-6">
+						<span class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+							<Fragment set:html={tool.icon} />
+						</span>
+						<p class="mt-4 text-xs font-semibold tracking-wide text-primary uppercase">{tool.eyebrow}</p>
+						<h2 class="mt-1 text-xl font-semibold tracking-tight">{tool.name}</h2>
+						<p class="mt-2 text-sm leading-relaxed text-muted-foreground">{tool.pitch}</p>
+						<ul class="mt-4 space-y-2">
+							{tool.points.map((point) => (
+								<li class="flex items-start gap-2 text-sm text-muted-foreground">
+									<svg
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2.5"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										class="mt-0.5 h-4 w-4 shrink-0 text-primary"
+										aria-hidden="true"
+									>
+										<path d="M20 6 9 17l-5-5" />
+									</svg>
+									{point}
+								</li>
+							))}
+						</ul>
+						<a
+							href={url(localePath(tool.path, locale))}
+							class="press mt-6 inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-6 font-semibold text-primary-foreground transition-[background-color,transform] duration-200 hover:bg-primary/90"
+						>
+							{tool.cta}
+						</a>
+					</div>
+				))
+			}
+		</div>
+	</section>
+
+	<section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+		<h2 data-reveal class="text-center text-2xl font-semibold tracking-tight">Kaam kaise karta hai</h2>
+		<ul class="mt-8 space-y-3">
+			{
+				trustPoints.map((point) => (
+					<li data-reveal class="rounded-xl border border-border bg-card p-5 text-sm leading-relaxed text-muted-foreground">
+						{point}
+					</li>
+				))
+			}
+		</ul>
+	</section>
+
+	{
+		guides.length > 0 && (
+			<section class="mx-auto max-w-3xl px-4 pb-20 sm:px-6">
+				<h2 data-reveal class="text-center text-2xl font-semibold tracking-tight">Hinglish guides</h2>
+				<ul class="mt-8 space-y-3">
+					{guides.map((guide) => (
+						<li data-reveal>
+							<a
+								href={url(guidePath(guide))}
+								class="block rounded-2xl border border-border bg-card p-5 transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-primary/30"
+							>
+								<span class="text-xs font-semibold text-primary">
+									{cluster(guide.data.cluster, locale).label}
+								</span>
+								<span class="mt-1 block font-semibold">{guide.data.title}</span>
+								<span class="mt-1 block text-sm leading-relaxed text-muted-foreground">
+									{guide.data.description}
+								</span>
+								<span class="mt-3 block text-xs text-muted-foreground">
+									{t.updated} <time datetime={guide.data.updated.toISOString()}>{formatDate(guide.data.updated)}</time>
+								</span>
+							</a>
+						</li>
+					))}
+				</ul>
+				<p data-reveal class="mt-6 text-center text-sm">
+					<a
+						href={url(localePath('/guides', locale))}
+						class="font-medium text-primary underline-offset-4 hover:underline"
+					>
+						{t.allGuides}
+					</a>
+				</p>
+			</section>
+		)
+	}
+</Layout>

@@ -1,71 +1,156 @@
 ---
+/**
+ * The About page.
+ *
+ * Rewritten because the original leaned on `prose prose-neutral dark:prose-invert`, and
+ * `@tailwindcss/typography` is not installed — so those three classes matched no CSS at all. The
+ * page rendered as one undifferentiated wall of text: no bullets, no space between paragraphs,
+ * and in-prose links styled the same as the text around them. It also had no `h2` anywhere, which
+ * left a 400-word page with no outline for a crawler to read.
+ *
+ * Everything here is built from the site's own utility classes instead, the same way every other
+ * page is. The guides get their `.prose` block because their body is Markdown that has to be
+ * styled generically; this page is hand-written markup and does not need it.
+ */
 import { url } from '@/lib/url';
 import Layout from '@/layouts/Layout.astro';
+import { SITE } from '@/lib/site';
+import { abs, breadcrumbs, ids } from '@/lib/schema';
 
-const title = 'About LabelsCrop';
+const title = 'About SellerWala';
 const description =
-	'LabelsCrop is a free, browser-only toolkit for Indian e-commerce sellers: crop and sort shipping labels for printing, and work out your real profit from the marketplace payment file — no login, no uploads, no watermarks.';
+	'SellerWala is a free, browser-only toolkit for Indian e-commerce sellers: crop and sort shipping labels for printing, and work out your real profit from the marketplace payment file — no login, no uploads, no watermarks.';
+
+const tools = [
+	{
+		path: '/tools/meesho-label-cropper',
+		name: 'The label cropper',
+		detail:
+			'Crops the invoice away, fits the label to your printer, and sorts the batch the way you actually pack — with a pick list of how many of each SKU to pull off the shelf.',
+	},
+	{
+		path: '/tools/meesho-profit-calculator',
+		name: 'The profit calculator',
+		detail:
+			'Reads your payment file and works out what you really earned — after cost of goods, ads, returns, and the rent and salaries no marketplace has ever heard of — down to the margin on each individual SKU.',
+	},
+];
+
+const principles = [
+	{
+		claim: 'Nothing you add leaves your device.',
+		detail:
+			"There is no server that processes your files. Cropping, sorting, PDF building and every profit calculation happen locally in your browser, using code that runs on your machine — not ours. That matters twice over here: one file holds your customers' addresses, the other holds your entire revenue.",
+	},
+	{
+		claim: 'No account, ever.',
+		detail:
+			"There's nothing to sign up for and nothing to forget a password for. Open a tool, use it, close the tab.",
+	},
+	{
+		claim: 'Free forever, funded by ads.',
+		detail:
+			'Advertising is placed away from the upload, preview, and download flow, so it never gets in the way of actually getting the work done.',
+	},
+];
+
+const schema = [
+	breadcrumbs(Astro.site, [{ name: 'About', path: '/about' }]),
+	{
+		'@context': 'https://schema.org',
+		'@type': 'AboutPage',
+		name: title,
+		description,
+		url: abs('/about', Astro.site),
+		// The page is about the organisation, so it says so rather than re-describing the brand.
+		mainEntity: { '@id': ids.organization(Astro.site) },
+		isPartOf: { '@id': ids.website(Astro.site) },
+		inLanguage: 'en-IN',
+	},
+];
 ---
 
-<Layout title={title} description={description}>
+<Layout title={title} description={description} schema={schema}>
 	<section class="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24">
-		<h1 data-reveal class="text-4xl font-bold tracking-tight sm:text-5xl">About LabelsCrop</h1>
+		<h1 data-reveal class="text-4xl font-bold tracking-tight sm:text-5xl">About {SITE.name}</h1>
 
-		<div data-reveal class="prose prose-neutral mt-8 max-w-none text-muted-foreground dark:prose-invert">
-			<p>
-				LabelsCrop exists because running a Meesho shop means doing two thankless jobs over and over.
-				The first is getting orders out of the door: Meesho — like most Indian marketplaces — exports
-				shipping labels with a tax invoice glued to the same page, in whatever order your orders
-				happened to sync in. The second is finding out whether any of it made money, which the
-				supplier panel will not tell you: it reports what it paid you, and stops there.
-			</p>
-			<p>So there are two tools, for the two ends of the same order:</p>
-			<ul>
-				<li>
-					<strong><a href={url('/tools/meesho-label-cropper')}>The label cropper</a></strong> crops the
-					invoice away, fits the label to your printer, and sorts the batch the way you actually pack —
-					with a pick list of how many of each SKU to pull off the shelf.
-				</li>
-				<li>
-					<strong><a href={url('/tools/meesho-profit-calculator')}>The profit calculator</a></strong>
-					reads your payment file and works out what you really earned — after cost of goods, ads,
-					returns and the rent and salaries no marketplace has ever heard of — down to the margin on
-					each individual SKU.
-				</li>
-			</ul>
-			<p>A few things we think matter enough to say plainly:</p>
-			<ul>
-				<li>
-					<strong>Nothing you add leaves your device.</strong> There is no server that processes your
-					files. Cropping, sorting, PDF building and every profit calculation happen locally in your
-					browser, using code that runs on your machine — not ours. That matters twice over here:
-					one file holds your customers' addresses, the other holds your entire revenue.
-				</li>
-				<li>
-					<strong>No account, ever.</strong> There's nothing to sign up for and nothing to forget
-					a password for. Open a tool, use it, close the tab.
-				</li>
-				<li>
-					<strong>Free forever, funded by ads.</strong> Advertising is placed away from the upload,
-					preview, and download flow, so it never gets in the way of actually getting the work done.
-				</li>
-			</ul>
-			<p>
-				Both tools start with Meesho. Support for other marketplaces is on the roadmap — see the
-				<a href={url('/faq')}>FAQ</a> for details.
-			</p>
-		</div>
+		<p data-reveal class="mt-6 text-lg leading-relaxed text-pretty text-muted-foreground">
+			{SITE.name} exists because running a Meesho shop means doing two thankless jobs over and over.
+			The first is getting orders out of the door. The second is finding out whether any of it made
+			money.
+		</p>
 
-		<div data-reveal class="mt-10 flex flex-col items-stretch justify-center gap-2.5 sm:flex-row sm:items-center">
+		<h2 data-reveal class="mt-12 text-2xl font-semibold tracking-tight">The problem</h2>
+		<p data-reveal class="mt-4 leading-relaxed text-muted-foreground">
+			Meesho — like most Indian marketplaces — exports shipping labels with a tax invoice glued to
+			the same page, in whatever order your orders happened to sync in. So before you can print
+			anything you are cutting, re-sorting, and wasting label stock.
+		</p>
+		<p data-reveal class="mt-4 leading-relaxed text-muted-foreground">
+			Then, at the other end, the supplier panel will not tell you whether the month worked. It
+			reports what it paid you, and stops there — which is revenue, not profit. It has no idea what
+			your products cost, what you spend on packaging, or what your rent is.
+		</p>
+
+		<h2 data-reveal class="mt-12 text-2xl font-semibold tracking-tight">
+			Two tools, two ends of the same order
+		</h2>
+		<dl class="mt-6 space-y-4">
+			{
+				tools.map((tool) => (
+					<div data-reveal class="rounded-2xl border border-border bg-card p-5">
+						<dt class="font-semibold">
+							<a
+								href={url(tool.path)}
+								class="text-primary underline-offset-4 transition-colors hover:underline"
+							>
+								{tool.name}
+							</a>
+						</dt>
+						<dd class="mt-2 text-sm leading-relaxed text-muted-foreground">{tool.detail}</dd>
+					</div>
+				))
+			}
+		</dl>
+
+		<h2 data-reveal class="mt-12 text-2xl font-semibold tracking-tight">What we will not do</h2>
+		<dl class="mt-6 space-y-4">
+			{
+				principles.map((principle) => (
+					<div data-reveal class="rounded-2xl border border-border bg-card p-5">
+						<dt class="font-semibold">{principle.claim}</dt>
+						<dd class="mt-2 text-sm leading-relaxed text-muted-foreground">{principle.detail}</dd>
+					</div>
+				))
+			}
+		</dl>
+
+		<h2 data-reveal class="mt-12 text-2xl font-semibold tracking-tight">What's next</h2>
+		<p data-reveal class="mt-4 leading-relaxed text-muted-foreground">
+			Both tools start with Meesho, because that is the marketplace we know best. Amazon and
+			Flipkart label cropping are on the roadmap — the underlying engine was built to take more
+			marketplaces, so what is left is the per-marketplace detail rather than a rewrite. The{' '}
+			<a href={url('/faq')} class="font-medium text-primary underline-offset-4 hover:underline">FAQ</a>
+			{' '}covers the rest, and the{' '}
+			<a href={url('/guides')} class="font-medium text-primary underline-offset-4 hover:underline">
+				guides
+			</a>
+			{' '}go deeper on printing, couriers and payments.
+		</p>
+
+		<div
+			data-reveal
+			class="mt-10 flex flex-col items-stretch justify-center gap-2.5 sm:flex-row sm:items-center"
+		>
 			<a
 				href={url('/tools/meesho-label-cropper')}
-				class="inline-flex min-h-12 items-center justify-center rounded-md bg-primary px-6 text-base font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+				class="press inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-6 text-base font-semibold text-primary-foreground shadow-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
 			>
 				Open the Label Cropper
 			</a>
 			<a
 				href={url('/tools/meesho-profit-calculator')}
-				class="inline-flex min-h-12 items-center justify-center rounded-md border border-border bg-background px-6 text-base font-semibold transition-colors hover:border-primary/40 hover:text-primary"
+				class="press inline-flex min-h-12 items-center justify-center rounded-xl border border-border bg-background px-6 text-base font-semibold transition-colors hover:border-primary/40 hover:text-primary"
 			>
 				Open the Profit Calculator
 			</a>

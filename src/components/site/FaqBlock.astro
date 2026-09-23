@@ -1,0 +1,108 @@
+---
+/**
+ * A reusable FAQ accordion, extracted from `src/pages/faq.astro` so tool pages and guides can
+ * carry their own questions instead of sending every question to one central page.
+ *
+ * Two deliberate differences from the original:
+ *
+ * 1. **Answers may contain inline HTML** and are rendered with `set:html`. The FAQ page's answers
+ *    were plain strings dropped into a `<p>`, which made it structurally impossible to link out of
+ *    an answer — 1,120 words of the site's most on-topic copy with not one link in it. Answers are
+ *    authored in this repo, never user input, so `set:html` is safe here.
+ * 2. **Questions are real headings** (`h3` by default), not bare `<summary>` text. A `<summary>`
+ *    contributes nothing to the document outline, so a page of them reads to a crawler as a page
+ *    with no subject matter.
+ *
+ * The caller passes the same array to `faqPage()` from `lib/schema.ts` to emit the JSON-LD, so the
+ * visible questions and the structured data cannot drift.
+ */
+export interface Faq {
+	q: string;
+	/** May contain inline HTML (links, <strong>). Stripped to text for the JSON-LD. */
+	a: string;
+}
+
+interface Props {
+	faqs: Faq[];
+	heading?: string;
+	intro?: string;
+	/** Heading level for each question. Use `h3` under an `h2` section, `h2` on a dedicated page. */
+	level?: 'h2' | 'h3';
+	/** Open the first item. Off by default — on a tool page the tool is the point, not the FAQ. */
+	openFirst?: boolean;
+}
+
+const { faqs, heading, intro, level = 'h3', openFirst = false } = Astro.props;
+const QuestionTag = level;
+---
+
+<div class="mx-auto max-w-3xl">
+	{
+		heading && (
+			<h2 data-reveal class="text-center text-2xl font-semibold tracking-tight">
+				{heading}
+			</h2>
+		)
+	}
+	{
+		intro && (
+			<p data-reveal class="mx-auto mt-2 max-w-xl text-center text-sm text-pretty text-muted-foreground">
+				{intro}
+			</p>
+		)
+	}
+
+	<div class="mt-8 space-y-3">
+		{
+			faqs.map((faq, i) => (
+				<details
+					data-reveal
+					open={openFirst && i === 0}
+					class="faq-item group rounded-2xl border border-border bg-card transition-[border-color,box-shadow] duration-200 hover:border-primary/30 open:border-primary/30 open:shadow-sm"
+				>
+					<summary class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 rounded-2xl px-5 py-4 transition-colors duration-150 marker:content-none active:bg-muted/60 [&::-webkit-details-marker]:hidden">
+						<QuestionTag class="text-base font-semibold">{faq.q}</QuestionTag>
+						<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground transition-[transform,background-color,color] duration-300 group-open:rotate-45 group-open:bg-primary group-open:text-primary-foreground">
+							<svg
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.5"
+								stroke-linecap="round"
+								class="h-4 w-4"
+								aria-hidden="true"
+							>
+								<path d="M12 5v14M5 12h14" />
+							</svg>
+						</span>
+					</summary>
+					<div
+						class="faq-answer px-5 pb-5 text-sm leading-relaxed text-muted-foreground sm:text-[0.95rem]"
+						set:html={faq.a}
+					/>
+				</details>
+			))
+		}
+	</div>
+</div>
+
+<style>
+	/* Smooth open/close where supported (Chrome 131+); other browsers simply snap open, which is fine. */
+	@supports (interpolate-size: allow-keywords) {
+		.faq-item {
+			interpolate-size: allow-keywords;
+		}
+	}
+
+	/* Links inside answers are the whole point of allowing markup here, so they have to look like
+	   links — inheriting muted-foreground would make them invisible. */
+	.faq-answer :global(a) {
+		color: var(--primary);
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+
+	.faq-answer :global(p + p) {
+		margin-top: 0.75rem;
+	}
+</style>

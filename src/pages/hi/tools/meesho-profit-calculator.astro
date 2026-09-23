@@ -1,0 +1,317 @@
+---
+/**
+ * The Hinglish profit calculator page.
+ *
+ * Written from scratch rather than translated, for the reasons set out at the top of the Hinglish
+ * label cropper page. The framing differs slightly from the English version on purpose: the query
+ * that brings sellers here in Hinglish is "meesho payment kam kyun aaya", a complaint, not
+ * "profit calculator", a tool name. So this page answers the complaint first and introduces the
+ * calculator as the answer to it.
+ *
+ * Money words stay in English — settlement, commission, RTO, margin — because that is what the
+ * supplier panel prints and what sellers say. "Nipatan raashi" would be a translation nobody
+ * searches for and nobody recognises.
+ */
+import { url } from '@/lib/url';
+import { breadcrumbs, faqPage, softwareApplication } from '@/lib/schema';
+import { alternates, localePath } from '@/lib/i18n';
+import Layout from '@/layouts/Layout.astro';
+import Breadcrumb from '@/components/site/Breadcrumb.astro';
+import FaqBlock from '@/components/site/FaqBlock.astro';
+import Figure from '@/components/site/Figure.astro';
+import GuideLinks from '@/components/site/GuideLinks.astro';
+import { ProfitToolApp } from '@/components/pnl/ProfitToolApp';
+import flowDiagram from '@/assets/meesho-profit-flow.png';
+
+const locale = 'hi-Latn';
+const path = '/tools/meesho-profit-calculator';
+
+const flowAlt =
+	'Order value se asli profit tak ka flow: Meesho commission, shipping, GST aur TCS/TDS, return aur ads kaat kar Final Settlement Amount tak pahunchta hai; uske baad aapka apna making cost, packaging, rent aur salary ghatti hai.';
+
+const title = 'Meesho Profit Calculator — Payment File Se Asli Profit';
+const description =
+	'Apni Meesho payment file se asli profit nikaalein: settlement, making cost, ads spend aur per-SKU margin. Free, browser mein chalta hai, bina login.';
+
+const capabilities = [
+	{
+		label: 'Asli payout padhta hai',
+		detail:
+			'Meesho ke apne Final Settlement Amount se shuru hota hai, isliye commission, shipping, GST aur TCS/TDS pehle hi kat chuke hote hain.',
+	},
+	{
+		label: 'Har settlement row ginta hai',
+		detail:
+			'Meesho kai orders ko do rows mein todta hai, doosri row ka status khaali hota hai. Woh adjustment rows chhode nahi jaate, jode jaate hain.',
+	},
+	{
+		label: 'Ads spend ghatata hai',
+		detail:
+			'Campaign spend account level ka kharcha hai, isliye use net profit se ghataya jata hai — chupchap ignore nahi kiya jata.',
+	},
+	{
+		label: 'Per-SKU margin',
+		detail:
+			'Making aur packing cost ek baar daal dijiye, phir dikhta hai kaunsa product sach mein kama raha hai aur kaunsa sirf busy rakh raha hai.',
+	},
+	{
+		label: 'RTO aur return',
+		detail:
+			'Aap tay karte hain ki RTO ya return par sach mein kitna nuksan hota hai, taaki profit asliyat dikhaye, best case nahi.',
+	},
+	{
+		label: 'Charts jo leak dikhayein',
+		detail:
+			'Har rupaya kahan gaya, orders ka anjaam kya hua, aur kaunse SKU sabse zyada kamate ya dubate hain.',
+	},
+	{
+		label: 'Costs Excel mein in aur out',
+		detail:
+			'Saare SKU ek spreadsheet mein export karein, Excel mein cost bharein, aur wapas import kar dein — ek-ek karke type karne ki zaroorat nahi.',
+	},
+	{
+		label: 'Privacy by design',
+		detail:
+			'Payment file browser mein hi padhi jati hai. Woh kabhi upload nahi hoti, aur aapke SKU costs aapke device par rehte hain.',
+	},
+];
+
+const deductions = [
+	{
+		name: 'Commission',
+		detail:
+			'Order par Meesho ka hissa. Yeh category aur price slab se badalta hai, isliye ek hi price ke do product par alag-alag lag sakta hai.',
+	},
+	{
+		name: 'Shipping charge',
+		detail:
+			'Parcel ke weight aur doori par lagta hai. Halka saman door bhejne par bhare local order se zyada shipping lag sakti hai.',
+	},
+	{
+		name: 'GST aur TCS/TDS',
+		detail:
+			'Aapke GSTIN aur PAN par jama hone wala tax. Yeh asli paisa hai jo settlement aane se pehle hi kat jata hai.',
+	},
+	{
+		name: 'Return aur RTO charge',
+		detail:
+			'Wapas aane wale parcel par bhi shipping lagti hai — chahe customer ne return kiya ho ya delivery hui hi na ho. Saman wapas milta hai, kabhi-kabhi bechne layak nahi.',
+	},
+	{
+		name: 'Ads spend',
+		detail:
+			'Campaign chalate hain to yeh per order nahi, poore account par kat-ta hai — isiliye product list profitable dikhne ke baawajood mahina loss mein ja sakta hai.',
+	},
+	{
+		name: 'Compensation aur claims',
+		detail:
+			'Kho gaye ya toote parcel ke badle Meesho jo wapas deta hai. Yeh alag rows mein aata hai, aur calculator ise ginta hai.',
+	},
+];
+
+const notCounted = [
+	'Har item banane ya khareedne ka cost',
+	'Packing material aur tape',
+	'Label, ink aur printer paper',
+	'Rent, bijli aur internet',
+	'Salary — apni bhi',
+	'Return aakar bechne layak na bacha maal',
+];
+
+const pageFaqs = [
+	{
+		q: 'Meesho payment order value se kam kyun aaya?',
+		a: 'Kyunki settlement woh hai jo commission, shipping, GST aur TCS/TDS, return ya RTO charge aur us period ke ads spend ke baad bachta hai. Meesho aapko bas itna batata hai ki usne kitna diya, aur wahin ruk jata hai. Calculator usi Final Settlement Amount se shuru karta hai aur phir woh sab ghatata hai jo Meesho ko pata hi nahi — aapka making cost, packing aur overheads. Wahi number batata hai ki mahina chala ya nahi.',
+	},
+	{
+		q: 'Kaunsi file upload karni hai?',
+		a: 'Supplier Panel mein <strong>Payments → Download → Payments to Date</strong> par jaayein aur apni dates chunein. Us menu ke paanch downloads mein sirf yahi ek settlement rows leke aata hai — GST Report, Tax Invoice, Supplier Tax Invoice aur Outstanding Payments mein woh rows hoti hi nahi, isliye woh yahan nahi padhi ja sakti.',
+	},
+	{
+		q: 'Kya commission aur shipping isme pehle se shaamil hai?',
+		a: 'Haan. Yeh Meesho ka Final Settlement Amount padhta hai, jisme commission, shipping, GST aur TCS/TDS pehle hi kat chuke hote hain — isliye woh dobara nahi ginte. Aap uske upar sirf woh daalte hain jo Meesho jaan hi nahi sakta: aapke apne kharche.',
+	},
+	{
+		q: 'Kya har SKU ka cost daalna zaroori hai?',
+		a: 'Zaroori nahi, lekin profit utna hi sach hoga jitne sach cost aap daalenge. Jis SKU ka cost nahi daala, woh zero maana jata hai aur result achha dikhne lagta hai. Aap saare SKU Excel mein export karke column bhar sakte hain aur wapas import kar sakte hain.',
+	},
+	{
+		q: 'Mere costs kahan save hote hain? Kya woh kho jayenge?',
+		a: 'Woh aapke apne browser mein, usi device par rehte hain aur kahin bheje nahi jaate — isliye reload ke baad bhi milte hain, par aapke phone par nahi pahunchte. Browser yeh storage clear kar sakta hai, aur Safari to lagbhag saat din baad khud hata deta hai. Numbers zaroori hain to Excel export hi asli backup hai.',
+	},
+	{
+		q: 'Meesho panel ka figure aur yeh profit alag kyun hai?',
+		a: 'Panel revenue aur settlement batata hai. Use pata hi nahi ki aapka product banne mein kitna laga, packing par kitna gaya, ya rent kitna hai — isliye woh profit bata hi nahi sakta, sirf payout bata sakta hai. Yeh do alag cheezein hain, aur inke beech ka fark hi is tool ke hone ki wajah hai.',
+	},
+	{
+		q: 'Kya yeh accounting ya GST filing tool hai?',
+		a: 'Nahi. Yeh kaam ka ek sahara hai — yeh tay karne ke liye ki kya stock karein aur kis cheez ka price badlein. Yeh accounting ya tax advice nahi hai, aur aapke CA ki books ki jagah nahi le sakta.',
+	},
+];
+
+const schema = [
+	faqPage(pageFaqs),
+	softwareApplication(Astro.site, {
+		name: 'Meesho Profit Calculator',
+		path: localePath(path, locale),
+		description,
+		category: 'FinanceApplication',
+		locale,
+		images: [{ image: flowDiagram, caption: flowAlt }],
+	}),
+	breadcrumbs(
+		Astro.site,
+		[
+			{ name: 'Tools', path: localePath('/tools', locale) },
+			{ name: 'Meesho Profit Calculator', path: localePath(path, locale) },
+		],
+		locale,
+	),
+];
+---
+
+<Layout
+	title={title}
+	description={description}
+	schema={schema}
+	locale={locale}
+	alternates={alternates({ en: path, 'hi-Latn': path })}
+	ogImage="/og/hi-meesho-profit-calculator.png"
+>
+	<section class="mx-auto max-w-3xl px-4 pt-10 sm:px-6 sm:pt-12">
+		<Breadcrumb locale={locale} trail={[{ name: 'Tools', path: '/tools' }, { name: 'Meesho Profit Calculator', path }]} />
+
+		<h1 data-reveal class="mt-6 text-center text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+			Meesho Profit Calculator
+		</h1>
+		<p data-reveal class="mx-auto mt-3 max-w-xl text-center text-base text-pretty text-muted-foreground sm:mt-4 sm:text-lg">
+			Payment file se hi aapka asli profit — settlement, costs, ads aur per-SKU margin.
+		</p>
+		<ul class="mt-4 flex flex-wrap justify-center gap-2 text-xs font-medium text-muted-foreground" aria-label="Highlights">
+			<li class="rounded-full bg-muted px-3 py-1">100% free</li>
+			<li class="rounded-full bg-muted px-3 py-1">Login nahi</li>
+			<li class="rounded-full bg-muted px-3 py-1">File upload nahi hoti</li>
+		</ul>
+	</section>
+
+	{/* Wider than the prose around it, same as the English page: once a file is loaded this is a
+	    data tool, and a 3xl column crushes the cost table. */}
+	<section class="mx-auto mt-8 max-w-6xl px-4 pb-4 sm:mt-10 sm:px-6">
+		<ProfitToolApp client:load />
+	</section>
+
+	<section class="mx-auto max-w-4xl px-4 py-14 sm:px-6">
+		<h2 class="text-center text-2xl font-semibold tracking-tight">Yeh nikaalta kya hai</h2>
+		<dl class="mt-8 grid gap-5 sm:grid-cols-2">
+			{
+				capabilities.map((item) => (
+					<div data-reveal class="rounded-2xl border border-border bg-card p-5">
+						<dt class="font-semibold">{item.label}</dt>
+						<dd class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{item.detail}</dd>
+					</div>
+				))
+			}
+		</dl>
+	</section>
+
+	<section class="mx-auto max-w-3xl px-4 pb-16 sm:px-6">
+		<div class="rounded-2xl border border-border bg-muted/40 p-6">
+			<h2 class="text-lg font-semibold">Kaunsi file upload karni hai?</h2>
+			<p class="mt-2 text-sm leading-relaxed text-muted-foreground">
+				Meesho supplier panel mein <strong class="text-foreground">Payments</strong> kholein, <strong
+					class="text-foreground">Download</strong
+				> dabayein aur <strong class="text-foreground">Payments to Date</strong> chunein, phir apna period
+				select karein. File <code class="rounded bg-background px-1 py-0.5 text-xs">*_PAYMENT_FILE_*.xlsx</code
+				> naam se aati hai, aur calculator ko bas wahi ek file chahiye.
+			</p>
+			<p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+				Usi Download button par GST Report, Tax Invoice, Supplier Tax Invoice aur Outstanding Payments
+				bhi milte hain. Unmein per-order settlement rows hoti hi nahi, isliye calculator unhe padh nahi
+				sakta — aapko <em>Payments to Date</em> hi chahiye.
+			</p>
+			<p class="mt-3 text-sm leading-relaxed text-muted-foreground">
+				File ke naam wali dates payment ki dates hain, order ki nahi — isliye ek file mein aksar
+				hafton purane orders bhi aate hain. Lamba period dekhna ho to ek se zyada payment file ek saath
+				daal sakte hain.
+			</p>
+			<p class="mt-4 text-sm leading-relaxed text-muted-foreground">
+				Abhi labels sort kiye hain? Usi batch ki packing wali side <a
+					href={url(localePath('/tools/meesho-label-cropper', locale))}
+					class="font-medium text-primary underline-offset-4 hover:underline">Meesho label cropper</a
+				> sambhalta hai.
+			</p>
+		</div>
+	</section>
+
+	<section class="mx-auto max-w-3xl px-4 pb-16 sm:px-6">
+		<h2 data-reveal class="text-center text-2xl font-semibold tracking-tight">
+			Paisa aane se pehle Meesho kya-kya kaat-ta hai
+		</h2>
+		<p data-reveal class="mx-auto mt-3 max-w-xl text-center text-sm text-pretty text-muted-foreground">
+			Yeh sab tab tak kat chuke hote hain jab Final Settlement Amount aapke bank tak pahunchta hai —
+			isiliye calculator order value se nahi, usi figure se shuru karta hai.
+		</p>
+		<Figure
+			class="mt-8"
+			src={flowDiagram}
+			alt={flowAlt}
+			caption="Meesho beech wala bar batata hai. Calculator ka kaam us bar aur sabse neeche wale bar ke beech ka fasla hai."
+		/>
+		<dl class="mt-10 space-y-4">
+			{
+				deductions.map((item) => (
+					<div data-reveal class="rounded-xl border border-border bg-card p-5">
+						<dt class="font-semibold">{item.name}</dt>
+						<dd class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{item.detail}</dd>
+					</div>
+				))
+			}
+		</dl>
+
+		<div data-reveal class="mt-10 rounded-2xl border border-border bg-muted/40 p-6">
+			<h3 class="text-lg font-semibold">Aur jo Meesho ko pata hi nahi</h3>
+			<p class="mt-2 text-sm leading-relaxed text-muted-foreground">
+				Meesho bata sakta hai ki usne kitna diya. Profit nahi bata sakta, kyunki inmein se use kuch
+				bhi dikhta hi nahi — aur yahi gap calculator aapse bharwata hai:
+			</p>
+			<ul class="mt-4 grid gap-2 sm:grid-cols-2">
+				{
+					notCounted.map((item) => (
+						<li class="flex items-start gap-2 text-sm text-muted-foreground">
+							<svg
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.5"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								class="mt-0.5 h-4 w-4 shrink-0 text-primary"
+								aria-hidden="true"
+							>
+								<path d="M20 6 9 17l-5-5" />
+							</svg>
+							{item}
+						</li>
+					))
+				}
+			</ul>
+		</div>
+	</section>
+
+	<section class="mx-auto max-w-3xl px-4 pb-16 sm:px-6">
+		<GuideLinks
+			locale={locale}
+			tool="meesho-profit-calculator"
+			heading="Payment aur margin ke guides"
+			intro="Settlement ka figure aata kahan se hai, aur usmein kya chhoot jata hai."
+		/>
+	</section>
+
+	<section class="mx-auto max-w-3xl px-4 pb-20 sm:px-6">
+		<FaqBlock
+			faqs={pageFaqs}
+			heading="Meesho profit ke aam sawal"
+			intro="Payment, settlement aur margin par sellers sabse zyada yahi puchte hain."
+		/>
+	</section>
+</Layout>

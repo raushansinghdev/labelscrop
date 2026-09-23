@@ -1,8 +1,18 @@
 ---
 import { url } from '@/lib/url';
-import { SITE } from '@/lib/site';
+import { breadcrumbs, faqPage, softwareApplication } from '@/lib/schema';
+import { alternates } from '@/lib/i18n';
 import Layout from '@/layouts/Layout.astro';
+import Breadcrumb from '@/components/site/Breadcrumb.astro';
+import FaqBlock from '@/components/site/FaqBlock.astro';
+import Figure from '@/components/site/Figure.astro';
+import GuideLinks from '@/components/site/GuideLinks.astro';
 import { ProfitToolApp } from '@/components/pnl/ProfitToolApp';
+import flowDiagram from '@/assets/meesho-profit-flow.png';
+
+/* One description, used as the image's `alt` and as its caption in the ImageObject schema. */
+const flowAlt =
+	'A flow from order value down to real profit: Meesho subtracts commission, shipping, GST and TCS/TDS, returns and ads to reach the Final Settlement Amount; your own costs of goods, packaging, rent and salaries come off after that.';
 
 const title = 'Meesho Profit Calculator — Real P&L From Your Payment File';
 const description =
@@ -43,27 +53,123 @@ const capabilities = [
 	},
 ];
 
-const schema = {
-	'@context': 'https://schema.org',
-	'@type': 'SoftwareApplication',
-	name: 'Meesho Profit Calculator',
-	applicationCategory: 'FinanceApplication',
-	operatingSystem: 'Any (runs in browser)',
-	url: new URL(url('/tools/meesho-profit-calculator'), Astro.site).toString(),
-	description,
-	offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR' },
-	isPartOf: {
-		'@type': 'WebSite',
-		name: SITE.name,
-		url: new URL(url('/'), Astro.site).toString(),
+/*
+ * Static prose below the tool — the same problem this page's sibling had: the substance lived in
+ * a `client:load` island, so the page ranked on a headline and a feature list.
+ *
+ * These sections answer the questions that bring sellers here in the first place ("why is my
+ * Meesho payment less than I expected") rather than describing the software, which is what the
+ * `capabilities` list above already does.
+ */
+const deductions = [
+	{
+		name: 'Commission',
+		detail:
+			'Meesho\'s cut of the order. It varies by category and by price slab, so two products at the same price can be charged differently.',
 	},
-};
+	{
+		name: 'Shipping charge',
+		detail:
+			'Charged on the parcel\'s weight and the distance it travels. A light item sent across the country can cost more to ship than a heavier local order.',
+	},
+	{
+		name: 'GST and TCS/TDS',
+		detail:
+			'Tax collected and deposited against your GSTIN and PAN. It is real money out of the settlement, and it is already subtracted before the amount reaches you.',
+	},
+	{
+		name: 'Return and RTO charges',
+		detail:
+			'A shipping charge is levied on parcels that come back, whether the customer returned it or it was never delivered. You also get the stock back, sometimes unsellable.',
+	},
+	{
+		name: 'Ads spend',
+		detail:
+			'If you run campaigns, this is deducted at the account level rather than per order — which is why a profitable-looking product list can still add up to a loss.',
+	},
+	{
+		name: 'Compensation and claims',
+		detail:
+			'Amounts Meesho adds back for lost or damaged parcels. These land as separate rows, and the calculator counts them.',
+	},
+];
+
+const notCounted = [
+	'What each item cost you to make or buy',
+	'Packaging material and tape',
+	'Labels, ink, and printer paper',
+	'Rent, electricity and internet',
+	'Salaries, including your own',
+	'Stock written off after a return comes back unsellable',
+];
+
+const pageFaqs = [
+	{
+		q: 'Why is my Meesho payment less than the order value?',
+		a: 'Because the settlement is what is left after commission, shipping, GST and TCS/TDS, plus any return or RTO charges and ads spend for the period. Meesho shows you what it paid and stops there. The calculator starts from that same Final Settlement Amount and then subtracts what Meesho never knew about — your product cost, packaging, and overheads — which is the number that tells you whether the month worked.',
+	},
+	{
+		q: 'Which file do I upload?',
+		a: `In the Supplier Panel go to <strong>Payments → Download → Payments to Date</strong> and choose your date range. That is the only one of the five downloads on that menu that carries settlement rows — GST Report, Tax Invoice, Supplier Tax Invoice and Outstanding Payments all parse to nothing here. The <a href="${url('/how-it-works')}">walkthrough</a> shows the exact path.`,
+	},
+	{
+		q: 'Does it already include commission and shipping?',
+		a: 'Yes. It reads Meesho\'s Final Settlement Amount, which is net of commission, shipping, GST and TCS/TDS — so those are never double-counted. What you add on top is only what Meesho cannot know: your own costs.',
+	},
+	{
+		q: 'Do I have to enter a cost for every SKU?',
+		a: 'No, but the profit figure is only as honest as the costs behind it. SKUs with no cost entered are counted at zero, which flatters the result. You can export every SKU to Excel, fill the column in, and import it back rather than typing them one at a time.',
+	},
+	{
+		q: 'Where are my costs saved? Will I lose them?',
+		a: 'They are stored in your own browser, on that device, and never sent anywhere — so they survive a reload but do not follow you to your phone. Browsers can clear this storage, and Safari expires script-written storage after about seven days regardless. Use the Excel export if the numbers matter to you; it is the only real backup.',
+	},
+	{
+		q: 'Why does my profit differ from the figure in the Meesho panel?',
+		a: 'The panel reports revenue and settlement. It has no idea what your products cost, what you spend on packaging, or what your rent is, so it cannot report profit — only payout. Those are different numbers, and the gap between them is the entire reason this tool exists.',
+	},
+	{
+		q: 'Is this an accounting or GST filing tool?',
+		a: 'No. It is a working aid for deciding what to stock and what to price differently. It is not accounting or tax advice, and the figures are not a substitute for your CA\'s books.',
+	},
+];
+
+const schema = [
+	faqPage(pageFaqs),
+	softwareApplication(Astro.site, {
+		name: 'Meesho Profit Calculator',
+		path: '/tools/meesho-profit-calculator',
+		description,
+		category: 'FinanceApplication',
+		images: [{ image: flowDiagram, caption: flowAlt }],
+	}),
+	breadcrumbs(Astro.site, [
+		{ name: 'Tools', path: '/tools' },
+		{ name: 'Meesho Profit Calculator', path: '/tools/meesho-profit-calculator' },
+	]),
+];
 ---
 
-<Layout title={title} description={description} schema={schema}>
-	<section class="mx-auto max-w-3xl px-4 pt-10 text-center sm:px-6 sm:pt-12">
-		<h1 data-reveal class="text-3xl font-bold tracking-tight text-balance sm:text-4xl">Meesho Profit Calculator</h1>
-		<p data-reveal class="mx-auto mt-3 max-w-xl text-base text-pretty text-muted-foreground sm:mt-4 sm:text-lg">
+<Layout
+	title={title}
+	description={description}
+	schema={schema}
+	alternates={alternates({ en: '/tools/meesho-profit-calculator', 'hi-Latn': '/tools/meesho-profit-calculator' })}
+	ogImage="/og/meesho-profit-calculator.png"
+>
+	<section class="mx-auto max-w-3xl px-4 pt-10 sm:px-6 sm:pt-12">
+		{/* Three levels, matching the JSON-LD — see the label cropper page for why. */}
+		<Breadcrumb
+			trail={[
+				{ name: 'Tools', path: '/tools' },
+				{ name: 'Meesho Profit Calculator', path: '/tools/meesho-profit-calculator' },
+			]}
+		/>
+
+		<h1 data-reveal class="mt-6 text-center text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+			Meesho Profit Calculator
+		</h1>
+		<p data-reveal class="mx-auto mt-3 max-w-xl text-center text-base text-pretty text-muted-foreground sm:mt-4 sm:text-lg">
 			Your real profit from the payment file itself — settlement, costs, ads and per-SKU margin.
 		</p>
 		{/* Same three chips as the label cropper. Two tools on one site should answer "what will
@@ -122,5 +228,78 @@ const schema = {
 				> handles the packing side of the same batch.
 			</p>
 		</div>
+	</section>
+
+	<section class="mx-auto max-w-3xl px-4 pb-16 sm:px-6">
+		<h2 data-reveal class="text-center text-2xl font-semibold tracking-tight">
+			What Meesho takes before you're paid
+		</h2>
+		<p data-reveal class="mx-auto mt-3 max-w-xl text-center text-sm text-pretty text-muted-foreground">
+			All of these are already subtracted by the time the Final Settlement Amount reaches your
+			bank, which is why the calculator starts from that figure rather than from order value.
+		</p>
+		{/* The whole argument of this page in one picture: two sets of deductions, only one of which
+		    Meesho knows about. It sits above the detail list because it is the summary of it. */}
+		<Figure
+			class="mt-8"
+			src={flowDiagram}
+			alt={flowAlt}
+			caption="Meesho reports the middle bar. The calculator's job is the distance between it and the bottom one."
+		/>
+		<dl class="mt-10 space-y-4">
+			{
+				deductions.map((item) => (
+					<div data-reveal class="rounded-xl border border-border bg-card p-5">
+						<dt class="font-semibold">{item.name}</dt>
+						<dd class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{item.detail}</dd>
+					</div>
+				))
+			}
+		</dl>
+
+		<div data-reveal class="mt-10 rounded-2xl border border-border bg-muted/40 p-6">
+			<h3 class="text-lg font-semibold">And what it doesn't know about</h3>
+			<p class="mt-2 text-sm leading-relaxed text-muted-foreground">
+				Meesho can report what it paid you. It cannot report profit, because none of this is
+				visible to it — and this is exactly the gap the calculator asks you to fill in:
+			</p>
+			<ul class="mt-4 grid gap-2 sm:grid-cols-2">
+				{
+					notCounted.map((item) => (
+						<li class="flex items-start gap-2 text-sm text-muted-foreground">
+							<svg
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.5"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								class="mt-0.5 h-4 w-4 shrink-0 text-primary"
+								aria-hidden="true"
+							>
+								<path d="M20 6 9 17l-5-5" />
+							</svg>
+							{item}
+						</li>
+					))
+				}
+			</ul>
+		</div>
+	</section>
+
+	<section class="mx-auto max-w-3xl px-4 pb-16 sm:px-6">
+		<GuideLinks
+			tool="meesho-profit-calculator"
+			heading="Guides on payments and margin"
+			intro="Where the settlement figure comes from, and what it leaves out."
+		/>
+	</section>
+
+	<section class="mx-auto max-w-3xl px-4 pb-20 sm:px-6">
+		<FaqBlock
+			faqs={pageFaqs}
+			heading="Meesho profit, answered"
+			intro="What sellers ask most about payments, settlements and margin."
+		/>
 	</section>
 </Layout>

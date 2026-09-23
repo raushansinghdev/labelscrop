@@ -1,11 +1,24 @@
 ---
 import { url } from '@/lib/url';
 import { SITE } from '@/lib/site';
+import { organization, website } from '@/lib/schema';
+import { LOCALES, type Alternate } from '@/lib/i18n';
 import { ClientRouter } from 'astro:transitions';
 import type { TransitionDirectionalAnimations } from 'astro';
 import Header from '@/components/site/Header.astro';
 import Footer from '@/components/site/Footer.astro';
+import LangSwitch from '@/components/site/LangSwitch.astro';
 import '@/styles/global.css';
+/*
+ * The Latin subset's URL, imported so the preload below points at the same hashed asset the
+ * stylesheet requests — hard-coding the filename would break on the next content hash.
+ *
+ * Only this one subset is preloaded. The package also ships Cyrillic, Cyrillic-ext, Latin-ext and
+ * Vietnamese subsets, but `unicode-range` means a browser never downloads those for English or
+ * romanized Hindi, and preloading a file the page will not use is a wasted request competing with
+ * the one it will.
+ */
+import geistLatin from '@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url';
 
 interface Props {
 	title: string;
@@ -13,9 +26,36 @@ interface Props {
 	/** One or more JSON-LD objects to emit as <script type="application/ld+json"> */
 	schema?: Record<string, unknown> | Record<string, unknown>[];
 	noindex?: boolean;
+	/**
+	 * Root-absolute path to this page's share image. Defaults to the site-wide card.
+	 * Per-page images matter most for the two tool pages, which are what actually gets
+	 * pasted into WhatsApp seller groups.
+	 */
+	ogImage?: string;
+	/**
+	 * BCP-47 tag for `<html lang>`. Defaults to `en-IN` rather than bare `en`, to agree with what
+	 * every piece of structured data on the site already declares — and because the region is
+	 * true: this is written for sellers in India. `hi-Latn` is the tag for romanized Hindi pages;
+	 * the script subtag is what distinguishes "meesho label crop kaise kare" written in Roman
+	 * letters from both English and Devanagari Hindi.
+	 */
+	locale?: string;
+	/**
+	 * This page's translations, from `alternates()` in `lib/i18n.ts`. Empty when the page exists
+	 * in one language only, which is most of them.
+	 */
+	alternates?: Alternate[];
 }
 
-const { title, description, schema, noindex = false } = Astro.props;
+const {
+	title,
+	description,
+	schema,
+	noindex = false,
+	ogImage = '/og/default.png',
+	locale = 'en-IN',
+	alternates = [],
+} = Astro.props;
 
 // The GitHub Pages deploy is a staging mirror of the production site. A project page can't
 // serve /robots.txt (that lives at the user-site root), so a meta tag is the only way to keep
@@ -40,30 +80,86 @@ const pageSwap: TransitionDirectionalAnimations = {
 };
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
-const schemaList = schema ? (Array.isArray(schema) ? schema : [schema]) : [];
+const ogImageURL = new URL(url(ogImage), Astro.site);
+
+/*
+ * `og:locale` wants an underscore form (`hi_IN`), `hreflang` wants the BCP-47 tag. Looking the
+ * page's locale up here keeps both spellings in `lib/i18n.ts` rather than string-mangling the
+ * tag at the point of use, which is how `hi-Latn` previously became the invalid `hi_Latn`.
+ */
+const localeMeta = (Object.values(LOCALES) as { tag: string; ogLocale: string }[]).find(
+	(entry) => entry.tag === locale,
+);
+const ogLocale = localeMeta?.ogLocale ?? 'en_IN';
+
+/*
+ * Site-wide identity first, then whatever the page adds.
+ *
+ * Organization and WebSite used to live on the home page alone, which left every other URL —
+ * including both tool pages, the ones that actually rank — with no declared publisher. Emitting
+ * them everywhere costs a few hundred bytes of head and gives every page something to hang its
+ * `publisher` / `isPartOf` reference on. The `@id`s in `lib/schema.ts` keep it one entity rather
+ * than one copy per page.
+ */
+const pageSchema = schema ? (Array.isArray(schema) ? schema : [schema]) : [];
+const schemaList = [organization(Astro.site), website(Astro.site), ...pageSchema];
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={locale}>
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<meta name="theme-color" content="#ffffff" />
+		<!-- The SVG is what modern browsers pick. The .ico is the fallback, and it is declared
+		     rather than left to the browser's automatic probe of `/favicon.ico`: on the GitHub
+		     Pages mirror the site is served from `/labelscrop/`, so a root probe would miss it. -->
 		<link rel="icon" type="image/svg+xml" href={url('/favicon.svg')} />
+		<link rel="icon" href={url('/favicon.ico')} sizes="48x48" />
+		<link rel="apple-touch-icon" href={url('/apple-touch-icon.png')} />
+		<link rel="manifest" href={url('/site.webmanifest')} />
+		<!-- The font is self-hosted and declared `font-display: swap`, so text is never invisible —
+		     but without this the request does not start until the stylesheet has been parsed, and
+		     the fallback face is shown for that much longer. `crossorigin` is required on font
+		     preloads even same-origin; without it the browser fetches the file a second time. -->
+		<link rel="preload" as="font" type="font/woff2" href={geistLatin} crossorigin />
+
 		<link rel="canonical" href={canonicalURL} />
+
+		<!-- Reciprocal language annotations. Each locale's list includes itself and an x-default;
+		     a non-reciprocal set is ignored outright, so the self-reference is load-bearing. -->
+		{alternates.map((alt) => (
+			<link rel="alternate" hreflang={alt.hreflang} href={new URL(url(alt.path), Astro.site)} />
+		))}
+
+		<!-- Both tools are heavy client-side work on a phone, and "add to home screen" is a
+		     realistic way a seller returns to them daily. The manifest above is what makes that
+		     offer appear at all. -->
+		<meta name="apple-mobile-web-app-title" content={SITE.name} />
 		{(noindex || isStagingMirror) && <meta name="robots" content="noindex, nofollow" />}
 
 		<title>{title}</title>
 		<meta name="description" content={description} />
 
+		<!-- The share card. WhatsApp is the main sharing channel for Indian sellers and it reads
+		     the OG tags, so `og:image` is not a nicety here — without it every link forwarded
+		     into a seller group renders as a grey text stub. `summary_large_image` is what turns
+		     it into a full-width card rather than a thumbnail. Dimensions are declared so the
+		     card reserves the right space before the image finishes loading. -->
 		<meta property="og:type" content="website" />
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
 		<meta property="og:url" content={canonicalURL} />
 		<meta property="og:site_name" content={SITE.name} />
-		<meta name="twitter:card" content="summary" />
+		<meta property="og:locale" content={ogLocale} />
+		<meta property="og:image" content={ogImageURL} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content={title} />
+		<meta name="twitter:card" content="summary_large_image" />
 		<meta name="twitter:title" content={title} />
 		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={ogImageURL} />
 
 		<meta name="generator" content={Astro.generator} />
 
@@ -109,6 +205,9 @@ const schemaList = schema ? (Array.isArray(schema) ? schema : [schema]) : [];
 		<main id="main-content" class="flex-1" transition:animate={pageSwap}>
 			<slot />
 		</main>
+		{/* Above the footer, not inside it: the footer is `transition:persist`ed, so anything
+		    page-specific placed in it would keep the previous page's links after a navigation. */}
+		<LangSwitch alternates={alternates} current={locale} />
 		<Footer />
 
 		<script>

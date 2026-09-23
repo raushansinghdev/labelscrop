@@ -1,7 +1,25 @@
 ---
 import { url } from '@/lib/url';
+import { breadcrumbs, faqPage, softwareApplication } from '@/lib/schema';
+import { alternates } from '@/lib/i18n';
 import Layout from '@/layouts/Layout.astro';
+import Breadcrumb from '@/components/site/Breadcrumb.astro';
+import FaqBlock from '@/components/site/FaqBlock.astro';
+import Figure from '@/components/site/Figure.astro';
+import GuideLinks from '@/components/site/GuideLinks.astro';
 import { MeeshoToolApp } from '@/components/tool/MeeshoToolApp';
+import cropDiagram from '@/assets/meesho-label-crop-before-after.png';
+import sizesDiagram from '@/assets/meesho-label-printer-sizes.png';
+
+/*
+ * Written once and used twice each: as the image's `alt` and as the `caption` in the ImageObject
+ * schema. Keeping them in one place is what stops the accessible description and the structured
+ * data from describing two different pictures.
+ */
+const cropAlt =
+	'A Meesho A4 page with the shipping label on top and the tax invoice below, marked with a cut line at the TAX INVOICE heading, beside the cropped label on its own.';
+const sizesAlt =
+	'Five print layouts drawn to scale: a 4 by 6 inch thermal label, a 3 by 5 inch thermal label, and A4 sheets holding 1, 2 or 4 labels.';
 
 const title = 'Meesho Label Cropper — Crop, Resize & Sort Labels Free';
 const description =
@@ -38,20 +56,140 @@ const helpLinks = [
 	},
 ];
 
-const schema = {
-	'@context': 'https://schema.org',
-	'@type': 'SoftwareApplication',
-	name: 'Meesho Label Cropper',
-	applicationCategory: 'BusinessApplication',
-	operatingSystem: 'Any (runs in browser)',
-	offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR' },
-	description,
-};
+/*
+ * Static prose below the tool.
+ *
+ * This page used to carry about 145 crawlable words: everything persuasive lived inside the
+ * `client:load` island, which a crawler weights far more weakly than server-rendered markup. The
+ * sections below are the vocabulary sellers actually search with — courier names, printer sizes,
+ * what an AWB is — none of which appeared anywhere in the rendered HTML before, despite all of it
+ * being knowledge the codebase already has in `src/lib/platforms/meesho/`.
+ *
+ * Every claim here is checked against that code. The courier list is illustrative, not a
+ * whitelist: `extractCourier` anchors on the position of the "Pickup" badge rather than matching
+ * names, so an unfamiliar courier is handled like any other.
+ */
+const couriers = [
+	{ name: 'Valmo', note: "Meesho's own logistics arm, now on a large share of orders." },
+	{ name: 'Delhivery', note: 'The format the boundary detection was first confirmed against.' },
+	{ name: 'Shadowfax', note: 'Same label structure, different header art.' },
+	{ name: 'Xpressbees', note: 'Handled by the same text-anchored crop.' },
+	{ name: 'Ekart', note: 'Recognised without any courier-specific rule.' },
+	{ name: 'Ecom Express', note: 'And any other courier Meesho assigns you.' },
+];
+
+const printerSizes = [
+	{
+		size: '4 x 6 inch',
+		who: 'The common thermal size',
+		detail:
+			'The default for most Indian label printers — TSC, TVS, Rugtek, Honeywell and the rest. Output is a PDF with a true 4x6 inch page, so the printer prints it at 100% with no scaling and no margin.',
+	},
+	{
+		size: '3 x 5 inch',
+		who: 'Smaller thermal rolls',
+		detail:
+			'Same idea at a smaller page size. Pick this only if your roll is genuinely 3x5 — printing a 4x6 label on a 3x5 roll crops it, rather than shrinking it.',
+	},
+	{
+		size: 'A4, 1 / 2 / 4 per sheet',
+		who: 'No thermal printer yet',
+		detail:
+			'Packs cropped labels onto an ordinary A4 sheet with a quarter-inch margin, rotating each label to fill its cell. Four per sheet is the usual choice: cut once across and once down.',
+	},
+];
+
+const labelParts = [
+	{
+		term: 'AWB number',
+		detail:
+			'The 12–20 digit tracking number printed above the barcode. It is what the courier scans, and what your customer types into a tracking page.',
+	},
+	{
+		term: 'SKU',
+		detail:
+			'Your own product code. The cropper reads it from the product table and can sort the whole batch by it, so identical items come off the printer together.',
+	},
+	{
+		term: 'Pickup hub',
+		detail:
+			'The courier branch collecting the parcel, printed under the courier name. Sorting by hub groups everything going out on the same van.',
+	},
+	{
+		term: 'Tax invoice',
+		detail:
+			'The GST invoice Meesho prints on the same page, below the label. It is not part of the shipping label and is what the cropper removes — though you can keep it, or save all invoices into a separate PDF for your records.',
+	},
+];
+
+const pageFaqs = [
+	{
+		q: 'Does it work with Valmo labels?',
+		a: 'Yes, and with every other courier Meesho uses. The tool finds the cut line by looking for the <strong>TAX INVOICE</strong> heading in the page text rather than slicing at a fixed height, and it reads the courier name from its position on the label rather than from a list of known names. A courier we have never seen is handled the same way as one we have.',
+	},
+	{
+		q: 'Will the cropped label print at the right size on my thermal printer?',
+		a: 'Yes. The output PDF has a real 4x6 inch (or 3x5 inch) page size, not an A4 page with a small label in the corner. Print it at 100% scale with "fit to page" turned <em>off</em> and it fills the roll exactly. If labels come out small with white edges, that is almost always a scaling setting in the print dialog rather than the file.',
+	},
+	{
+		q: 'Can I print Meesho labels without a thermal printer?',
+		a: 'Yes — choose the A4 option and pick 1, 2, or 4 labels per sheet. Four per sheet on ordinary paper is what most sellers start with before buying a label printer. Stick them on with tape and cut along the gaps.',
+	},
+	{
+		q: 'How many labels can I crop at once?',
+		a: 'Batches of a few thousand pages work, and you can add several PDFs at once if you export in parts or run more than one Meesho account. Files are processed one at a time and released as they finish, so the limit is closer to your device\'s memory than to any cap we set. Very large batches are noticeably slower on a phone than on a laptop.',
+	},
+	{
+		q: 'Does the tool remove the tax invoice permanently?',
+		a: 'It never touches your original file — the download is a new PDF. You can also keep the invoice attached, or save every invoice into a second PDF, which is worth doing if you file them for GST. Either way the original stays exactly as Meesho gave it to you.',
+	},
+	{
+		q: 'Is it safe to upload my customer addresses here?',
+		// Links inside answer markup must go through `url()` like any other link, or they break
+		// on the GitHub Pages mirror, which is served from a sub-path.
+		a: `Nothing is uploaded. The PDF is opened and rewritten by JavaScript running inside your own browser, and there is no server that could receive it — which is why the tool keeps working with your Wi-Fi off. See the <a href="${url('/privacy-policy')}">privacy policy</a> for what our ad and analytics providers do and do not see.`,
+	},
+];
+
+const schema = [
+	softwareApplication(Astro.site, {
+		name: 'Meesho Label Cropper',
+		path: '/tools/meesho-label-cropper',
+		description,
+		images: [
+			{ image: cropDiagram, caption: cropAlt },
+			{ image: sizesDiagram, caption: sizesAlt },
+		],
+	}),
+	faqPage(pageFaqs),
+	// Three levels now that /tools exists. It was two for a long time because a middle crumb
+	// needs somewhere real to point, and a crumb to a URL that does not exist is a validation
+	// error rather than a shortcut.
+	breadcrumbs(Astro.site, [
+		{ name: 'Tools', path: '/tools' },
+		{ name: 'Meesho Label Cropper', path: '/tools/meesho-label-cropper' },
+	]),
+];
 ---
 
-<Layout title={title} description={description} schema={schema}>
+<Layout
+	title={title}
+	description={description}
+	schema={schema}
+	alternates={alternates({ en: '/tools/meesho-label-cropper', 'hi-Latn': '/tools/meesho-label-cropper' })}
+	ogImage="/og/meesho-label-cropper.png"
+>
 	<section class="mx-auto max-w-5xl px-4 pt-8 pb-16 sm:px-6 sm:pt-14 sm:pb-20">
-		<div class="mx-auto max-w-2xl text-center">
+		{/* Same three levels as the JSON-LD above, built from the same shape so the visible trail
+		    and the structured data cannot disagree. */}
+		<Breadcrumb
+			trail={[
+				{ name: 'Tools', path: '/tools' },
+				{ name: 'Meesho Label Cropper', path: '/tools/meesho-label-cropper' },
+			]}
+		/>
+
+		<div class="mx-auto mt-6 max-w-2xl text-center">
 			<h1 class="text-3xl font-bold tracking-tight text-balance sm:text-5xl">Meesho Label Cropper</h1>
 			<p class="mx-auto mt-3 max-w-xl text-base text-pretty text-muted-foreground sm:mt-4 sm:text-lg">
 				Crop the invoice, fit labels to your printer, and sort them the way you pack.
@@ -79,6 +217,91 @@ const schema = {
 					</div>
 				))}
 			</dl>
+		</div>
+
+		<div class="mx-auto mt-16 max-w-3xl">
+			<h2 data-reveal class="text-center text-2xl font-semibold tracking-tight">
+				Works with every Meesho courier
+			</h2>
+			<p data-reveal class="mx-auto mt-3 max-w-xl text-center text-sm text-pretty text-muted-foreground">
+				The cut line is found by reading the page text for the <strong class="font-semibold text-foreground">TAX INVOICE</strong>
+				heading, not by slicing at a fixed height. Courier names are read from where they sit on
+				the label rather than matched against a list — so a courier we have never seen still works.
+			</p>
+			{/* Sits under the paragraph it illustrates rather than at the top of the page: the cut line
+			    and the TAX INVOICE anchor are exactly what the sentence above describes. */}
+			<Figure
+				class="mt-8 max-w-2xl"
+				src={cropDiagram}
+				alt={cropAlt}
+				caption="The cut is found by reading the page for the TAX INVOICE heading, so it lands in the right place even when the label above it is a different height."
+			/>
+			<ul class="mt-10 grid gap-3 sm:grid-cols-2">
+				{couriers.map((courier) => (
+					<li data-reveal class="rounded-xl border border-border bg-card p-4">
+						<span class="font-semibold">{courier.name}</span>
+						<span class="mt-1 block text-sm text-muted-foreground">{courier.note}</span>
+					</li>
+				))}
+			</ul>
+		</div>
+
+		<div class="mx-auto mt-16 max-w-3xl">
+			<h2 data-reveal class="text-center text-2xl font-semibold tracking-tight">
+				Which printer size should you pick?
+			</h2>
+			<Figure
+				class="mt-8"
+				src={sizesDiagram}
+				alt={sizesAlt}
+				caption="All five layouts drawn to the same scale, so the size difference is the real one. A4 sheets keep a quarter-inch margin your printer can grip."
+			/>
+			<div class="mt-10 space-y-4">
+				{printerSizes.map((preset) => (
+					<div data-reveal class="rounded-2xl border border-border bg-card p-5">
+						<div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+							<h3 class="text-lg font-semibold">{preset.size}</h3>
+							<span class="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+								{preset.who}
+							</span>
+						</div>
+						<p class="mt-2 text-sm leading-relaxed text-muted-foreground">{preset.detail}</p>
+					</div>
+				))}
+			</div>
+		</div>
+
+		<div class="mx-auto mt-16 max-w-3xl">
+			<h2 data-reveal class="text-center text-2xl font-semibold tracking-tight">
+				What's on a Meesho shipping label
+			</h2>
+			<p data-reveal class="mx-auto mt-3 max-w-xl text-center text-sm text-pretty text-muted-foreground">
+				Worth knowing, because these are the fields the cropper can sort and stamp by.
+			</p>
+			<dl class="mt-8 space-y-4">
+				{labelParts.map((part) => (
+					<div data-reveal class="rounded-xl border border-border bg-card p-5">
+						<dt class="font-semibold">{part.term}</dt>
+						<dd class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{part.detail}</dd>
+					</div>
+				))}
+			</dl>
+		</div>
+
+		<div class="mt-16">
+			<GuideLinks
+				tool="meesho-label-cropper"
+				heading="Guides for printing and packing"
+				intro="Longer walkthroughs of the parts this page only summarises."
+			/>
+		</div>
+
+		<div class="mt-16">
+			<FaqBlock
+				faqs={pageFaqs}
+				heading="Meesho label cropping, answered"
+				intro="The questions sellers ask most about this tool."
+			/>
 		</div>
 
 		<div data-reveal class="mx-auto mt-16 max-w-3xl">

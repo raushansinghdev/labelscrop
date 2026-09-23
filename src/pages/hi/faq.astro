@@ -1,0 +1,195 @@
+---
+/**
+ * The Hinglish FAQ.
+ *
+ * Deliberately shorter than the English page, which carries twenty questions across three groups.
+ * That page is a reference; this one is the set of questions a Hinglish-speaking seller actually
+ * arrives with, and padding it out to match would mean translating questions nobody asked in this
+ * language. Anything not answered here is answered on the two Hinglish tool pages, which carry
+ * their own FAQ blocks.
+ *
+ * Every link points at a Hinglish page where one exists. The two that do not — the privacy policy
+ * and the how-it-works walkthrough — say so in the answer, so a reader knows before the click that
+ * the language changes.
+ */
+import Layout from '@/layouts/Layout.astro';
+import PageCta from '@/components/site/PageCta.astro';
+import Breadcrumb from '@/components/site/Breadcrumb.astro';
+import FaqBlock from '@/components/site/FaqBlock.astro';
+import { url } from '@/lib/url';
+import { breadcrumbs, faqPage } from '@/lib/schema';
+import { alternates, localePath } from '@/lib/i18n';
+
+const locale = 'hi-Latn';
+const path = '/faq';
+
+/** Same shorthand as the English FAQ: answers may carry inline markup, so links go through `url()`. */
+const a = (p: string, text: string) => `<a href="${url(p)}">${text}</a>`;
+
+const CROPPER = localePath('/tools/meesho-label-cropper', locale);
+const PROFIT = localePath('/tools/meesho-profit-calculator', locale);
+
+const title = 'Sawal-Jawab — Meesho Label Cropper aur Profit Calculator';
+const description =
+	'Meesho label cropper aur profit calculator ke aam sawal: kya yeh sach mein free hai, data safe hai ya nahi, kaunsi payment file chahiye, aur profit kaise nikalta hai.';
+
+const groups = [
+	{
+		heading: 'Site ke baare mein',
+		faqs: [
+			{
+				q: 'Kya yeh sach mein free hai?',
+				a: `Haan. ${a(CROPPER, 'label cropper')} aur ${a(PROFIT, 'profit calculator')} dono hamesha free hain — na page limit, na watermark, na account. Site ads se chalti hai, aur woh ads upload, preview aur download ke raste se hata kar rakhe gaye hain taaki kaam mein na aayein.`,
+			},
+			{
+				q: 'Account banana ya login karna padega?',
+				a: 'Nahi. Na login, na signup, na email. Tool kholiye, file daaliye, result download kar lijiye.',
+			},
+			{
+				q: 'Mere order aur customer ka data safe hai?',
+				a: `Aapki file kahin upload hoti hi nahi. Label crop karna, payment file padhna aur saara hisaab aapke browser mein, aapke apne device ki taakat par hota hai — koi server hai hi nahi jo kisi customer ka address ya settlement figure dekh sake. Hamare ad aur analytics providers kya dekhte hain, woh ${a('/privacy-policy', 'privacy policy')} mein likha hai; woh page English mein hai.`,
+			},
+			{
+				q: 'Kya yeh mere phone par chalega?',
+				a: `Haan. Dono tools pehle mobile ke liye banaye gaye hain aur kisi bhi modern mobile browser (Chrome, Safari) mein chalte hain, saath hi laptop aur tablet par bhi. Zyadatar seller ${a(CROPPER, 'cropper')} phone par hi chalate hain, packing ke beech mein.`,
+			},
+			{
+				q: 'Amazon aur Flipkart ka support kab aayega?',
+				a: 'Woh plan mein hai. Site is tarah bani hai ki ek se zyada marketplace sambhal sake — Meesho pehla hai, Amazon aur Flipkart baad mein aayenge. Jab tak unke labels par theek se test nahi ho jata, unhe live karna aadha-adhoora tool dene jaisa hoga.',
+			},
+			{
+				q: 'Koi kami dikhi ya naya feature chahiye — kaise bataayein?',
+				a: 'Kisi bhi page ke upar "Request a feature" dabaiye. Aapka email app ek chhote template ke saath khulega — jo chahiye ya jo galat hua woh likh dijiye, aur ho sake to screenshot laga dijiye.',
+			},
+		],
+	},
+	{
+		heading: 'Label Cropper',
+		faqs: [
+			{
+				q: 'Meesho label se tax invoice kaise hataayein?',
+				a: `Meesho shipping label aur tax invoice ek hi page par chhapta hai. ${a(CROPPER, 'Label cropper')} beech ka cut khud dhoondh leta hai aur invoice kaat deta hai. Chahein to invoice laga rehne dein, ya sabhi invoice ek alag PDF mein save kar lein.`,
+			},
+			{
+				q: 'Kaunse printer size chalte hain?',
+				a: `3x5" aur 4x6" thermal label printer, ya normal A4 paper par 1, 2 ya 4 label per sheet — invoice ke saath bhi, bina bhi. Aapke printer ke liye kaunsa size sahi hai, yeh ${a(CROPPER, 'cropper page')} par samjhaya gaya hai.`,
+			},
+			{
+				q: 'Kya label SKU ya courier se sort ho sakte hain?',
+				a: 'Haan. SKU, courier, pickup hub, colour phir size, ya size phir colour — ya Meesho wala original order hi rakh lijiye. Saath mein SKU pick list bhi milti hai, jisme dikhta hai kis item ke kitne piece pack karne hain.',
+			},
+			{
+				q: 'Ek se zyada Meesho account ke labels ek saath daal sakte hain?',
+				a: 'Haan. Ek saath kai label PDF add ki ja sakti hain, isliye ek se zyada account chalane wale ya batch mein export karne wale sellers sab kuch ek hi baar mein nikaal sakte hain.',
+			},
+		],
+	},
+	{
+		heading: 'Profit Calculator',
+		faqs: [
+			{
+				q: 'Profit calculator mein kaunsi file daalni hai?',
+				a: `Meesho supplier panel mein: Payments → Download → Payments to Date → apni dates chunein. Woh <code>*_PAYMENT_FILE_*.xlsx</code> naam se aati hai, aur ${a(PROFIT, 'profit calculator')} ko bas wahi chahiye. Usi button ke doosre downloads (GST Report, Tax Invoice, Supplier Tax Invoice, Outstanding Payments) mein per-order settlement rows hoti hi nahi, isliye woh padhi nahi ja sakti. ${a('/how-it-works', 'Step-by-step walkthrough')} har screen dikhata hai; woh page English mein hai.`,
+			},
+			{
+				q: 'Kya commission, shipping aur GST pehle se kate hue hote hain?',
+				a: 'Haan. Calculator Meesho ke apne Final Settlement Amount se chalta hai — yaani woh figure jo sach mein bank mein aata hai — isliye commission, shipping, GST aur TCS/TDS pehle hi kat chuke hote hain. Uske baad woh sirf wahi ghatata hai jo Meesho ko pata nahi: aapka making cost, ads spend, return aur business ke kharche.',
+			},
+			{
+				q: 'Har SKU ka cost daalna zaroori hai?',
+				a: 'Zaroori nahi, par jis SKU ka cost nahi daala uska profit zyada dikhega — aur tool yeh chhupata nahi: product card par, chart par aur Costs tab par ginti ke saath dikhata hai. Cost aap type kar sakte hain, ya saare SKU Excel mein export karke bhar kar wapas import kar sakte hain.',
+			},
+			{
+				q: 'Kya rent, salary aur baaki kharche bhi jod sakte hain?',
+				a: 'Haan. Ek baar mahine ke hisaab se daal dijiye; phir har payment file par utne hi din ke hisaab se woh kharcha lagta hai, aur hisaab saamne dikhta hai. Ise jaan-boojh kar SKU ke beech nahi baanta jata — kisi ek order ki wajah se aapka rent nahi lagta, isliye koi bhi batwara banaya hua hi hota.',
+			},
+			{
+				q: 'RTO aur return ka hisaab kaise hota hai?',
+				a: 'Dono ginte hain. Packing to kharch ho hi gayi, chahe saman wapas aaye ya nahi — aur item ka kitna hissa RTO, customer return ya raaste mein kho jane par sach mein bekaar hota hai, yeh aap tay karte hain. Isi liye profit woh dikhta hai jo hua, na ki best case.',
+			},
+			{
+				q: 'Meesho panel ka number aur yahan ka profit alag kyun hai?',
+				a: 'Kyunki Meesho ko sirf itna pata hai ki usne kitna diya. Aapka product banne mein kya laga, rent aur salary kitni hai, return aaya saman dobara bik payega ya nahi — kuch nahi pata. Yeh tool Meesho ke settlement se shuru karke baaki sab ghatata hai, isliye jawab aksar kam aata hai — aur aapke bank balance ke zyada kareeb hota hai.',
+			},
+		],
+	},
+];
+
+const faqs = groups.flatMap((group) => group.faqs);
+
+const schema = [
+	faqPage(faqs),
+	breadcrumbs(Astro.site, [{ name: 'Sawal-jawab', path: localePath(path, locale) }], locale),
+];
+---
+
+<Layout
+	title={title}
+	description={description}
+	schema={schema}
+	locale={locale}
+	alternates={alternates({ en: path, 'hi-Latn': path })}
+>
+	<section class="mx-auto max-w-3xl px-4 pt-10 pb-16 sm:px-6 sm:pt-16 sm:pb-24">
+		<Breadcrumb locale={locale} trail={[{ name: 'Sawal-jawab', path }]} />
+
+		<div class="mt-8 text-center">
+			<p data-reveal class="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+				Sawal-jawab
+			</p>
+			<h1 data-reveal class="mt-4 text-3xl font-bold tracking-tight text-balance sm:text-5xl">
+				Aapke sawal, seedhe jawab
+			</h1>
+			<p data-reveal class="mx-auto mt-3 max-w-xl text-base text-pretty text-muted-foreground sm:mt-4 sm:text-lg">
+				Privacy, printer, payment file, aur profit ka number asli mein kehta kya hai — sellers yahi
+				sabse zyada puchte hain.
+			</p>
+		</div>
+
+		{
+			groups.map((group, groupIndex) => (
+				<div class="mt-10 sm:mt-12">
+					<h2 data-reveal class="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+						{group.heading}
+					</h2>
+					<div class="mt-4">
+						<FaqBlock faqs={group.faqs} level="h3" openFirst={groupIndex === 0} />
+					</div>
+				</div>
+			))
+		}
+
+		<PageCta
+			locale={locale}
+			title="Koi aur sawal hai?"
+			text="Email kar dijiye — hum har message padhte hain. Ya koi ek tool kholkar apni file par try kar lijiye."
+		/>
+	</section>
+</Layout>
+
+<style>
+	/* Smooth open/close where supported (Chrome 131+); other browsers simply snap open, which is fine. */
+	@supports (interpolate-size: allow-keywords) {
+		:root {
+			interpolate-size: allow-keywords;
+		}
+		.faq-item::details-content {
+			height: 0;
+			overflow: clip;
+			opacity: 0;
+			transition:
+				height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+				opacity 0.3s ease,
+				content-visibility 0.35s allow-discrete;
+		}
+		.faq-item[open]::details-content {
+			height: auto;
+			opacity: 1;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.faq-item::details-content {
+			transition: none;
+		}
+	}
+</style>

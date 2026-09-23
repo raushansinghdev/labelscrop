@@ -1,0 +1,107 @@
+---
+title: Meesho payment kam kyun aaya — poora hisaab
+description: Commission, shipping, GST aur TCS/TDS, return charges aur ads — sab settlement se pehle kat jaate hain. Jaaniye har deduction kya hai, aur woh kaunsa kharcha hai jo Meesho ko dikhta hi nahi.
+cluster: profit
+locale: hi-Latn
+translationOf: why-is-my-meesho-payment-less-than-expected
+published: 2026-09-23
+updated: 2026-09-23
+tool: meesho-profit-calculator
+faqs:
+  - q: Kya Final Settlement Amount hi mera profit hai?
+    a: 'Nahi. Woh aapka revenue hai Meesho ke deductions ke baad — jo bank mein aata hai. Profit uske baad nikalta hai, jab aap woh sab ghatate hain jo Meesho ko pata hi nahi: product ki cost, packing, label aur ink, rent, bijli aur salary.'
+  - q: Kuch orders payment file mein do baar kyun dikhte hain?
+    a: Meesho kabhi-kabhi ek order ko do rows mein settle karta hai — ek original aur ek baad wala adjustment, jiska status aksar blank hota hai. Dono real paise hain. Status par filter lagane se doosri row chhoot jati hai, isliye <a href="/tools/meesho-profit-calculator">profit calculator</a> use rows ko ginta hai, chhodta nahi.
+  - q: File ki dates order dates hain kya?
+    a: Nahi, woh payment dates hain. Ek file aksar un orders ko settle karti hai jo kai hafte pehle mile the, kyunki payment cycle delivery aur return window ke baad chalta hai. Isiliye payment file ko usi hafte ke orders se milane ki koshish kabhi match nahi karti.
+  - q: Kya Meesho ads ka paisa har order se kaatta hai?
+    a: Nahi. Campaign spend account level par kaata jata hai, per order nahi. Isiliye aisa hota hai ki har product alag se profitable lage, lekin mahina milakar loss mein chala jaye.
+  - q: Mere SKU costs kahan save hote hain?
+    a: Aapke apne browser mein, usi device par — kahin bhejte nahi. Browser storage clear ho sakti hai, aur Safari ise lagbhag saat din baad khatam kar deta hai, isliye tool Excel backup ka option deta hai. Agar numbers zaroori hain toh wahi asli backup hai.
+---
+
+₹1,000 ka saaman becha aur bank mein ₹640 aaye. Yeh sawaal har Meesho seller poochta hai. Jawab
+ek deduction nahi hai — kai deductions ka stack hai, jisme se kuch waajib hain, aur ek aisa kharcha
+hai jo supplier panel mein dikhta hi nahi.
+
+## Meesho paisa bhejne se pehle kya kaatta hai
+
+**Commission** — Meesho ka hissa. Yeh category aur price slab ke hisaab se badalta hai, isliye ek
+hi price ke do product par alag-alag charge lag sakta hai. "Lagbhag 10%" maan kar chalna aadhe SKUs
+par galat hoga.
+
+**Shipping charge** — parcel ke weight aur distance par. Yeh sabse zyada chaunkata hai: ek halka
+item jo desh ke doosre kone mein ja raha hai, usmein ek bhaari local order se zyada kharcha aa
+sakta hai. Matlab ek jaisi do sale alag amount par settle ho sakti hain.
+
+**GST aur TCS/TDS** — aapke GSTIN aur PAN par collect karke jama kiya jata hai. Yeh settlement se
+nikla hua asli paisa hai, jo aap apni return file karke wapas claim karte hain, Meesho se nahi.
+
+**Return aur RTO charges** — parcel wapas aaye — chahe customer ne return kiya ho ya delivery hi
+na hui ho — shipping charge phir bhi lagta hai. Stock wapas milta hai, lekin hamesha bechne layak
+haalat mein nahi.
+
+**Ads spend** — agar aap campaign chalate hain toh yeh per order nahi, account level par kaata
+jata hai. Yahi woh deduction hai jo profitable dikhne wali product list ko aksar loss mein badal
+deta hai, kyunki kisi ek order par yeh kahin nazar nahi aata.
+
+**Compensation aur claims** — doosri taraf, kho gaye ya damage hue parcels ke liye Meesho paisa
+wapas bhi jodta hai. Yeh apni alag rows mein aata hai.
+
+Jo bachta hai woh hai **Final Settlement Amount**, aur hisaab wahin se shuru karna chahiye. Upar ke
+saare deductions us number ke andar pehle se hain — unhe dobara ghatana double counting hai.
+
+## Jo Meesho ko dikhta hi nahi
+
+Ab woh hissa jahan supplier panel kuch madad nahi kar sakta. Meesho bata sakta hai ki usne aapko
+kitna diya. Profit nahi bata sakta, kyunki yeh sab usko dikhta hi nahi:
+
+- har item banane ya kharidne ki cost
+- packing material, tape aur filler
+- label, ink aur printer paper
+- rent, bijli aur internet
+- salary — apni bhi
+- return aaya hua stock jo ab bik nahi sakta
+
+Panel ka dashboard revenue report hai jo profit report ke kapde pehne hue hai. Final Settlement
+Amount aur aapke haath mein sach mein bachne wale paise ke beech ka farak hi asli sawaal hai — aur
+[profit calculator](/hi/tools/meesho-profit-calculator) usi farak ko naapne ke liye banaya gaya hai.
+
+## Hisaab match kyun nahi hota
+
+Teen cheezein log aksar miss kar dete hain:
+
+1. **Dates payment ki hain, order ki nahi.** Ek hafte ki payment file un orders ko settle karti
+   hai jo kai hafte pehle aaye the — delivery aur return window ke baad. Isliye ek hi period ke
+   orders se milane par hisaab kabhi nahi baithega.
+2. **Kuch orders do rows mein settle hote hain.** Pehli row, phir baad ka adjustment — jiska
+   status aksar blank hota hai. Dono real hain. Status par filter lagate hi doosri chup-chaap
+   gayab ho jati hai.
+3. **RTO cancel order nahi hai.** Woh ek poora shipping kaam hai jo aapke hi pate par khatam hua.
+   Shipping ka kharcha dono taraf se gaya, aur packing bhi gayi.
+
+## Asli margin kaise nikalein
+
+Supplier panel mein: **Payments → Download → Payments to Date**, phir apni dates chunein. Sirf
+wahi file per-order settlement rows leke aati hai. Us button ke peeche baaki chaar downloads (GST
+Report, Tax Invoice, Supplier Tax Invoice, Outstanding Payments) mein woh rows hoti hi nahi,
+isliye unse yeh kaam nahi ho sakta.
+
+Phir teen cheezein aap jodte hain, jo sirf aapko pata hain:
+
+- **Per-SKU cost** — item kharidne ya banane ka kharcha, aur uske pack karne ka.
+- **Return par nuksan** — RTO, customer return ya transit mein kho gaye parcel par aap sach mein
+  kitna write off karte hain. Na 0%, na poora 100%.
+- **Monthly kharche** — rent, bijli, salary. Yeh file ke poore period par bantte hain, kisi ek
+  order par nahi — kyunki koi ek order aapka rent paida nahi karta.
+
+Jo number nikalta hai woh aksar umeed se kam hota hai, aur mahine bhar mein aapke bank balance ke
+kaafi kareeb hota hai. Yahi is hisaab ka matlab hai.
+
+## Yaad rakhne wali baatein
+
+- Settlement mein commission, shipping, GST, TCS/TDS, return aur ads pehle se kat chuke hain.
+- Phir bhi woh profit nahi hai — aapke apne kharche abhi ghatne baaki hain.
+- Payment dates order dates nahi hain, isliye hafte-war milan kabhi nahi hoga.
+- Ads account par lagte hain, order par nahi — poore mahine ke hisaab se dekhein.
+- Per order profitable dikhne wala product bhi return aur ads ke baad loss de sakta hai.

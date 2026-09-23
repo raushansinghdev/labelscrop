@@ -1,0 +1,78 @@
+---
+import ToolsHub, { type HubTool } from '@/components/tools/ToolsHub.astro';
+import { alternates } from '@/lib/i18n';
+
+const iconAttrs =
+	'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"';
+
+/*
+ * The two roadmap stubs have no Hinglish page, and `ToolsHub` links them without a locale prefix
+ * on purpose — an English roadmap note is better than a `/hi/` URL that 404s. `soonIntro` says so
+ * rather than letting the reader discover it by clicking.
+ */
+const tools: HubTool[] = [
+	{
+		path: '/tools/meesho-label-cropper',
+		name: 'Meesho Label Cropper',
+		pitch:
+			'Supplier panel wali label PDF ko saaf, print-ready file mein badal dijiye — usi order mein jis tarah aap pack karte hain.',
+		points: [
+			'Har label se tax invoice kat jata hai',
+			'3x5" aur 4x6" thermal, ya A4 par 1 / 2 / 4 label',
+			'SKU, courier, pickup hub ya colour-size se sorting',
+			'SKU pick list — kya-kya pack karna hai',
+		],
+		cta: 'Label crop karein',
+		icon: `<svg ${iconAttrs}><path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/></svg>`,
+	},
+	{
+		path: '/tools/meesho-profit-calculator',
+		name: 'Meesho Profit Calculator',
+		pitch:
+			'Payment file padhkar jaaniye ki mahine mein asli kamai kitni hui — yeh Meesho kabhi nahi batata.',
+		points: [
+			'Asli Final Settlement Amount se shuru hota hai',
+			'Cost daalte hi per-SKU margin',
+			'Ads spend, RTO aur return imaandari se ghatte hain',
+			'Rent, salary aur bills bhi, period ke hisaab se',
+		],
+		cta: 'Profit dekhein',
+		icon: `<svg ${iconAttrs}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+	},
+	{
+		path: '/tools/amazon-label-cropper',
+		name: 'Amazon Label Cropper',
+		pitch: 'Amazon ke shipping labels ke liye wahi cropping aur sorting.',
+		soon: true,
+		points: [],
+		cta: '',
+		icon: `<svg ${iconAttrs}><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>`,
+	},
+	{
+		path: '/tools/flipkart-label-cropper',
+		name: 'Flipkart Label Cropper',
+		pitch: 'Flipkart ke shipping labels ke liye wahi cropping aur sorting.',
+		soon: true,
+		points: [],
+		cta: '',
+		icon: `<svg ${iconAttrs}><path d="M20 7H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1Z"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg>`,
+	},
+];
+---
+
+<ToolsHub
+	locale="hi-Latn"
+	title="Meesho Sellers Ke Liye Free Tools — Label Cropper aur Profit Calculator"
+	description="Meesho sellers ke liye do free browser tools: labels crop aur sort karein kisi bhi printer ke liye, aur payment file se asli profit nikaalein. Na login, na upload."
+	eyebrow="Tools"
+	heading="Order se lekar hisaab tak, dono cheezein"
+	intro="Ek tool us din ke liye jab parcel jaate hain, doosra us din ke liye jab paisa aata hai. Dono free, dono aapke browser mein hi chalte hain, aur dono bina kisi signup ke."
+	tools={tools}
+	liveHeading="Abhi use kar sakte hain"
+	soonHeading="Aage aane wale"
+	soonIntro="Andar ka engine kisi ek marketplace ka nahi hai, isliye yeh naye tools nahi, sirf adapters hain. Yeh tabhi aayenge jab asli labels par theek se test ho jayein — us se pehle nahi, kyunki galat jagah kaatne wala cropper na hone se bhi bura hai. (In dono ke page filhaal English mein hain.)"
+	soonLabel="Jald aa raha hai"
+	ctaTitle="Aaj jo kaam saamne hai, wahan se shuru karein"
+	ctaText="Aaj packing hai ya pichhle mahine ka hisaab — dono free hain aur kisi ko account nahi chahiye."
+	alternates={alternates({ en: '/tools', 'hi-Latn': '/tools' })}
+/>

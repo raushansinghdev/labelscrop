@@ -1,0 +1,362 @@
+---
+/**
+ * The Hinglish label cropper page.
+ *
+ * Not a translation of `/tools/meesho-label-cropper`, and deliberately so. Running the English
+ * copy through a translator is what Google's scaled-content-abuse policy is written about, and it
+ * would also read wrong: the sentences that work in English are built around English word order,
+ * and the phrases sellers actually search with ("label crop kaise kare", "invoice hata ke print")
+ * are not what a translator produces from "crop the invoice away".
+ *
+ * So the argument is the same and the words are original. Product nouns stay in English —
+ * "thermal printer", "courier", "tax invoice", "settlement" — because that is what sellers say
+ * out loud and type into a search box; translating them into formal Hindi would target queries
+ * nobody enters.
+ *
+ * The tool island itself is the same English component. That is intentional: a seller who has
+ * used the Meesho supplier panel already reads its labels in English, and a half-translated
+ * interface is harder to follow than a consistent one. The page around it does the explaining.
+ */
+import { url } from '@/lib/url';
+import { breadcrumbs, faqPage, softwareApplication } from '@/lib/schema';
+import { alternates, localePath } from '@/lib/i18n';
+import Layout from '@/layouts/Layout.astro';
+import Breadcrumb from '@/components/site/Breadcrumb.astro';
+import FaqBlock from '@/components/site/FaqBlock.astro';
+import Figure from '@/components/site/Figure.astro';
+import GuideLinks from '@/components/site/GuideLinks.astro';
+import { MeeshoToolApp } from '@/components/tool/MeeshoToolApp';
+import cropDiagram from '@/assets/meesho-label-crop-before-after.png';
+import sizesDiagram from '@/assets/meesho-label-printer-sizes.png';
+
+const locale = 'hi-Latn';
+const path = '/tools/meesho-label-cropper';
+
+/* Alt text is in Hinglish too — a reader on this page hears it in Hinglish from their screen
+   reader, and it is the same text the ImageObject caption carries. */
+const cropAlt =
+	'Ek Meesho A4 page jisme upar shipping label aur neeche tax invoice hai, TAX INVOICE heading par cut line bani hui — aur uske baad sirf cropped label.';
+const sizesAlt =
+	'Paanch print layouts, sahi scale par: 4x6 inch thermal label, 3x5 inch thermal label, aur A4 sheet par 1, 2 ya 4 label.';
+
+const title = 'Meesho Label Cropper — Label Crop Kaise Kare (Free)';
+const description =
+	'Meesho label se tax invoice hataayein, 3x5" ya 4x6" printer ke size mein resize karein, aur SKU ya courier se sort karein. Free, browser mein, bina login.';
+
+const toolOptions = [
+	{ label: 'Printer type', detail: 'Label printer (3x5" / 4x6"), ya A4 paper par 1, 2 ya 4 label per sheet.' },
+	{ label: 'Invoice ka kya karein', detail: 'Invoice kaat dein, label ke saath laga rehne dein, ya sabhi invoice alag PDF mein save karein.' },
+	{ label: 'Sort order', detail: 'Meesho wala original order, ya SKU, courier, pickup hub, colour-size — jaise aap pack karte hain.' },
+	{ label: 'Apna text aur order number', detail: 'Har label par ek note ya order number chhaap dein.' },
+	{ label: 'SKU pick list', detail: 'Poore batch mein kis SKU ke kitne piece hain, download karne layak list — packing ke liye.' },
+	{ label: 'Privacy by design', detail: 'Sab kuch aapke browser mein chalta hai — label aur customer ki details kabhi upload nahi hoti.' },
+];
+
+const iconAttrs =
+	'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"';
+
+/* Only pages that exist in Hinglish. `/how-it-works` is English-only, and sending a Hinglish
+   reader to it from here would be the one link on the page that changes language under them. */
+const helpLinks = [
+	{
+		href: url(localePath('/faq', locale)),
+		title: 'Aksar puche jane wale sawal',
+		detail: 'Privacy, printer size, phone par use karna — sab kuch.',
+		icon: `<svg ${iconAttrs}><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>`,
+	},
+	{
+		href: url(localePath('/tools/meesho-profit-calculator', locale)),
+		title: 'Profit Calculator',
+		detail: 'Batch pack ho gaya? Ab dekhiye ki isse kamai kitni hui.',
+		icon: `<svg ${iconAttrs}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+	},
+];
+
+/*
+ * The same claims as the English page, checked against the same code: `extractCourier` reads the
+ * courier from where it sits relative to the "Pickup" badge rather than matching a name list, and
+ * `detectMeeshoBoundary` anchors on the TAX INVOICE text. Both are what make "jo courier humne
+ * kabhi dekha hi nahi" an honest sentence rather than marketing.
+ */
+const couriers = [
+	{ name: 'Valmo', note: 'Meesho ka apna logistics — ab bahut saare orders par yahi aata hai.' },
+	{ name: 'Delhivery', note: 'Sabse pehle isi format par crop ko confirm kiya gaya tha.' },
+	{ name: 'Shadowfax', note: 'Label ka structure wahi, bas header ka design alag.' },
+	{ name: 'Xpressbees', note: 'Usi text-based cut se handle hota hai.' },
+	{ name: 'Ekart', note: 'Iske liye koi alag rule likhna nahi pada.' },
+	{ name: 'Ecom Express', note: 'Aur koi bhi courier jo Meesho aapko de de.' },
+];
+
+const printerSizes = [
+	{
+		size: '4 x 6 inch',
+		who: 'Sabse common thermal size',
+		detail:
+			'India ke zyadatar label printers ka default — TSC, TVS, Rugtek, Honeywell, sab. Output PDF ka page sach mein 4x6 inch ka hota hai, isliye printer use 100% par chhapta hai: na scaling, na margin.',
+	},
+	{
+		size: '3 x 5 inch',
+		who: 'Chhote thermal roll',
+		detail:
+			'Wahi cheez, bas chhote page size par. Yeh tabhi chunein jab aapka roll sach mein 3x5 ka ho — 4x6 ka label 3x5 roll par chhapne se woh chhota nahi hota, kat jata hai.',
+	},
+	{
+		size: 'A4 — 1 / 2 / 4 per sheet',
+		who: 'Abhi thermal printer nahi hai',
+		detail:
+			'Cropped labels ko normal A4 sheet par quarter-inch margin ke saath set kar deta hai, aur har label ko ghuma kar uske box mein fit karta hai. Zyadatar log 4 per sheet chunte hain: ek baar aar, ek baar paar kaat lijiye.',
+	},
+];
+
+const labelParts = [
+	{
+		term: 'AWB number',
+		detail:
+			'Barcode ke upar chhapa 12–20 digit ka tracking number. Courier isi ko scan karta hai, aur customer isi ko tracking page par daalta hai.',
+	},
+	{
+		term: 'SKU',
+		detail:
+			'Aapka apna product code. Cropper ise product table se padh leta hai aur poore batch ko isi se sort kar sakta hai, taaki ek jaise item ek saath printer se nikle.',
+	},
+	{
+		term: 'Pickup hub',
+		detail:
+			'Courier ki woh branch jo parcel uthayegi, courier ke naam ke neeche chhapi hoti hai. Hub se sort karne par ek hi gaadi mein jane wala saara maal saath aa jata hai.',
+	},
+	{
+		term: 'Tax invoice',
+		detail:
+			'Wahi GST invoice jo Meesho label ke neeche, usi page par chhapta hai. Woh shipping label ka hissa nahi hai aur cropper isi ko hata deta hai — chahein to rehne dein, ya sabhi invoice ek alag PDF mein records ke liye save kar lein.',
+	},
+];
+
+const pageFaqs = [
+	{
+		q: 'Kya Valmo ke labels par chalta hai?',
+		a: 'Haan — aur Meesho ke har doosre courier par bhi. Tool cut line ko fixed height par nahi kaatta; woh page ke text mein <strong>TAX INVOICE</strong> heading dhoondhta hai. Courier ka naam bhi kisi list se match nahi karta, balki label par uski jagah se padhta hai. Isliye jo courier humne kabhi dekha hi nahi, woh bhi baaki sab jaisa hi handle hota hai.',
+	},
+	{
+		q: 'Thermal printer par label sahi size mein chhapega?',
+		a: 'Haan. Output PDF ka page sach mein 4x6 inch (ya 3x5 inch) ka hota hai — aisa nahi ki A4 page ke kone mein chhota sa label pada ho. Print dialog mein 100% scale rakhein aur "fit to page" <em>band</em> kar dein, label poora roll bhar dega. Agar label chhota chhap raha hai aur chaaron taraf safed jagah bach rahi hai, to galti file mein nahi, print dialog ki scaling setting mein hai.',
+	},
+	{
+		q: 'Bina thermal printer ke Meesho label kaise print karein?',
+		a: 'A4 option chunein aur 1, 2 ya 4 label per sheet select karein. Zyadatar seller label printer khareedne se pehle normal paper par 4 per sheet hi chhapte hain — gap se kaat lijiye aur tape se chipka dijiye.',
+	},
+	{
+		q: 'Ek baar mein kitne label crop kar sakte hain?',
+		a: 'Kuch hazaar pages tak aaram se chalta hai, aur aap ek saath kai PDF bhi daal sakte hain — chahe aap parts mein export karte hon ya ek se zyada Meesho account chalate hon. Files ek-ek karke process hoti hain aur khatam hote hi memory chhod deti hain, isliye limit hamari taraf se nahi, aapke device ki memory ki hai. Bahut bade batch phone par laptop ke muqable dheere chalte hain.',
+	},
+	{
+		q: 'Kya original file se invoice hamesha ke liye hat jata hai?',
+		a: 'Nahi. Aapki original file ko haath bhi nahi lagta — download ek nayi PDF hoti hai. Aap invoice ko label ke saath rakh bhi sakte hain, ya sabhi invoice ek doosri PDF mein save kar sakte hain, jo GST ke liye rakhna ho to kaam aata hai. Dono soorat mein original waisi hi rehti hai jaisi Meesho ne di thi.',
+	},
+	{
+		q: 'Customer ke address is site par daalna safe hai?',
+		a: `Kuch upload hota hi nahi. PDF ko aapke apne browser ke andar chal raha JavaScript kholta aur dobara likhta hai, aur koi server hai hi nahi jo use le sake — isiliye Wi-Fi band karke bhi tool chalta rehta hai. Hamare ad aur analytics providers kya dekhte hain aur kya nahi, woh <a href="${url('/privacy-policy')}">privacy policy</a> mein likha hai (woh page English mein hai).`,
+	},
+];
+
+const schema = [
+	softwareApplication(Astro.site, {
+		name: 'Meesho Label Cropper',
+		path: localePath(path, locale),
+		description,
+		locale,
+		images: [
+			{ image: cropDiagram, caption: cropAlt },
+			{ image: sizesDiagram, caption: sizesAlt },
+		],
+	}),
+	faqPage(pageFaqs),
+	// Three levels, same as the English page, now that /hi/tools exists.
+	breadcrumbs(
+		Astro.site,
+		[
+			{ name: 'Tools', path: localePath('/tools', locale) },
+			{ name: 'Meesho Label Cropper', path: localePath(path, locale) },
+		],
+		locale,
+	),
+];
+---
+
+<Layout
+	title={title}
+	description={description}
+	schema={schema}
+	locale={locale}
+	alternates={alternates({ en: path, 'hi-Latn': path })}
+	ogImage="/og/hi-meesho-label-cropper.png"
+>
+	<section class="mx-auto max-w-5xl px-4 pt-8 pb-16 sm:px-6 sm:pt-14 sm:pb-20">
+		<Breadcrumb
+			locale={locale}
+			trail={[{ name: 'Tools', path: '/tools' }, { name: 'Meesho Label Cropper', path }]}
+		/>
+
+		<div class="mx-auto mt-6 max-w-2xl text-center">
+			<h1 class="text-3xl font-bold tracking-tight text-balance sm:text-5xl">Meesho Label Cropper</h1>
+			<p class="mx-auto mt-3 max-w-xl text-base text-pretty text-muted-foreground sm:mt-4 sm:text-lg">
+				Invoice hataayein, label apne printer ke size mein laayein, aur jis tarah pack karte hain
+				usi tarah sort kar lein.
+			</p>
+			<ul class="mt-4 flex flex-wrap justify-center gap-2 text-xs font-medium text-muted-foreground" aria-label="Highlights">
+				<li class="rounded-full bg-muted px-3 py-1">100% free</li>
+				<li class="rounded-full bg-muted px-3 py-1">Login nahi</li>
+				<li class="rounded-full bg-muted px-3 py-1">File upload nahi hoti</li>
+			</ul>
+		</div>
+
+		{/* Same as the English page: no data-reveal, because the tool is the point of the page and
+		  * should be tappable immediately rather than waiting on a scroll-reveal fade. */}
+		<div class="mt-8 sm:mt-12">
+			<MeeshoToolApp client:load />
+		</div>
+
+		<div data-reveal class="mx-auto mt-16 max-w-3xl">
+			<h2 class="text-center text-2xl font-semibold tracking-tight">Aap kya-kya set kar sakte hain</h2>
+			<dl class="mt-8 grid gap-6 sm:grid-cols-2">
+				{
+					toolOptions.map((opt) => (
+						<div class="rounded-xl border border-border bg-card p-5">
+							<dt class="font-medium">{opt.label}</dt>
+							<dd class="mt-1.5 text-sm text-muted-foreground">{opt.detail}</dd>
+						</div>
+					))
+				}
+			</dl>
+		</div>
+
+		<div class="mx-auto mt-16 max-w-3xl">
+			<h2 data-reveal class="text-center text-2xl font-semibold tracking-tight">
+				Meesho ke har courier ke saath chalta hai
+			</h2>
+			<p data-reveal class="mx-auto mt-3 max-w-xl text-center text-sm text-pretty text-muted-foreground">
+				Cut line fixed height par nahi lagti — page ke text mein <strong class="font-semibold text-foreground"
+					>TAX INVOICE</strong
+				> heading dhoondhi jati hai. Courier ka naam bhi kisi list se match nahi hota, label par uski jagah
+				se padha jata hai. Isliye naya courier bhi utni hi asani se chalta hai.
+			</p>
+			<Figure
+				class="mt-8 max-w-2xl"
+				src={cropDiagram}
+				alt={cropAlt}
+				caption="Cut TAX INVOICE heading dhoondh kar lagti hai, isliye upar ka label chhota ho ya bada, kaat hamesha sahi jagah par hi aati hai."
+			/>
+			<ul class="mt-10 grid gap-3 sm:grid-cols-2">
+				{
+					couriers.map((courier) => (
+						<li data-reveal class="rounded-xl border border-border bg-card p-4">
+							<span class="font-semibold">{courier.name}</span>
+							<span class="mt-1 block text-sm text-muted-foreground">{courier.note}</span>
+						</li>
+					))
+				}
+			</ul>
+		</div>
+
+		<div class="mx-auto mt-16 max-w-3xl">
+			<h2 data-reveal class="text-center text-2xl font-semibold tracking-tight">
+				Kaunsa printer size chunein?
+			</h2>
+			<Figure
+				class="mt-8"
+				src={sizesDiagram}
+				alt={sizesAlt}
+				caption="Paanchon layout ek hi scale par, taaki size ka farak asli dikhe. A4 sheets par quarter-inch margin chhoda jata hai, jise printer pakad sake."
+			/>
+			<div class="mt-10 space-y-4">
+				{
+					printerSizes.map((preset) => (
+						<div data-reveal class="rounded-2xl border border-border bg-card p-5">
+							<div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+								<h3 class="text-lg font-semibold">{preset.size}</h3>
+								<span class="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+									{preset.who}
+								</span>
+							</div>
+							<p class="mt-2 text-sm leading-relaxed text-muted-foreground">{preset.detail}</p>
+						</div>
+					))
+				}
+			</div>
+		</div>
+
+		<div class="mx-auto mt-16 max-w-3xl">
+			<h2 data-reveal class="text-center text-2xl font-semibold tracking-tight">
+				Meesho shipping label par hota kya hai
+			</h2>
+			<p data-reveal class="mx-auto mt-3 max-w-xl text-center text-sm text-pretty text-muted-foreground">
+				Jaan lena kaam ka hai, kyunki inhi cheezon se cropper sort karta hai aur inhi ko label par
+				chhaap sakta hai.
+			</p>
+			<dl class="mt-8 space-y-4">
+				{
+					labelParts.map((part) => (
+						<div data-reveal class="rounded-xl border border-border bg-card p-5">
+							<dt class="font-semibold">{part.term}</dt>
+							<dd class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{part.detail}</dd>
+						</div>
+					))
+				}
+			</dl>
+		</div>
+
+		<div class="mt-16">
+			<GuideLinks
+				locale={locale}
+				tool="meesho-label-cropper"
+				heading="Printing aur packing ke guides"
+				intro="Jo cheezein is page par sirf summary mein hain, unki poori detail."
+			/>
+		</div>
+
+		<div class="mt-16">
+			<FaqBlock
+				faqs={pageFaqs}
+				heading="Label cropping ke aam sawal"
+				intro="Is tool ke baare mein sellers sabse zyada yahi puchte hain."
+			/>
+		</div>
+
+		<div data-reveal class="mx-auto mt-16 max-w-3xl">
+			<h2 class="text-center text-2xl font-semibold tracking-tight">Aur kuch puchna hai?</h2>
+			<p class="mt-2 text-center text-sm text-muted-foreground">
+				Tool kaise kaam karta hai, aur aapka data safe kyun hai.
+			</p>
+			<div class="mt-8 grid gap-4 sm:grid-cols-2">
+				{
+					helpLinks.map((link) => (
+						<a
+							href={link.href}
+							class="group flex items-center gap-4 rounded-2xl border border-border bg-card p-5 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md active:translate-y-0"
+						>
+							<span
+								class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"
+								set:html={link.icon}
+							/>
+							<span class="min-w-0 flex-1">
+								<span class="block font-semibold">{link.title}</span>
+								<span class="mt-0.5 block text-sm text-muted-foreground">{link.detail}</span>
+							</span>
+							<svg
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								class="h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-1 group-hover:text-primary"
+								aria-hidden="true"
+							>
+								<path d="M5 12h14M13 6l6 6-6 6" />
+							</svg>
+						</a>
+					))
+				}
+			</div>
+		</div>
+	</section>
+</Layout>

@@ -1,0 +1,117 @@
+---
+title: A Meesho label cropper vs a generic online PDF cropper
+description: Any PDF site can crop a page. Six things a general-purpose cropper cannot do with a Meesho label file — and the one question worth asking before you upload customer addresses anywhere.
+cluster: comparison
+published: 2026-09-23
+updated: 2026-09-23
+tool: meesho-label-cropper
+faqs:
+  - q: Can I just use a normal PDF cropper for Meesho labels?
+    a: You can, and for a handful of labels it is fine. It becomes painful at volume, because a general cropper applies one fixed rectangle to every page — and Meesho labels are not all the same height, so a fixed crop that fits a one-item order clips a four-item one.
+  - q: Why does a fixed crop rectangle go wrong on Meesho labels?
+    a: Because the product table above the invoice grows with the number of items in the order. The boundary between label and invoice therefore sits at a different height on different pages, and any tool that crops at a fixed position will cut through the wrong thing on some of them.
+  - q: Is it safe to upload shipping labels to an online PDF tool?
+    a: That depends entirely on whether the file leaves your device. A Meesho label carries your customer's full name, address and phone number. Before uploading to any tool, check whether it processes files in the browser or on a server — and if the page does not say, assume the server.
+  - q: What should I look for in a label cropper?
+    a: That it finds the cut by reading the page rather than at a fixed height, outputs a true 4x6 or 3x5 page size rather than a small label on an A4 sheet, can sort the batch, and does not upload your file. Those four cover almost everything that goes wrong.
+---
+
+Search for a way to crop Meesho labels and you will find two kinds of result: general-purpose PDF
+sites that crop any PDF, and tools built specifically for marketplace labels. Both genuinely work.
+This is an honest account of where the difference actually shows up, because for a small batch it
+barely does.
+
+We build one of the second kind, so read this with that in mind — the points below are the ones
+you can check yourself on any tool, including ours.
+
+## Where a generic cropper is completely fine
+
+If you ship a few orders a day, print on A4, and do not care about sort order, a general PDF
+cropper will do the job. Drag the box around the label, apply to all pages, download. There is no
+reason to use anything more specialised, and anyone telling you otherwise is selling something.
+
+The trouble starts at volume, and it starts in a specific place.
+
+## 1. The cut is not at a fixed height
+
+This is the big one, and it is not obvious until it bites.
+
+Meesho prints the shipping label at the top of an A4 page and the tax invoice below it. The
+invoice contains a product table, and **that table grows with the number of items in the order**.
+A single-item order and a four-item order therefore have their label/invoice boundary at
+different heights on the page.
+
+A general cropper applies one rectangle to every page. Set it against a one-item order and it
+clips the bottom off your bigger labels; set it against a four-item order and you keep a strip of
+invoice on all the small ones. There is no single rectangle that is right for a mixed batch,
+which is exactly what a real day's orders is.
+
+Reading the page for the **TAX INVOICE** heading and cutting there instead means the boundary is
+found per page. That is the difference, and it is structural rather than a matter of polish.
+
+## 2. Page size, not just page content
+
+Cropping changes what is *on* the page. It does not necessarily change the page's *size*.
+
+Crop a 4x6 label out of an A4 page with a general tool and you frequently still have an A4 page
+with a label in the corner of it. Send that to a thermal printer and you get a tiny label in the
+middle of the roll, or a print dialog fight with "fit to page". The output needs a real 4x6 or
+3x5 inch page geometry for the printer to lay it down at 100%.
+
+If you are printing on A4 anyway, this one does not matter to you at all.
+
+## 3. Sorting
+
+A general cropper preserves page order, because it has no idea what is on the pages. It cannot
+group by SKU, because it does not know what an SKU is.
+
+Sorting by SKU means identical items come off the printer together, so you pull stock from the
+shelf once per product rather than walking back and forth. Sorting by courier gives you one stack
+per pickup. Neither is possible for a tool that treats the file as anonymous pages —
+[which courier is which](/guides/meesho-courier-partners-explained) is information that has to be
+read off the label.
+
+## 4. The pick list
+
+A by-product of understanding the file: a count of how many of each SKU the batch contains,
+before you start packing. A generic cropper cannot produce one for the same reason it cannot sort.
+
+## 5. Where your file goes
+
+This is the one worth taking seriously regardless of which tool you choose.
+
+**A Meesho shipping label carries your customer's full name, delivery address and phone number.**
+That is personal data belonging to someone who did not agree to it being uploaded anywhere.
+
+Most general online PDF tools work by uploading your file to a server, processing it there, and
+sending back a result. That is not sinister — it is the straightforward way to build a web tool,
+and reputable ones delete files after a period. But it does mean your customers' addresses have
+been on someone else's machine, and you are relying on their retention policy.
+
+The alternative is processing in the browser, where the file never leaves your device. You can
+check which one you are using: **load the tool, turn off your Wi-Fi, and try it.** If it still
+works, nothing is being uploaded. If it fails, the file was going somewhere. That test works on
+any tool and costs you ten seconds.
+
+## 6. What happens when the label format changes
+
+Marketplaces change their label layouts. A tool built on a fixed crop rectangle breaks silently
+when that happens — it keeps producing output, just with the cut in the wrong place, and you find
+out from a courier rejecting a stack.
+
+A tool that anchors on text is more likely to survive a layout change, because the words are
+usually still there even when the positions move. Not guaranteed, but a better bet.
+
+## So which should you use?
+
+| If you… | Use |
+|---|---|
+| Ship a handful of orders, print on A4 | Whatever is nearest, including a generic cropper |
+| Have mixed order sizes in one batch | Something that finds the cut per page |
+| Print on a thermal printer | Something that outputs true 4x6 / 3x5 pages |
+| Pack by product rather than by order | Something that can sort and count |
+| Care where customer addresses go | Anything that passes the Wi-Fi-off test |
+
+Our answer to all of these is the [Meesho label cropper](/tools/meesho-label-cropper), which is
+free, runs entirely in your browser and passes that test. But the test matters more than the
+recommendation — run it on whatever you end up using.

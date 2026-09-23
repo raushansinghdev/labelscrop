@@ -4,6 +4,7 @@ import { url } from '@/lib/url';
 const navItems = [
 	{ href: url('/tools/meesho-label-cropper'), label: 'Label Cropper' },
 	{ href: url('/tools/meesho-profit-calculator'), label: 'Profit Calculator' },
+	{ href: url('/guides'), label: 'Guides' },
 	{ href: url('/how-it-works'), label: 'How it Works' },
 	{ href: url('/faq'), label: 'FAQ' },
 ];
@@ -34,19 +35,22 @@ const feedbackIcon =
 		<a
 			href={url('/')}
 			class="press group flex items-center gap-2 font-semibold tracking-tight"
-			aria-label="LabelsCrop home"
+			aria-label="SellerWala home"
 		>
+			{/*
+			 * The mark is the W of "Wala" drawn as a seller's month, and its last stroke is meant to
+			 * run out of the tile — `overflow-hidden` on the tile is what cuts it, so the glyph fills
+			 * the tile rather than sitting centred inside it. Geometry lives in `scripts/icons.mjs`.
+			 */}
 			<span
-				class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-transform duration-300 ease-out group-hover:-rotate-6 group-hover:scale-105"
+				class="brand-tile block h-8 w-8 overflow-hidden rounded-lg bg-primary text-primary-foreground transition-transform duration-300 ease-out group-hover:-rotate-6 group-hover:scale-105"
 				aria-hidden="true"
 			>
-				<svg viewBox="0 0 24 24" fill="none" class="h-4.5 w-4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
-					<path d="M14 3v5h5" />
-					<path d="m9.5 13.5 2 2 4-4.5" stroke-dasharray="0" />
+				<svg viewBox="0 0 48 48" class="h-full w-full" fill="none" stroke="currentColor" stroke-width="4.2" stroke-linecap="butt" stroke-linejoin="miter">
+					<path d="M14.7 18 L19.8 30 L24 22.2 L28.2 30 L40.8 1.2" />
 				</svg>
 			</span>
-			<span class="text-base">LabelsCrop</span>
+			<span class="text-base">SellerWala</span>
 		</a>
 
 		{/*
@@ -157,6 +161,16 @@ const feedbackIcon =
 </header>
 
 <style>
+	/* The tile carries the same subtle depth as the app icons: one step down from --primary
+	 * rather than a second hue, so it stays the brand blue in both themes. */
+	.brand-tile {
+		background-image: linear-gradient(
+			135deg,
+			var(--primary),
+			color-mix(in oklch, var(--primary) 62%, black)
+		);
+	}
+
 	/* Elevation on scroll. The attribute is set by an IntersectionObserver on a 1px sentinel in
 	 * Layout.astro, so there is no scroll handler behind any of this. */
 	:global(html[data-scrolled]) #site-header {

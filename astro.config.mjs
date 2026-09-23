@@ -2,17 +2,20 @@
 import { defineConfig } from 'astro/config';
 
 import react from '@astrojs/react';
+import mdx from '@astrojs/mdx';
 import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
 import partytown from '@astrojs/partytown';
 
 // The GitHub Pages workflow sets GITHUB_PAGES=true so the dev site is served from
 // https://raushansinghdev.github.io/labelscrop/. Regular builds keep the production domain.
+// The repo (and therefore the Pages sub-path) is still named `labelscrop`; renaming it would
+// break the staging URL for no gain, since that mirror is noindexed either way.
 const isGitHubPages = process.env.GITHUB_PAGES === 'true';
 
 // https://astro.build/config
 export default defineConfig({
-  site: isGitHubPages ? 'https://raushansinghdev.github.io' : 'https://labelscrop.com',
+  site: isGitHubPages ? 'https://raushansinghdev.github.io' : 'https://sellerwala.com',
   base: isGitHubPages ? '/labelscrop' : '/',
   // The Amazon/Flipkart pages are roadmap placeholders carrying almost no content. They're
   // marked noindex until the adapters ship, so they must stay out of the sitemap too —
@@ -28,6 +31,10 @@ export default defineConfig({
 
   integrations: [
     react(),
+    // Guides are authored as MDX rather than .astro pages so adding one is writing prose, not
+    // writing a component — and so the same files can later be re-rendered under /hi/ without
+    // duplicating any layout.
+    mdx(),
     sitemap({
       filter: (page) =>
         !/\/tools\/(amazon|flipkart)-label-cropper\/?$/.test(new URL(page).pathname)
