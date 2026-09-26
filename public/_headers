@@ -1,0 +1,22 @@
+# Cloudflare Pages response headers. Only Cloudflare reads this file; the GitHub Pages mirror ignores it.
+
+# Every deploy is also served at sellerwala.pages.dev (and <hash>.sellerwala.pages.dev for previews).
+# Canonical tags already point at sellerwala.com, but a noindex header keeps those copies out of the
+# index entirely, instead of leaving Google to pick between two identical sites.
+https://:project.pages.dev/*
+  X-Robots-Tag: noindex
+
+https://:version.:project.pages.dev/*
+  X-Robots-Tag: noindex
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  # SAMEORIGIN, not DENY: Partytown can load its own same-origin sandbox page in an iframe.
+  X-Frame-Options: SAMEORIGIN
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# Astro puts a content hash in every file name under /_astro/, so a changed file is a new URL.
+# That makes them safe to cache forever. Pages would otherwise revalidate them on every visit.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
