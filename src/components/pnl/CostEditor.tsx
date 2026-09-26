@@ -54,6 +54,11 @@ interface Draft {
  */
 const COST_COLS = 'md:grid-cols-[minmax(0,1fr)_4.5rem_6rem_6rem_4.5rem]';
 
+/** A row counts as costed the moment either box has something in it. */
+function hasDraftCost(draft: Draft | undefined): boolean {
+	return Boolean(draft && (draft.making !== '' || draft.packaging !== ''));
+}
+
 /** What one unit costs all in — the figure the P&L actually charges against each order. */
 function unitTotal(draft: Draft): number {
 	return (Number(draft.making) || 0) + (Number(draft.packaging) || 0);
@@ -124,10 +129,7 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 	/** A cost is "entered" the moment it's in the box — waiting for a save to confirm it makes the
 	 *  counter look broken while you type. */
 	const hasCost = useCallback(
-		(sku: string) => {
-			const draft = drafts[sku];
-			return Boolean(draft && (draft.making !== '' || draft.packaging !== ''));
-		},
+		(sku: string) => hasDraftCost(drafts[sku]),
 		[drafts],
 	);
 
@@ -255,10 +257,22 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 			// costs for SKUs the seller left out of it.
 			saveCosts({ ...(loadCosts() as SkuCostMap), ...imported });
 
-			// Drafts are only seeded for SKUs that don't have one, so imported values would stay
-			// hidden behind the old inputs. Clearing them lets the effect reseed from storage.
-			setDrafts({});
-			setDirty(false);
+			// Written straight into the drafts rather than cleared and left for the load effect to
+			// reseed: that waited on a recompute, so the counters and the list disagreed until the
+			// filter was touched. Rows the sheet didn't mention keep whatever is typed in them.
+			const next = { ...drafts };
+			for (const row of rows) {
+				const cost = imported[row.sku];
+				if (cost) next[row.sku] = { making: String(cost.making_cost), packaging: String(cost.packaging_cost) };
+			}
+			setDrafts(next);
+			// The "Missing" list is a snapshot, so it has to be retaken by hand — otherwise the rows
+			// just filled stay on screen, ticked, under a "Missing (0)" pill.
+			if (onlyMissing) {
+				setMissingSnapshot(
+					new Set(ordered.filter((r) => !hasDraftCost(next[r.sku])).map((r) => r.sku)),
+				);
+			}
 			setNotice({ kind: 'ok', text: `Imported costs for ${count} SKUs.` });
 			onCostsSaved();
 		} catch (err) {

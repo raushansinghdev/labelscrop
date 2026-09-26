@@ -1,7 +1,9 @@
-import { CheckIcon, DownloadIcon, FileTextIcon, Loader2Icon } from 'lucide-react';
-import { motion } from 'motion/react';
+import { CheckIcon, DownloadIcon, FileTextIcon, Loader2Icon, RotateCcwIcon, Share2Icon } from 'lucide-react';
+import { motion, useInView } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from 'cn';
+import { backButton, primaryCta } from '@/components/tool/buttons';
+import { triggerDownload, useShareFile } from '@/components/tool/useShareFile';
 import { formatDateRange, formatNumber } from './format';
 import { EASE_OUT, SPRING } from './motion';
 import type { ExpenseRow } from './expenses';
@@ -15,69 +17,83 @@ interface DownloadReportProps {
 	fileNames: string[];
 }
 
-type State = 'idle' | 'working' | 'done' | 'error';
+/** The built report: the Blob for sharing, an object URL for downloading. */
+interface ReportPdf {
+	blob: Blob;
+	url: string;
+}
 
 /**
- * The overview, as a PDF — offered at the end of the overview, which is the point at which a
- * seller has read the thing they might want to keep.
+ * The overview as a PDF: a name, what it covers, and the cropper's download + share pair.
  *
- * It sat in the file bar at the top for one release, beside "New file", and that was wrong twice
- * over: next to the name of the spreadsheet they just uploaded, "Download PDF" reads as an offer
- * to hand that file back, and a bare button never says what the thing it produces *is*. So it is
- * a card with a name, a sentence about what is inside it and what it is for, and the period it
- * covers — the button is the last part of it rather than the whole of it.
- *
- * The builder is imported on click rather than with the island: it pulls in pdf-lib, which is
- * larger than the whole dashboard, and most visits never ask for a report at all.
+ * The PDF is built as soon as the card scrolls into view rather than on the tap. Share has to be
+ * called while the tap still counts as a user gesture, and phones stop counting after a few
+ * seconds — longer than pdf-lib takes to load and draw on a slow one. Built ahead, both buttons
+ * act instantly. pdf-lib is still only fetched by someone who scrolls this far.
  */
 export function DownloadReport({ result, overheads, expenses, expenseDays, fileNames }: DownloadReportProps) {
-	const [state, setState] = useState<State>('idle');
-	const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const ref = useRef<HTMLElement>(null);
+	const inView = useInView(ref, { once: true, margin: '0px 0px 200px 0px' });
+	const [pdf, setPdf] = useState<ReportPdf | null>(null);
+	const [failed, setFailed] = useState(false);
+	const [saved, setSaved] = useState(false);
+	// Bumped by the button after a failed build, to try again.
+	const [attempt, setAttempt] = useState(0);
+	const filename = reportFilename(result);
+	const namesKey = fileNames.join('\n');
 
 	useEffect(() => {
+		if (!inView) return;
+		let cancelled = false;
+		let built: string | null = null;
+		// Dropped first, so a report of the old figures can't be downloaded while the new one builds.
+		setPdf(null);
+		setFailed(false);
+		import('@/lib/pnl/report/profitReport')
+			.then(({ buildProfitReportPdf }) =>
+				buildProfitReportPdf({ result, overheads, expenses, expenseDays, fileNames: namesKey.split('\n') }),
+			)
+			.then((bytes) => {
+				if (cancelled) return;
+				const blob = new Blob([new Uint8Array(bytes)], { type: 'application/pdf' });
+				built = URL.createObjectURL(blob);
+				setPdf({ blob, url: built });
+			})
+			.catch((err) => {
+				if (cancelled) return;
+				console.error('Could not build the profit report', err);
+				setFailed(true);
+			});
 		return () => {
-			if (resetTimer.current) clearTimeout(resetTimer.current);
+			cancelled = true;
+			// Safari needs a URL to outlive the click that used it; a minute is far longer than any save.
+			if (built) {
+				const url = built;
+				setTimeout(() => URL.revokeObjectURL(url), 60_000);
+			}
 		};
-	}, []);
+	}, [inView, result, overheads, expenses, expenseDays, namesKey, attempt]);
 
-	const download = useCallback(async () => {
-		if (state === 'working') return;
-		setState('working');
-		try {
-			const { buildProfitReportPdf } = await import('@/lib/pnl/report/profitReport');
-			const bytes = await buildProfitReportPdf({ result, overheads, expenses, expenseDays, fileNames });
+	const { canShare, status: shareStatus, share } = useShareFile(pdf, filename);
 
-			const url = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }));
-			const link = document.createElement('a');
-			link.href = url;
-			link.download = reportFilename(result);
-			link.click();
-			// Safari needs the URL to outlive the click; a minute is far longer than any save takes.
-			setTimeout(() => URL.revokeObjectURL(url), 60_000);
+	useEffect(() => {
+		if (!saved) return;
+		const timer = setTimeout(() => setSaved(false), 2500);
+		return () => clearTimeout(timer);
+	}, [saved]);
 
-			setState('done');
-			resetTimer.current = setTimeout(() => setState('idle'), 2500);
-		} catch (err) {
-			console.error('Could not build the profit report', err);
-			setState('error');
-			resetTimer.current = setTimeout(() => setState('idle'), 5000);
+	const download = useCallback(() => {
+		if (failed) {
+			setAttempt((n) => n + 1);
+			return;
 		}
-	}, [expenseDays, expenses, fileNames, overheads, result, state]);
+		if (!pdf) return;
+		triggerDownload(pdf.url, filename);
+		setSaved(true);
+	}, [pdf, filename, failed]);
 
-	// Short, because the button is `shrink-0` in this row and a label that grows from "Download
-	// PDF" to "Building your report…" shoves the paragraph beside it sideways mid-click. The long
-	// version of each goes to the live region instead, where only a screen reader hears it.
-	const label =
-		state === 'working' ? 'Building…' : state === 'done' ? 'Saved' : state === 'error' ? 'Try again' : 'Download PDF';
-	const status =
-		state === 'working'
-			? 'Building your profit report.'
-			: state === 'done'
-				? 'Report saved to your downloads.'
-				: state === 'error'
-					? 'The report could not be built.'
-					: '';
-	const Icon = state === 'working' ? Loader2Icon : state === 'done' ? CheckIcon : DownloadIcon;
+	const working = !pdf && !failed;
+	const Icon = working ? Loader2Icon : saved ? CheckIcon : failed ? RotateCcwIcon : DownloadIcon;
 
 	const period = formatDateRange(result.overall.payment_window_start, result.overall.payment_window_end);
 	const covers = [
@@ -88,76 +104,75 @@ export function DownloadReport({ result, overheads, expenses, expenseDays, fileN
 
 	return (
 		<motion.section
+			ref={ref}
 			initial={{ opacity: 0, y: 10 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.4, ease: EASE_OUT }}
 			aria-labelledby="profit-report-heading"
 			className={cn(
-				'overflow-hidden rounded-3xl border border-primary/20 p-5 sm:p-6',
+				'rounded-3xl border border-primary/20 p-4 sm:p-5',
 				// The one block on this screen that asks for something rather than reporting it, so
 				// it carries the brand wash the site's other calls to action use.
 				'bg-gradient-to-br from-primary/[0.07] via-card to-card',
 			)}
 		>
-			<div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
-				<span
-					className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-					aria-hidden="true"
-				>
-					<FileTextIcon className="size-5.5" />
-				</span>
-
-				<div className="min-w-0 flex-1">
-					<h3 id="profit-report-heading" className="text-base font-semibold tracking-tight">
-						Your profit report
-					</h3>
-					<p className="mt-1 text-sm leading-relaxed text-pretty text-muted-foreground">
-						Everything on this page as one PDF — the headline figures, a table of every product, and
-						the costs and write-off rates you entered. Print it, file it with your books, or send it
-						to your accountant.
-					</p>
-					{covers.length > 0 && (
-						<p className="mt-2 text-xs text-muted-foreground/90">Covers {covers.join(' · ')}</p>
-					)}
+			<div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+				<div className="flex min-w-0 flex-1 items-center gap-3">
+					<span
+						className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary"
+						aria-hidden="true"
+					>
+						<FileTextIcon className="size-5" />
+					</span>
+					<div className="min-w-0">
+						<h3 id="profit-report-heading" className="text-base font-semibold tracking-tight">
+							Your profit report
+						</h3>
+						{covers.length > 0 && (
+							<p className="mt-0.5 text-sm text-muted-foreground">{covers.join(' · ')}</p>
+						)}
+					</div>
 				</div>
 
-				<motion.button
-					type="button"
-					onClick={() => void download()}
-					disabled={state === 'working'}
-					whileTap={{ scale: 0.97 }}
-					transition={SPRING}
-					className={cn(
-						'group inline-flex h-12 min-w-44 shrink-0 items-center justify-center gap-2 rounded-2xl px-5',
-						'text-base font-semibold transition-colors',
-						'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-						'disabled:pointer-events-none',
-						state === 'done'
-							? 'bg-success text-success-foreground'
-							: state === 'error'
-								? 'bg-destructive/10 text-destructive'
-								: 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90',
+				<div className="flex gap-2.5 sm:w-80 sm:shrink-0">
+					<motion.button
+						type="button"
+						onClick={download}
+						disabled={working}
+						whileTap={{ scale: 0.97 }}
+						transition={SPRING}
+						className={cn(
+							primaryCta,
+							saved && 'bg-success text-success-foreground shadow-success/25 hover:bg-success',
+							failed && 'bg-destructive/10 text-destructive shadow-none',
+						)}
+					>
+						<Icon className={cn('size-5', working && 'animate-spin')} aria-hidden="true" />
+						{saved ? 'Saved' : failed ? 'Try again' : 'Download PDF'}
+					</motion.button>
+					{canShare && (
+						<motion.button
+							type="button"
+							whileTap={{ scale: 0.94 }}
+							onClick={share}
+							disabled={!pdf}
+							aria-label="Share profit report PDF"
+							aria-busy={shareStatus === 'sharing'}
+							className={cn(backButton, shareStatus === 'sharing' && 'opacity-60')}
+						>
+							<Share2Icon className="size-5" aria-hidden="true" />
+						</motion.button>
 					)}
-				>
-					<Icon className={cn('size-4', state === 'working' && 'animate-spin')} aria-hidden="true" />
-					{label}
-				</motion.button>
+				</div>
 			</div>
 
 			<span role="status" aria-live="polite" className="sr-only">
-				{status}
+				{saved ? 'Report saved to your downloads.' : failed ? 'The report could not be built.' : ''}
 			</span>
 
-			{state === 'error' ? (
-				<p className="mt-4 border-t border-destructive/20 pt-3 text-xs text-destructive">
-					The report could not be built. Your figures are all still here — try the button again, and if
-					it keeps failing the browser console will say why.
-				</p>
-			) : (
-				/* The same promise the upload screen makes, restated where it is easiest to doubt: a
-				 * download feels like a round trip to a server, and this one isn't. */
-				<p className="mt-4 border-t border-primary/10 pt-3 text-xs text-muted-foreground">
-					Built in your browser from the file you opened — nothing is uploaded, and no one else sees it.
+			{shareStatus === 'fellBack' && (
+				<p role="status" className="mt-3 text-center text-xs text-muted-foreground sm:text-right">
+					Sharing isn't available in this browser, so the PDF was downloaded instead.
 				</p>
 			)}
 		</motion.section>
