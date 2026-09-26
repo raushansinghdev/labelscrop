@@ -198,6 +198,37 @@ const schemaList = [organization(Astro.site), website(Astro.site), ...pageSchema
 		<main id="main-content" class="flex-1" transition:animate={pageSwap}>
 			<slot />
 		</main>
+		<script is:inline>
+			/*
+			 * Starts the first screen's fade-in as soon as <main> is parsed, rather than when the
+			 * module below runs.
+			 *
+			 * That module runs after the page's other modules, the tool bundles included, so on a
+			 * throttled phone the heading and intro (each page's LCP element) sat invisible until
+			 * the JS arrived: 4.0s LCP on the profit calculator. Running this part inline, mid-parse,
+			 * keeps the same fade and stagger but starts it within a frame of the text arriving.
+			 * The module still handles everything below the fold, and skips what is queued here.
+			 *
+			 * getBoundingClientRect forces a style pass with the elements still hidden, which is
+			 * what gives the transition a starting point. The 70/280ms stagger mirrors
+			 * REVEAL_STEP_MS and REVEAL_MAX_DELAY_MS in the module; an inline script cannot import
+			 * them.
+			 */
+			(() => {
+				if (!document.documentElement.hasAttribute('data-motion')) return;
+				const onScreen = [...document.querySelectorAll('[data-reveal]:not(.is-visible)')].filter((el) => {
+					const rect = el.getBoundingClientRect();
+					return rect.top < innerHeight && rect.bottom > 0;
+				});
+				for (const el of onScreen) el.setAttribute('data-reveal-queued', '');
+				requestAnimationFrame(() =>
+					onScreen.forEach((el, index) => {
+						el.style.setProperty('--reveal-delay', `${Math.min(index * 70, 280)}ms`);
+						el.classList.add('is-visible');
+					}),
+				);
+			})();
+		</script>
 		{/* Above the footer, not inside it: the footer is `transition:persist`ed, so anything
 		    page-specific placed in it would keep the previous page's links after a navigation. */}
 		<LangSwitch alternates={alternates} current={locale} />
@@ -224,7 +255,11 @@ const schemaList = [organization(Astro.site), website(Astro.site), ...pageSchema
 			}
 
 			function initReveal() {
-				const els = [...document.querySelectorAll<HTMLElement>('[data-reveal]:not(.is-visible)')];
+				// Queued elements are the first screen, already being faded in by the inline script
+				// after <main>.
+				const els = [
+					...document.querySelectorAll<HTMLElement>('[data-reveal]:not(.is-visible):not([data-reveal-queued])'),
+				];
 				if (els.length === 0) return;
 
 				/*
