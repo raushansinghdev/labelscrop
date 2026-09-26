@@ -40,6 +40,13 @@ interface Props {
 
 const { guide, siblings, everyGuide } = Astro.props;
 const { title, description, cluster, published, updated, locale, tool, faqs } = guide.data;
+/*
+ * The brand goes on the end only when it fits. Google cuts titles off at roughly 60 characters,
+ * and on a long title the cut used to land mid-question, leaving " — SellerWala" to push out the
+ * words that actually match the search.
+ */
+const BRANDED = `${title} — SellerWala`;
+const pageTitle = BRANDED.length <= 62 ? BRANDED : title;
 
 const { Content, headings } = await render(guide);
 const t = UI[locale];
@@ -76,7 +83,7 @@ const schema = [
 ---
 
 <Layout
-	title={`${title} — SellerWala`}
+	title={pageTitle}
 	description={description}
 	schema={schema}
 	locale={lang}

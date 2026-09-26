@@ -105,10 +105,11 @@ describe.skipIf(!hasFixture)('computePnl against a real payment file', () => {
 	});
 
 	it('combines several payment files into one P&L', async () => {
-		// Sellers get one file per payment cycle, so a quarter means three files. Passing the
-		// same file twice is the sharpest version of the test: orders are keyed by sub-order
-		// number, so the order count must NOT double, while account-level ads spend — which is
-		// a per-file total with no key to merge on — must.
+		// Sellers get one file per payment cycle, and the windows they pick often overlap — or
+		// the same file is added twice. Passing the same file twice is the sharpest version:
+		// every payment is shared, so nothing may double. This test once asserted that ads spend
+		// and settlement *did* double, which is how the double-count shipped. (Distinct files
+		// adding up is covered with synthetic workbooks in overlap.test.ts.)
 		const XLSX = await import('xlsx');
 		const bytes = readFileSync(FIXTURE);
 		const a = XLSX.read(bytes, { type: 'buffer', cellDates: true });
@@ -123,9 +124,8 @@ describe.skipIf(!hasFixture)('computePnl against a real payment file', () => {
 		});
 
 		expect(combined.overall.total_orders).toBe(result.overall.total_orders);
-		expect(combined.overall.ads_cost).toBeCloseTo(result.overall.ads_cost * 2, 1);
-		// Settlement is summed per sub-order, so duplicated legs do add up.
-		expect(combined.overall.net_settlement).toBeCloseTo(result.overall.net_settlement * 2, 1);
+		expect(combined.overall.ads_cost).toBeCloseTo(result.overall.ads_cost, 1);
+		expect(combined.overall.net_settlement).toBeCloseTo(result.overall.net_settlement, 1);
 	});
 
 	it('treats a single workbook and a one-item array the same', async () => {

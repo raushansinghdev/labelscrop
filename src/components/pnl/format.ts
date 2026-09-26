@@ -35,10 +35,20 @@ export function formatPercent(value: number | null): string {
 	return `${value.toFixed(1)}%`;
 }
 
+/**
+ * The calculator's "2026-08-20" as that calendar day, in local time. `new Date("2026-08-20")` is
+ * UTC midnight, which is still the 19th anywhere west of Greenwich.
+ */
+export function parseIsoDate(iso: string): Date | null {
+	const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+	const date = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(iso);
+	return Number.isNaN(date.getTime()) ? null : date;
+}
+
 /** "1 Aug – 31 Aug 2026" from the calculator's ISO date strings. */
 export function formatDateRange(start: string, end: string): string {
 	if (!start || !end) return '';
 	const fmt = (iso: string) =>
-		new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+		parseIsoDate(iso)?.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) ?? iso;
 	return `${fmt(start)} – ${fmt(end)}`;
 }

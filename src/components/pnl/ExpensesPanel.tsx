@@ -91,10 +91,8 @@ export function ExpensesPanel({
 				<h2 className="text-xl font-bold tracking-tight sm:text-2xl">
 					What does it cost you to run the business each month?
 				</h2>
-				<p className="mt-1.5 max-w-prose text-sm leading-relaxed text-muted-foreground">
-					Rent, salaries and subscriptions are paid whether or not you sell anything, so Meesho's settlement
-					never mentions them. Enter them once — they're saved on this device and reused for every future
-					payment file.
+				<p className="mt-1.5 max-w-prose text-sm text-muted-foreground">
+					Rent, salaries, bills — enter once, reused for every file.
 				</p>
 			</motion.div>
 
@@ -266,7 +264,7 @@ export function ExpensesPanel({
 					id="loss-rates"
 					icon={<Undo2Icon />}
 					title="How much do returns really cost you?"
-					hint="How much of an item is written off when it comes back. Leave it if unsure — the defaults assume the worst."
+					hint="Optional · the defaults assume the worst"
 					badge={changedRates > 0 ? `${changedRates} changed` : undefined}
 					open={openRates}
 					onOpenChange={setOpenRates}

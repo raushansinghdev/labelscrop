@@ -18,7 +18,7 @@ import { prorate } from '@/components/pnl/expenses';
 import { formatDateRange, formatNumber, formatPercent } from '@/components/pnl/format';
 import { buildStatusSlices } from '@/components/pnl/status';
 import type { ExpenseRow } from '@/components/pnl/expenses';
-import type { LossRates, PnlResult, SkuRow } from '@/components/pnl/types';
+import type { PnlResult, SkuRow } from '@/components/pnl/types';
 import { ICONS } from './icons';
 import { COLORS, PAGE, Sheet, createDocument, fillClassToColor, formatMoney, mix, type Fonts, type Run } from './sheet';
 import type { PDFDocument, RGB } from 'pdf-lib';

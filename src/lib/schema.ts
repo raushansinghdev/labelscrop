@@ -39,9 +39,13 @@ export function organization(site: URL | undefined): Record<string, unknown> {
 		legalName: SITE.legalName,
 		url: abs('/', site),
 		description: SITE.tagline,
+		// A raster logo: Google's logo guidelines ask for at least 112x112 in a format Google
+		// Images indexes, and the 512px app icon is the same mark as the favicon.
 		logo: {
 			'@type': 'ImageObject',
-			url: abs('/favicon.svg', site),
+			url: abs('/icon-512.png', site),
+			width: 512,
+			height: 512,
 		},
 		// The audience is stated explicitly because these tools are useless outside it, and a
 		// narrow, honest audience declaration is easier to match to a query than a broad one.
@@ -217,7 +221,11 @@ export function article(
 		publisher: { '@id': ids.organization(site) },
 		isPartOf: { '@id': ids.website(site) },
 		inLanguage: guide.locale ?? 'en-IN',
-		...(guide.image ? { image: imageObject(site, guide.image, guide.title) } : {}),
+		// Every Article gets an image, as Google's Article markup recommends. A guide without a
+		// diagram of its own falls back to the share card its page already carries as og:image.
+		image: guide.image
+			? imageObject(site, guide.image, guide.title)
+			: { '@type': 'ImageObject', url: abs('/og/default.png', site), width: 1200, height: 630 },
 	};
 }
 

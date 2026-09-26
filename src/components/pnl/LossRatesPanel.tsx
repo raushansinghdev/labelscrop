@@ -1,6 +1,7 @@
-import { ChevronDownIcon, PackageXIcon, RotateCcwIcon } from 'lucide-react';
+import { PackageOpenIcon, PackageXIcon, type LucideIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from 'cn';
+import { InfoTip } from './InfoTip';
 import { SPRING, STAGGER_ITEM, STAGGER_LIST } from './motion';
 import type { LossRates } from './types';
 
@@ -20,11 +21,18 @@ interface Field {
  * *item* is gone", the second "how much of the *packaging* is gone" — and the honest answers differ
  * sharply: a returned item is often resellable, a torn courier bag never is.
  */
-const GROUPS: { title: string; caption: string; icon: typeof RotateCcwIcon; fields: Field[] }[] = [
+const GROUPS: {
+	title: string;
+	caption: string;
+	icon: LucideIcon;
+	tone: keyof typeof TONES;
+	fields: Field[];
+}[] = [
 	{
 		title: 'Stock you lose',
-		caption: 'How much of the item itself is written off when an order does not stay delivered.',
-		icon: RotateCcwIcon,
+		caption: 'How much of the item itself is written off when an order comes back or goes missing.',
+		icon: PackageOpenIcon,
+		tone: 'stock',
 		fields: [
 			{
 				key: 'rto',
@@ -50,22 +58,40 @@ const GROUPS: { title: string; caption: string; icon: typeof RotateCcwIcon; fiel
 	},
 	{
 		title: 'Packaging you lose',
-		caption: 'Material is spent the moment you ship, whether or not the item comes back.',
+		caption: 'The bag, box and tape are spent the moment you ship, whether or not the item comes back.',
 		icon: PackageXIcon,
+		tone: 'packaging',
 		fields: [
 			{
 				key: 'rto_packaging_loss',
-				label: 'Packaging on courier returns',
+				label: 'On courier returns',
 				hint: 'You cannot reuse a torn courier bag.',
 			},
 			{
 				key: 'return_packaging_loss',
-				label: 'Packaging on returns',
-				hint: 'Same idea for customer returns.',
+				label: 'On customer returns',
+				hint: 'A customer return comes back in torn or reused packaging too.',
 			},
 		],
 	},
 ];
+
+/**
+ * Each group wears its own colour, all the way down to the slider fill, so "stock" and "packaging"
+ * read as two separate questions at a glance rather than six sliders in one grid.
+ */
+const TONES = {
+	stock: {
+		panel: 'border-primary/20 bg-primary/[0.04]',
+		badge: 'bg-primary/12 text-primary',
+		slider: 'accent-[var(--primary)]',
+	},
+	packaging: {
+		panel: 'border-chart-4/30 bg-chart-4/[0.07]',
+		badge: 'bg-chart-4/20 text-warning',
+		slider: 'accent-[var(--chart-4)]',
+	},
+} as const;
 
 /**
  * 0% is money kept, 100% is money gone — the readout is coloured so the row reads before it's read.
@@ -85,27 +111,35 @@ export function LossRatesPanel({ value, onChange }: LossRatesPanelProps) {
 	return (
 		<motion.div variants={STAGGER_LIST} initial="hidden" animate="show" className="space-y-3">
 			{GROUPS.map((group) => (
-				<motion.section key={group.title} variants={STAGGER_ITEM} className="space-y-3">
-					<div className="flex items-start gap-2 px-1">
-						<group.icon className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
-						<div>
-							<h3 className="text-sm font-semibold tracking-tight">{group.title}</h3>
-							<p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{group.caption}</p>
-						</div>
+				<motion.section
+					key={group.title}
+					variants={STAGGER_ITEM}
+					aria-labelledby={`loss-group-${group.tone}`}
+					className={cn('rounded-2xl border p-3 sm:p-4', TONES[group.tone].panel)}
+				>
+					<div className="flex items-center gap-2.5">
+						<span
+							className={cn('flex size-8 shrink-0 items-center justify-center rounded-xl', TONES[group.tone].badge)}
+							aria-hidden="true"
+						>
+							<group.icon className="size-4" />
+						</span>
+						<h3 id={`loss-group-${group.tone}`} className="text-sm font-semibold tracking-tight">
+							{group.title}
+						</h3>
+						<InfoTip label={`About ${group.title.toLowerCase()}`}>{group.caption}</InfoTip>
 					</div>
 
-					<div className="grid gap-3 sm:grid-cols-2">
+					<div className="mt-3 grid gap-2 sm:grid-cols-2">
 						{group.fields.map((field) => {
 							const pct = Math.round(value[field.key] * 100);
 							return (
-								<div
-									key={field.key}
-									className="rounded-2xl border border-border bg-card p-4 transition-colors hover:border-foreground/20"
-								>
-									<div className="flex items-center justify-between gap-3">
-										<label htmlFor={`loss-${field.key}`} className="text-sm font-semibold">
+								<div key={field.key} className="rounded-xl border border-border bg-card px-3 pt-2.5 pb-1.5">
+									<div className="flex items-center gap-2">
+										<label htmlFor={`loss-${field.key}`} className="min-w-0 truncate text-sm font-medium">
 											{field.label}
 										</label>
+										<InfoTip label={`About ${field.label.toLowerCase()}`}>{field.hint}</InfoTip>
 										{/* Keyed on the value so the chip re-springs on every step —
 										  * the number feels dragged rather than merely updated. */}
 										<motion.span
@@ -114,7 +148,7 @@ export function LossRatesPanel({ value, onChange }: LossRatesPanelProps) {
 											animate={{ scale: 1 }}
 											transition={SPRING}
 											className={cn(
-												'shrink-0 rounded-full px-2.5 py-1 text-sm font-semibold tabular-nums',
+												'ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums',
 												severityClass(pct),
 											)}
 										>
@@ -134,9 +168,11 @@ export function LossRatesPanel({ value, onChange }: LossRatesPanelProps) {
 										onChange={(e) =>
 											onChange({ ...value, [field.key]: Number(e.target.value) / 100 })
 										}
-										className="mt-3 h-7 w-full cursor-pointer accent-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+										className={cn(
+											'mt-1 h-8 w-full cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+											TONES[group.tone].slider,
+										)}
 									/>
-									<p className="mt-2 text-sm leading-relaxed text-muted-foreground">{field.hint}</p>
 								</div>
 							);
 						})}
@@ -144,33 +180,14 @@ export function LossRatesPanel({ value, onChange }: LossRatesPanelProps) {
 				</motion.section>
 			))}
 
-			{/* Collapsed by default: it's the most important caveat on the page but also the longest
-			  * text on it, and leaving it open buried the sliders it's meant to qualify. */}
-			<motion.details
-				variants={STAGGER_ITEM}
-				className="group rounded-2xl border border-border bg-card [&_summary::-webkit-details-marker]:hidden"
-			>
-				<summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-base font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-					How much of this is actually measured?
-					<ChevronDownIcon
-						className="size-5 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180"
-						aria-hidden="true"
-					/>
-				</summary>
-				<div className="space-y-2.5 px-4 pb-4 text-sm leading-relaxed text-muted-foreground">
-					<p>
-						Your settlement and ads figures come straight from Meesho's payment file — those are exact, and
-						reconcile against your bank statement to the paisa.
-					</p>
-					<p>
-						These loss rates are not measured. They are your judgement about how much stock you really lose
-						when an order comes back, and nothing tracks that today. Cost of goods and therefore net profit
-						rest on them, so treat the profit figure as only as good as your assumptions — not as a
-						bank-verified number.
-					</p>
-				</div>
-			</motion.details>
-
+			{/* The caveat, one tap away. It used to be a paragraph-long disclosure of its own — the
+			  * longest text on the screen, for the thing a seller least needs to read. */}
+			<motion.div variants={STAGGER_ITEM} className="flex justify-center pt-1">
+				<InfoTip label="How exact are these?" text="These are your estimates" side="top">
+					Settlement and ads come straight from Meesho's file, so they're exact. These rates aren't
+					measured anywhere — they're your best guess, and profit is only as right as they are.
+				</InfoTip>
+			</motion.div>
 		</motion.div>
 	);
 }

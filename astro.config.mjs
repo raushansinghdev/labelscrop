@@ -52,6 +52,7 @@ export default defineConfig({
         'pdfjs-dist/legacy/build/pdf.mjs',
         '@base-ui/react/button',
         '@base-ui/react/dialog',
+        '@base-ui/react/popover',
         '@base-ui/react/progress',
         '@base-ui/react/radio',
         '@base-ui/react/radio-group',

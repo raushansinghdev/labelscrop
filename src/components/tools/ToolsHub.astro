@@ -21,7 +21,7 @@ import Breadcrumb from '@/components/site/Breadcrumb.astro';
 import PageCta from '@/components/site/PageCta.astro';
 import { url } from '@/lib/url';
 import { abs, breadcrumbs, ids } from '@/lib/schema';
-import { localePath, type Alternate, type Locale } from '@/lib/i18n';
+import { LOCALES, localePath, type Alternate, type Locale } from '@/lib/i18n';
 
 export interface HubTool {
 	path: string;
@@ -90,7 +90,8 @@ const schema = [
 	title={props.title}
 	description={props.description}
 	schema={schema}
-	locale={locale}
+	// The Layout wants the BCP-47 tag. The English key is `en` but its tag is `en-IN`.
+	locale={LOCALES[locale].tag}
 	alternates={props.alternates}
 >
 	<section class="mx-auto max-w-5xl px-4 pt-10 pb-20 sm:px-6 sm:pt-14">

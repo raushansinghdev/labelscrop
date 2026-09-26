@@ -117,7 +117,9 @@ const schemaList = [organization(Astro.site), website(Astro.site), ...pageSchema
 		     preloads even same-origin; without it the browser fetches the file a second time. -->
 		<link rel="preload" as="font" type="font/woff2" href={geistLatin} crossorigin />
 
-		<link rel="canonical" href={canonicalURL} />
+		<!-- Indexable pages only. On a noindex page a canonical is a contradictory signal, and on the
+		     404 it named `/404/`, a URL that doesn't exist. -->
+		{!noindex && <link rel="canonical" href={canonicalURL} />}
 
 		<!-- Reciprocal language annotations. Each locale's list includes itself and an x-default;
 		     a non-reciprocal set is ignored outright, so the self-reference is load-bearing. -->
@@ -371,6 +373,17 @@ const schemaList = [organization(Astro.site), website(Astro.site), ...pageSchema
 				document.documentElement.removeAttribute('data-navigating');
 			};
 			document.addEventListener('astro:after-swap', endNavigation);
+
+			/*
+			 * The swap replaces every attribute on <html> with the incoming page's, and the incoming
+			 * page's inline head script never runs — so without this, `data-motion` vanished on the
+			 * first navigation and every scroll reveal after it was silently switched off. Copied
+			 * onto the new document before the swap, so there is no frame without it.
+			 */
+			document.addEventListener('astro:before-swap', (event) => {
+				const root = event.newDocument.documentElement;
+				if (document.documentElement.hasAttribute('data-motion')) root.setAttribute('data-motion', '');
+			});
 
 			function init() {
 				initScrollState();
