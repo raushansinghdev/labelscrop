@@ -164,14 +164,11 @@ const schemaList = [organization(Astro.site), website(Astro.site), ...pageSchema
 
 		<script is:inline>
 			/*
-			 * The motion gate. Everything the stylesheet hides on scroll-reveal is scoped to
-			 * `html[data-motion]`, so this one line is what gives the CSS permission to hide
-			 * anything at all. It is deliberately inline and un-deferred: it has to win the race
-			 * against first paint, or content flashes in and then hides itself.
-			 *
-			 * The flip side is the guarantee it buys — if this script never runs (blocked, old
-			 * browser, parse error), no `[data-reveal]` element is ever hidden and the page reads
-			 * exactly as it does with JavaScript off.
+			 * The motion gate. The scroll-reveal styles are scoped to `html[data-motion]`, and the
+			 * reveal script hides nothing without it. So a visitor who prefers reduced motion gets
+			 * a page where every `[data-reveal]` element is simply there. If this script never runs
+			 * (blocked, old browser, parse error), the page reads exactly as it does with
+			 * JavaScript off.
 			 */
 			if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
 				document.documentElement.dataset.motion = '';
@@ -220,6 +217,7 @@ const schemaList = [organization(Astro.site), website(Astro.site), ...pageSchema
 						`${Math.min(index * REVEAL_STEP_MS, REVEAL_MAX_DELAY_MS)}ms`,
 					);
 					el.classList.add('is-visible');
+					el.removeAttribute('data-reveal-pending');
 				});
 			}
 
@@ -228,30 +226,32 @@ const schemaList = [organization(Astro.site), website(Astro.site), ...pageSchema
 				if (els.length === 0) return;
 
 				/*
-				 * Anything already on screen is revealed immediately, before a single scroll event.
+				 * Anything already on screen stays exactly as it painted: visible, with no fade.
 				 *
-				 * This is not an optimisation, it is the fix for a real bug: the observer alone used
-				 * a 0.15 threshold, so an element poking a few percent above the fold — which is
-				 * exactly where the home page's two tool cards sat at 1280x900 — never reached the
-				 * threshold and never revealed. The bottom of the first screen was blank white until
-				 * the visitor happened to scroll. Being in the viewport at all is the condition now.
+				 * It used to be hidden until this script ran and then faded in, which made each
+				 * page's heading and intro (the LCP element) wait on a module that runs after the
+				 * tool bundles. Only what is below the fold gets hidden now. Nobody has seen it yet,
+				 * so hiding it costs nothing, and it still fades up on scroll.
+				 *
+				 * "On screen" means in the viewport at all, not past a threshold: an element poking
+				 * a few percent above the fold (where the home page's tool cards sit at 1280x900)
+				 * must count, or the bottom of the first screen is left blank until a scroll.
 				 */
-				const onScreen: HTMLElement[] = [];
 				const offScreen: HTMLElement[] = [];
 				for (const el of els) {
 					const rect = el.getBoundingClientRect();
-					(rect.top < window.innerHeight && rect.bottom > 0 ? onScreen : offScreen).push(el);
+					if (rect.top < window.innerHeight && rect.bottom > 0) el.classList.add('is-visible');
+					else offScreen.push(el);
 				}
-				// Next frame, not this one: the elements must paint hidden once for the transition
-				// to have somewhere to travel from. Setting the class in the same frame as first
-				// paint skips the animation entirely.
-				requestAnimationFrame(() => revealAll(onScreen));
 
+				// No motion (reduced-motion preference, see the inline gate in <head>) or no observer
+				// to bring them back: leave everything visible rather than hide what can't return.
 				if (offScreen.length === 0) return;
-				if (!('IntersectionObserver' in window)) {
+				if (!document.documentElement.hasAttribute('data-motion') || !('IntersectionObserver' in window)) {
 					revealAll(offScreen);
 					return;
 				}
+				for (const el of offScreen) el.setAttribute('data-reveal-pending', '');
 
 				// `-8%` at the bottom starts the reveal a little before the element reaches the
 				// very edge of the screen, so it is already settling by the time it is being read.
