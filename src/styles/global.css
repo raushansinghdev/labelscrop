@@ -248,7 +248,14 @@
  * that has already proven it will run the script gets to hide anything.
  * ------------------------------------------------------------------------ */
 html[data-motion] [data-reveal] {
-  opacity: 0;
+  /* 0.01, not 0. Chrome does not treat an element it first paints at exactly opacity 0 as
+   * contentful, and a composited opacity transition never repaints it. So the page's heading
+   * and intro, which fade in from here, were credited to LCP only at some later unrelated
+   * repaint, not when they appeared. Measured with a throttled phone profile on the profit
+   * calculator: LCP at 1.03s from 0, and at first paint (0.39s) from 0.01. The fade itself
+   * starts within a frame of that paint (see the inline script after <main>), so the number
+   * is now true. 1% opacity is invisible. */
+  opacity: 0.01;
   /* translate3d rather than translateY: this promotes the element to its own layer for the
    * duration of the transition, which keeps a grid of a dozen cards off the main thread. */
   transform: translate3d(0, var(--reveal-y, 1rem), 0);
