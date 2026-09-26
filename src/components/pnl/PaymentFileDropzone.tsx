@@ -132,6 +132,7 @@ export function PaymentFileDropzone({ files, onFilesAdded, onRemove, disabled }:
 				type="file"
 				accept=".xlsx,.xlsm,.xls"
 				multiple
+				aria-label="Choose Meesho payment files"
 				className="sr-only"
 				tabIndex={-1}
 				disabled={disabled}

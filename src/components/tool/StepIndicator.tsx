@@ -46,7 +46,9 @@ export function StepIndicator({ current, onStepClick, steps = STEPS }: StepIndic
 								disabled={!clickable}
 								onClick={() => clickable && onStepClick(index)}
 								aria-current={active ? 'step' : undefined}
-								aria-label={`${label}${done ? ' (done — go back)' : ''}`}
+								// The name has to contain the digit shown in the dot: speech-input users say what
+								// they see ("click 2"), and a name of just "Customize" wouldn't match it.
+								aria-label={done ? `${label} (done — go back)` : `Step ${index + 1}: ${label}`}
 								className={cn(
 									'relative flex size-8 items-center justify-center rounded-full text-sm font-semibold transition-colors duration-300',
 									// A 32px dot is the right size to look at and too small to hit with a

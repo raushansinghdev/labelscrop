@@ -291,6 +291,7 @@ export function CostEditor({ rows, onCostsSaved, primaryLabel, onPrimary, second
 							ref={fileInputRef}
 							type="file"
 							accept=".xlsx,.xls"
+							aria-label="Import costs from Excel"
 							className="sr-only"
 							onChange={(e) => {
 								const picked = e.target.files?.[0];

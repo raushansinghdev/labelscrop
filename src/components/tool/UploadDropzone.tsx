@@ -122,6 +122,7 @@ export function UploadDropzone({ files, onFilesAdded, onRemove, disabled }: Uplo
 				type="file"
 				accept="application/pdf,.pdf"
 				multiple
+				aria-label="Choose label PDFs"
 				className="sr-only"
 				tabIndex={-1}
 				onChange={(e) => {

@@ -69,7 +69,9 @@
     --secondary: oklch(0.97 0 0);
     --secondary-foreground: oklch(0.205 0 0);
     --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
+    /* #6c6c6c. The stock 0.556 (#737373) is 4.73:1 on white but only 4.34:1 on --muted, and the
+       trust chips put exactly that pair at 12px. This is 4.84:1 there and 5.28:1 on white. */
+    --muted-foreground: oklch(0.53 0 0);
     --accent: oklch(0.96 0.03 264);
     --accent-foreground: oklch(0.35 0.15 264);
     --destructive: oklch(0.50 0.20 27);     /* #bb0916 — 6.66:1; the same red the charts use */
