@@ -2,10 +2,11 @@
 import { url } from '@/lib/url';
 import Layout from '@/layouts/Layout.astro';
 import PageCta from '@/components/site/PageCta.astro';
+import { breadcrumbs } from '@/lib/schema';
 
 const title = 'How It Works — Meesho Label Cropper & Profit Calculator';
 const description =
-	'Step by step: how the label cropper turns a Meesho label PDF into a print-ready file, and how the profit calculator turns a payment file into your real profit — both entirely in your browser.';
+	'Step by step: turn a Meesho label PDF into print-ready labels, and a Meesho payment file into your real profit — both entirely in your browser.';
 
 const iconAttrs =
 	'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6" aria-hidden="true"';
@@ -83,7 +84,10 @@ const promises = [
 	{ title: 'No account', text: 'Nothing to sign up for or remember. Open the page and go.' },
 ];
 
-const schema = flows.map((flow) => ({
+const schema = [
+	// Every other content page carries one; in mobile results it replaces the bare URL.
+	breadcrumbs(Astro.site, [{ name: 'How it works', path: '/how-it-works' }]),
+	...flows.map((flow) => ({
 	'@context': 'https://schema.org',
 	'@type': 'HowTo',
 	name: flow.howToName,
@@ -93,7 +97,8 @@ const schema = flows.map((flow) => ({
 		name: step.name,
 		text: step.text,
 	})),
-}));
+	})),
+];
 ---
 
 <Layout title={title} description={description} schema={schema}>

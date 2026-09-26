@@ -17,10 +17,34 @@ const requireXlsx = () => {
 	return XLSX;
 };
 
-const toNum = (val) => {
+/**
+ * A number from a spreadsheet cell, which is not always a number: a hand-made cost sheet says
+ * "₹150" or "1,250", and a text-formatted cell arrives as a string. Both used to come out as 0 —
+ * an imported cost of nothing, silently. Currency signs, commas and spaces are stripped first.
+ */
+export const toAmount = (val) => {
   if (val === undefined || val === null || val === "") return 0.0;
-  const parsed = Number(val);
-  return isNaN(parsed) ? 0.0 : parsed;
+  if (typeof val === "number") return Number.isFinite(val) ? val : 0.0;
+  const parsed = Number(String(val).replace(/[₹,\s]|rs\.?|inr/gi, ""));
+  return Number.isFinite(parsed) ? parsed : 0.0;
+};
+
+const toNum = toAmount;
+
+/**
+ * A date from a payment-file cell. Meesho writes them as text — "2026-09-18", or with a time,
+ * "2026-08-09 01:52:53" — and `new Date(text)` reads the first as UTC midnight (the day before,
+ * anywhere west of Greenwich) and the second, with its space, isn't in the spec at all; older
+ * Safari returns Invalid Date for it. Both are read as the local calendar date they spell.
+ */
+export const toDate = (val) => {
+  if (val === undefined || val === null || val === "") return null;
+  if (val instanceof Date) return Number.isNaN(val.getTime()) ? null : val;
+  const m = String(val).trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  const date = m
+    ? new Date(+m[1], +m[2] - 1, +m[3], +(m[4] ?? 0), +(m[5] ?? 0), +(m[6] ?? 0))
+    : new Date(val);
+  return Number.isNaN(date.getTime()) ? null : date;
 };
 
 /**
@@ -83,8 +107,8 @@ export const parseOrderPayments = (workbook) => {
       "Sub Order No": subOrderNo,
       "Supplier SKU": (rowObj["Supplier SKU"] || "").toString().trim(),
       "Live Order Status": isSentinelStatus ? null : statusStr,
-      "Order Date": rowObj["Order Date"] ? new Date(rowObj["Order Date"]) : null,
-      "Payment Date": rowObj["Payment Date"] ? new Date(rowObj["Payment Date"]) : null,
+      "Order Date": toDate(rowObj["Order Date"]),
+      "Payment Date": toDate(rowObj["Payment Date"]),
       "Final Settlement Amount": toNum(rowObj["Final Settlement Amount"]),
       "Return Shipping Charge": toNum(rowObj["Return Shipping Charge (Incl. GST)"]),
       "Total Sale Amount (Incl. Shipping & GST)": toNum(rowObj["Total Sale Amount (Incl. Shipping & GST)"]),
@@ -169,7 +193,7 @@ export const parseOrdersCsv = (file) => {
           df.push({
             "Sub Order No": (rowObj["Sub Order No"] || "").toString().trim(),
             "SKU": (rowObj["SKU"] || "").toString().trim(),
-            "Order Date": rowObj["Order Date"] ? new Date(rowObj["Order Date"]) : null,
+            "Order Date": toDate(rowObj["Order Date"]),
             "Quantity": toNum(rowObj["Quantity"]),
             "Supplier Discounted Price (Incl GST and Commision)": toNum(
               rowObj["Supplier Discounted Price (Incl GST and Commision)"]
@@ -210,8 +234,11 @@ export const parseCostsExcel = (workbook) => {
     const sku = getVal(["sku code", "sku"]);
     if (!sku) continue;
 
-    const makingCost = toNum(getVal(["making cost (₹)", "making cost"]));
-    const packagingCost = toNum(getVal(["packaging cost (₹)", "packaging cost"]));
+    // The app's own column says "Packing", so a sheet a seller made by copying it will too.
+    const makingCost = toNum(getVal(["making cost (₹)", "making cost", "making (₹)", "making"]));
+    const packagingCost = toNum(
+      getVal(["packaging cost (₹)", "packaging cost", "packing cost (₹)", "packing cost", "packing (₹)", "packing", "packaging"]),
+    );
 
     costs[sku.toString().trim()] = {
       making_cost: makingCost,

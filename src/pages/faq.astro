@@ -21,7 +21,7 @@ const PROFIT = '/tools/meesho-profit-calculator';
 
 const title = 'FAQ — Meesho Label Cropper & Profit Calculator';
 const description =
-	'Answers about the free Meesho label cropper and profit calculator: is it really free, is my data safe, which payment file to upload, how per-SKU margin is worked out, and more.';
+	'Answers about the free Meesho label cropper and profit calculator: is it free, is my data safe, which payment file to upload, and how margin is worked out.';
 
 /*
  * Grouped, because the site now hosts two tools and a flat list made every seller read eleven
@@ -128,7 +128,19 @@ const faqs = groups.flatMap((group) => group.faqs);
  * `faqPage` strips the inline markup the answers now carry — schema expects plain text, while the
  * rendered DOM keeps the links. Both are built from the same `faqs` array, so they cannot drift.
  */
-const schema = [faqPage(faqs), breadcrumbs(Astro.site, [{ name: 'FAQ', path: '/faq' }])];
+/*
+ * Questions the calculator's own page already marks up. They stay visible here, but Google asks for
+ * repeated FAQ content to be marked up once, on one page — and the tool page is the one that ranks.
+ */
+const MARKED_UP_ON_TOOL_PAGE = new Set([
+	'Do I have to enter a cost for every SKU?',
+	'Why does my profit differ from the figure in the Meesho panel?',
+]);
+
+const schema = [
+	faqPage(faqs.filter((faq) => !MARKED_UP_ON_TOOL_PAGE.has(faq.q))),
+	breadcrumbs(Astro.site, [{ name: 'FAQ', path: '/faq' }]),
+];
 ---
 
 <Layout

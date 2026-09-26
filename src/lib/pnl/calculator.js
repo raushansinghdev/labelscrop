@@ -4,8 +4,58 @@ import {
   COGS_FULL_STATUSES,
   COGS_ZERO_STATUSES
 } from "./config";
-import { parseOrderPayments, parseSmallSheet, parseOrdersCsv } from "./parser";
+import { parseOrderPayments, parseSmallSheet, toAmount } from "./parser";
 import { getUnmappedSkus, loadCosts } from "./skuCosts";
+
+/**
+ * Pools rows from several files, counting a row that appears in more than one of them once.
+ *
+ * Sellers download a payment file per cycle, and the windows they pick overlap more often than
+ * not — or the same file gets added twice, once as "file.xlsx" and once as "file 2.xlsx". Plain
+ * concatenation counted every shared payment twice and inflated the profit with no warning.
+ *
+ * The rule is a multiset union: a key seen twice in one file is kept twice (Meesho does repeat
+ * identical legs within a file), but a key seen in two files is kept as many times as the file
+ * with the most copies of it holds. `onDuplicate` sees each row that was dropped.
+ */
+export const unionAcrossFiles = (perFile, keyOf, onDuplicate) => {
+  const kept = new Map();
+  const out = [];
+  for (const rows of perFile) {
+    const inThisFile = new Map();
+    for (const row of rows) {
+      const key = keyOf(row);
+      const n = (inThisFile.get(key) || 0) + 1;
+      inThisFile.set(key, n);
+      if (n > (kept.get(key) || 0)) {
+        kept.set(key, n);
+        out.push(row);
+      } else if (onDuplicate) {
+        onDuplicate(row);
+      }
+    }
+  }
+  return out;
+};
+
+const time = (d) => (d instanceof Date ? d.getTime() : "");
+
+/**
+ * One payment leg's identity. Deliberately leaves out "Live Order Status": that column is the
+ * order's status *on the day the file was downloaded*, so the same leg in a later download can
+ * carry a newer status — and must still be recognised as the same money.
+ */
+const paymentKey = (r) =>
+  [
+    r["Sub Order No"],
+    r["Supplier SKU"],
+    time(r["Order Date"]),
+    time(r["Payment Date"]),
+    r["Final Settlement Amount"],
+    r["Total Sale Amount (Incl. Shipping & GST)"],
+    r["Return Shipping Charge"],
+    r["Quantity"],
+  ].join("|");
 
 /**
  * Collapse the Order Payments array to one row per Sub Order No.
@@ -135,24 +185,16 @@ export const applyCogs = (orderLevel, skuCosts, lossRates) => {
  * Summarise account-level adjustments
  */
 export const summarizeAccountLevel = (workbook) => {
-  const out = { ads_cost: 0.0, referral_income: 0.0, compensation_recovery: 0.0 };
+  const books = Array.isArray(workbook) ? workbook : [workbook];
+  const rowsOf = (sheet) =>
+    unionAcrossFiles(books.map(book => parseSmallSheet(book, sheet)), (r) => JSON.stringify(r));
+  const total = (rows, column) => rows.reduce((sum, r) => sum + toAmount(r[column]), 0);
 
-  const ads = parseSmallSheet(workbook, "Ads Cost");
-  ads.forEach(r => {
-    out.ads_cost += Number(r["Total Ads Cost"] || 0);
-  });
-
-  const ref = parseSmallSheet(workbook, "Referral Payments");
-  ref.forEach(r => {
-    out.referral_income += Number(r["Net Referral Amount"] || 0);
-  });
-
-  const comp = parseSmallSheet(workbook, "Compensation and Recovery");
-  comp.forEach(r => {
-    out.compensation_recovery += Number(r["Amount (inc GST) INR"] || 0);
-  });
-
-  return out;
+  return {
+    ads_cost: total(rowsOf("Ads Cost"), "Total Ads Cost"),
+    referral_income: total(rowsOf("Referral Payments"), "Net Referral Amount"),
+    compensation_recovery: total(rowsOf("Compensation and Recovery"), "Amount (inc GST) INR"),
+  };
 };
 
 /**
@@ -273,8 +315,24 @@ export const computePnl = async (workbook, ordersDf, lossRatesReq) => {
     throw new Error("No payment file to calculate from.");
   }
 
-  // 1. Parse order payments
-  const orderPaymentsRaw = workbooks.flatMap(book => parseOrderPayments(book));
+  // 1. Parse order payments, counting any leg that appears in more than one file once. A dropped
+  // duplicate can still carry a newer status than the copy that was kept, so its status survives
+  // as a zero-amount row: status resolution already picks the most final status across legs.
+  const statusOnly = [];
+  const orderPaymentsRaw = unionAcrossFiles(
+    workbooks.map(book => parseOrderPayments(book)),
+    paymentKey,
+    (dup) => {
+      if (dup["Live Order Status"]) {
+        statusOnly.push({
+          ...dup,
+          "Final Settlement Amount": 0,
+          "Total Sale Amount (Incl. Shipping & GST)": 0,
+          "Return Shipping Charge": 0,
+        });
+      }
+    },
+  ).concat(statusOnly);
 
   // Load SKU costs from localStorage
   const skuCosts = loadCosts();
@@ -294,14 +352,9 @@ export const computePnl = async (workbook, ordersDf, lossRatesReq) => {
   // 3. Apply COGS
   orderLevel = applyCogs(orderLevel, skuCosts, lossRates);
 
-  // 4. Account-level adjustments, totalled across every file
-  const extras = workbooks.reduce((acc, book) => {
-    const one = summarizeAccountLevel(book);
-    acc.ads_cost += one.ads_cost;
-    acc.referral_income += one.referral_income;
-    acc.compensation_recovery += one.compensation_recovery;
-    return acc;
-  }, { ads_cost: 0, referral_income: 0, compensation_recovery: 0 });
+  // 4. Account-level adjustments, totalled across every file — with the same overlap rule as the
+  // orders, or two overlapping files would charge the shared days' ads spend twice.
+  const extras = summarizeAccountLevel(workbooks);
 
   // 5. Build overall PnL
   const net_settlement = orderLevel.reduce((acc, row) => acc + row.net_settlement, 0);

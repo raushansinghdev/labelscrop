@@ -2,14 +2,27 @@
 
 const SKU_COSTS_KEY = "meesho_sku_costs";
 
+// The last costs saved this session, used when the browser won't let us read or write storage,
+// so the P&L still sees what the seller just typed. It's lost on reload, which is what the Excel
+// backup is for.
+let memoryCopy = null;
+
 /**
  * Read the SKU cost JSON from localStorage and normalise every entry to v2 format.
  * Returns: {sku: {"making_cost": float, "packaging_cost": float}}
  */
 export function loadCosts() {
-  const rawData = localStorage.getItem(SKU_COSTS_KEY);
+  // getItem throws, rather than returning null, where storage is blocked (strict privacy settings,
+  // some in-app browsers). Every other store in the app already guards this; without it the whole
+  // P&L failed with "The operation is insecure" instead of simply starting with no costs.
+  let rawData = null;
+  try {
+    rawData = localStorage.getItem(SKU_COSTS_KEY);
+  } catch {
+    return memoryCopy ? JSON.parse(memoryCopy) : {};
+  }
   if (!rawData) {
-    return {};
+    return memoryCopy ? JSON.parse(memoryCopy) : {};
   }
 
   try {
@@ -61,7 +74,12 @@ export function saveCosts(costs) {
     }
   }
 
-  localStorage.setItem(SKU_COSTS_KEY, JSON.stringify(out));
+  memoryCopy = JSON.stringify(out);
+  try {
+    localStorage.setItem(SKU_COSTS_KEY, memoryCopy);
+  } catch (err) {
+    console.warn("Could not save SKU costs to this browser; keeping them for this visit only", err);
+  }
 }
 
 /**

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from 'cn';
 import { backButton, primaryCta } from '@/components/tool/buttons';
 import { triggerDownload, useShareFile } from '@/components/tool/useShareFile';
-import { formatDateRange, formatNumber } from './format';
+import { formatDateRange, formatNumber, parseIsoDate } from './format';
 import { EASE_OUT, SPRING } from './motion';
 import type { ExpenseRow } from './expenses';
 import type { PnlResult } from './types';
@@ -187,8 +187,8 @@ export function DownloadReport({ result, overheads, expenses, expenseDays, fileN
 function reportFilename(result: PnlResult): string {
 	const { payment_window_start, payment_window_end } = result.overall;
 	const stamp = (iso: string) => {
-		const date = new Date(iso);
-		if (Number.isNaN(date.getTime())) return '';
+		const date = parseIsoDate(iso);
+		if (!date) return '';
 		return `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
 	};
 	const from = stamp(payment_window_start);
