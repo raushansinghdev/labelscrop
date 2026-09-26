@@ -7,16 +7,12 @@ import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
 import partytown from '@astrojs/partytown';
 
-// The GitHub Pages workflow sets GITHUB_PAGES=true so the dev site is served from
-// https://raushansinghdev.github.io/labelscrop/. Regular builds keep the production domain.
-// The repo (and therefore the Pages sub-path) is still named `labelscrop`; renaming it would
-// break the staging URL for no gain, since that mirror is noindexed either way.
-const isGitHubPages = process.env.GITHUB_PAGES === 'true';
-
 // https://astro.build/config
 export default defineConfig({
-  site: isGitHubPages ? 'https://raushansinghdev.github.io' : 'https://sellerwala.com',
-  base: isGitHubPages ? '/labelscrop' : '/',
+  // Staging is Cloudflare Pages' per-branch preview (dev.sellerwala.pages.dev), which serves the
+  // same build at the root. So there is one site URL and no base path. The previews are kept out
+  // of the index by public/_headers.
+  site: 'https://sellerwala.com',
   // The Amazon/Flipkart pages are roadmap placeholders carrying almost no content. They're
   // marked noindex until the adapters ship, so they must stay out of the sitemap too —
   // submitting a noindex URL is a contradictory signal Search Console flags as an error.
